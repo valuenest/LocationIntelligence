@@ -49,6 +49,45 @@ interface AnalysisResult {
 export async function registerRoutes(app: Express): Promise<Server> {
   const server = createServer(app);
 
+  // Google Maps configuration endpoint
+  app.get("/api/maps-config", (req: Request, res: Response) => {
+    res.json({ 
+      apiKey: process.env.GOOGLE_MAPS_API_KEY || "",
+      isConfigured: !!process.env.GOOGLE_MAPS_API_KEY
+    });
+  });
+
+  // Usage status endpoint  
+  app.get("/api/usage-status", async (req: Request, res: Response) => {
+    try {
+      const ipAddress = req.ip || req.connection.remoteAddress || "127.0.0.1";
+      let usageLimit = await storage.getUsageLimit(ipAddress);
+      
+      if (!usageLimit) {
+        usageLimit = await storage.createUsageLimit({
+          ipAddress,
+          freeUsageCount: 0,
+          lastUsageDate: new Date().toISOString().split('T')[0]
+        });
+      }
+
+      // Reset daily usage if it's a new day
+      const today = new Date().toISOString().split('T')[0];
+      if (usageLimit.lastUsageDate !== today) {
+        usageLimit = await storage.resetDailyUsage(ipAddress);
+      }
+
+      res.json({
+        freeUsageCount: usageLimit.freeUsageCount,
+        canUseFree: usageLimit.freeUsageCount < 3,
+        dailyLimit: 3
+      });
+    } catch (error) {
+      console.error("Error getting usage status:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Razorpay webhook handler
   app.post("/api/razorpay/webhook", async (req: Request, res: Response) => {
     try {
