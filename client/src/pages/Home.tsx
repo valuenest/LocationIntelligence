@@ -5,6 +5,8 @@ import PropertyForm from "@/components/PropertyForm";
 import PricingPlans from "@/components/PricingPlans";
 import SampleAnalysis from "@/components/SampleAnalysis";
 import PaymentModal from "@/components/PaymentModal";
+import AnalysisLoadingModal from "@/components/AnalysisLoadingModal";
+import UsageLimitModal from "@/components/UsageLimitModal";
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, TrendingUp, Brain } from "lucide-react";
 
@@ -33,6 +35,8 @@ export default function Home() {
   const [propertyData, setPropertyData] = useState<PropertyFormData | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [usageLimitModalOpen, setUsageLimitModalOpen] = useState(false);
 
   const { data: usageStatus } = useQuery<{ success: boolean; usage: { canUseFree: boolean; freeUsageCount: number; maxFreeUsage: number } }>({
     queryKey: ['/api/usage-status'],
@@ -49,7 +53,13 @@ export default function Home() {
   const handlePropertySubmit = async (data: PropertyFormData) => {
     setPropertyData(data);
     
-    // Automatically trigger free analysis when property form is submitted
+    // Check if user can use free analysis or needs to pay
+    if (!canUseFree) {
+      setUsageLimitModalOpen(true);
+      return;
+    }
+    
+    // Proceed with free analysis
     if (selectedLocation) {
       await handleFreeAnalysis(data);
     } else {
@@ -61,24 +71,25 @@ export default function Home() {
     setSelectedPlan(plan);
     if (plan === 'paid' || plan === 'pro') {
       setPaymentModalOpen(true);
-    } else {
+    } else if (propertyData) {
       // Handle free plan directly
-      handleFreeAnalysis();
+      handleFreeAnalysis(propertyData);
     }
   };
 
-  const handleFreeAnalysis = async (formData?: PropertyFormData) => {
-    const dataToUse = formData || propertyData;
-    
-    if (!selectedLocation || !dataToUse) {
-      alert('Please select a location and enter property details first');
+  const handleUsageLimitPlanSelect = (plan: string) => {
+    setUsageLimitModalOpen(false);
+    setSelectedPlan(plan);
+    setPaymentModalOpen(true);
+  };
+
+  const handleFreeAnalysis = async (formData: PropertyFormData) => {
+    if (!selectedLocation) {
+      alert('Please select a location first');
       return;
     }
 
-    if (!canUseFree) {
-      alert('Daily free usage limit exceeded. Please upgrade to a paid plan.');
-      return;
-    }
+    setAnalysisLoading(true);
 
     try {
       const response = await fetch('/api/analyze', {
