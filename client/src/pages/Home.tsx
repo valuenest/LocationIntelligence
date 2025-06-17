@@ -97,19 +97,32 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           location: selectedLocation,
-          amount: dataToUse.amount,
-          propertyType: dataToUse.propertyType,
+          amount: formData.amount,
+          propertyType: formData.propertyType,
+          propertySize: formData.propertySize,
+          sizeUnit: formData.sizeUnit,
+          propertyAge: formData.propertyAge,
+          bedrooms: formData.bedrooms,
+          furnished: formData.furnished,
+          floor: formData.floor,
+          parkingSpaces: formData.parkingSpaces,
           planType: 'free',
         }),
       });
 
       const result = await response.json();
       if (result.success) {
-        window.location.href = `/results/${result.sessionId}`;
+        // Add delay for better UX with loading animation
+        setTimeout(() => {
+          setAnalysisLoading(false);
+          window.location.href = `/results?sessionId=${result.sessionId}`;
+        }, 3000);
       } else {
+        setAnalysisLoading(false);
         alert(result.error || 'Analysis failed');
       }
     } catch (error) {
+      setAnalysisLoading(false);
       console.error('Analysis error:', error);
       alert('Failed to perform analysis');
     }
@@ -226,6 +239,17 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Analysis Loading Modal */}
+      <AnalysisLoadingModal isOpen={analysisLoading} />
+
+      {/* Usage Limit Modal */}
+      <UsageLimitModal
+        isOpen={usageLimitModalOpen}
+        onClose={() => setUsageLimitModalOpen(false)}
+        onSelectPlan={handleUsageLimitPlanSelect}
+        freeUsageCount={freeUsageCount}
+      />
 
       {/* Payment Modal */}
       <PaymentModal

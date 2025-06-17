@@ -2,6 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Consistent text sizing for form elements */
+.form-text {
+  @apply text-base;
+}
+
+.form-label {
+  @apply text-base font-medium;
+}
+
+.form-input {
+  @apply text-base;
+}
+
+.form-select {
+  @apply text-base;
+}
+
+/* Ensure consistent button text */
+.btn-text {
+  @apply text-base font-medium;
+}
+
 :root {
   --background: hsl(0, 0%, 100%);
   --foreground: hsl(20, 14.3%, 4.1%);
