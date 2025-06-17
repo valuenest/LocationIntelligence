@@ -127,7 +127,7 @@ Format as: Area Name | Reasoning | Distance`;
           score: 75 + Math.random() * 20, // Random score between 75-95
           reasoning: parts[1],
           distance: parts[2],
-          imageUrl: `https://maps.googleapis.com/maps/api/staticmap?center=${centerLocation.lat + offsetLat},${centerLocation.lng + offsetLng}&zoom=15&size=300x200&maptype=roadmap&markers=color:blue%7C${centerLocation.lat + offsetLat},${centerLocation.lng + offsetLng}&key=AIzaSyCEetXKsgKVA4KB5v-XhjY6cCfl9UZNK6w`
+          imageUrl: `https://maps.googleapis.com/maps/api/staticmap?center=${centerLocation.lat + offsetLat},${centerLocation.lng + offsetLng}&zoom=15&size=300x200&maptype=roadmap&markers=color:blue%7C${centerLocation.lat + offsetLat},${centerLocation.lng + offsetLng}&key=${process.env.GOOGLE_MAPS_API_KEY}`
         });
       }
     }
@@ -151,7 +151,7 @@ Format as: Area Name | Reasoning | Distance`;
           score: 80 + Math.random() * 15,
           reasoning: 'Strong infrastructure development and connectivity options',
           distance: `${(15 + Math.random() * 10).toFixed(1)} km`,
-          imageUrl: `https://maps.googleapis.com/maps/api/staticmap?center=${centerLocation.lat + offsetLat},${centerLocation.lng + offsetLng}&zoom=15&size=300x200&maptype=roadmap&markers=color:blue%7C${centerLocation.lat + offsetLat},${centerLocation.lng + offsetLng}&key=AIzaSyCEetXKsgKVA4KB5v-XhjY6cCfl9UZNK6w`
+          imageUrl: `https://maps.googleapis.com/maps/api/staticmap?center=${centerLocation.lat + offsetLat},${centerLocation.lng + offsetLng}&zoom=15&size=300x200&maptype=roadmap&markers=color:blue%7C${centerLocation.lat + offsetLat},${centerLocation.lng + offsetLng}&key=${process.env.GOOGLE_MAPS_API_KEY}`
         });
       });
     }
