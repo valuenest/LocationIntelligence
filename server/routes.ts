@@ -312,7 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       recommendations.push(`🔍 Alternative Suggestion: Look for properties with better location scores or in emerging areas with planned infrastructure development.`);
       
-      if (propertyDetails.propertySize < 800 && propertyDetails.sizeUnit === 'sqft') {
+      if (propertySize < 800 && sizeUnit === 'sqft') {
         recommendations.push(`📏 Size Limitation: Properties under 800 sq ft have limited appreciation potential. Consider larger units for better long-term returns.`);
       }
     }
@@ -322,7 +322,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       recommendations.push(`🏗️ Development Opportunity: Plots in this area have 35-40% appreciation potential with approved construction plans. Current infrastructure development supports residential projects.`);
     }
     
-    if (propertyDetails.bedrooms >= 3) {
+    if (propertyDetails?.bedrooms >= 3) {
       recommendations.push(`👨‍👩‍👧‍👦 Family Appeal: 3+ bedroom properties maintain 90% occupancy rates and command 20-25% higher rental yields in this locality.`);
     }
     

@@ -39,6 +39,14 @@ interface AnalysisResult {
   }>;
   streetViewUrl?: string;
   aiRecommendations?: string[];
+  topInvestmentLocations?: Array<{
+    address: string;
+    lat: number;
+    lng: number;
+    score: number;
+    reasoning: string;
+    distance: string;
+  }>;
 }
 
 interface AnalysisData {
