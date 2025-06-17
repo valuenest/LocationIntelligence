@@ -401,8 +401,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
 
     if (planType === 'free') {
-      // FREE TIER: Search for essential services - let real location data determine results
-      const basicPlaceTypes = ['school', 'hospital', 'subway_station', 'bus_station', 'shopping_mall', 'grocery_or_supermarket', 'restaurant', 'bank'];
+      // FREE TIER: Search for essential services with comprehensive place type matching
+      const basicPlaceTypes = [
+        'school', 'hospital', 'health', 'doctor', 'clinic', 'pharmacy',
+        'subway_station', 'bus_station', 'train_station', 'transit_station', 'light_rail_station',
+        'shopping_mall', 'supermarket', 'grocery_or_supermarket', 'store', 'convenience_store',
+        'restaurant', 'food', 'meal_takeaway', 'cafe', 'bakery',
+        'bank', 'atm', 'finance', 'post_office',
+        'gas_station', 'petrol_station', 'fuel'
+      ];
       result.nearbyPlaces = await findNearbyPlaces(location.lat, location.lng, basicPlaceTypes);
       result.distances = await calculateDistances(location, result.nearbyPlaces);
       
@@ -548,11 +555,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } else if (planType === 'paid') {
       // PAID TIER: Full analysis report + growth prediction + nearby developments + visual scoring + street view
       const comprehensivePlaceTypes = [
-        'school', 'hospital', 'subway_station', 'shopping_mall', 'restaurant', 
-        'bank', 'gas_station', 'park', 'real_estate_agency', 'atm',
-        'bus_station', 'grocery_or_supermarket', 'pharmacy',
+        'school', 'hospital', 'health', 'doctor', 'clinic', 'pharmacy',
+        'subway_station', 'bus_station', 'train_station', 'transit_station', 'light_rail_station',
+        'shopping_mall', 'supermarket', 'grocery_or_supermarket', 'store', 'convenience_store',
+        'restaurant', 'food', 'meal_takeaway', 'cafe', 'bakery',
+        'bank', 'atm', 'finance', 'post_office',
+        'gas_station', 'petrol_station', 'fuel',
+        'park', 'real_estate_agency', 'gym', 'spa', 'beauty_salon',
         'tourist_attraction', 'temple', 'church', 'mosque', 'zoo', 'museum',
-        'amusement_park', 'movie_theater', 'stadium', 'natural_feature'
+        'amusement_park', 'movie_theater', 'stadium', 'natural_feature',
+        'electronics_store', 'clothing_store', 'jewelry_store', 'book_store'
       ];
       
       result.nearbyPlaces = await findNearbyPlaces(location.lat, location.lng, comprehensivePlaceTypes);
@@ -714,11 +726,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } else if (planType === 'pro') {
       // PRO TIER: All paid features + AI-picked top 3 investment locations + AI reasoning
       const comprehensivePlaceTypes = [
-        'school', 'hospital', 'subway_station', 'shopping_mall', 'restaurant', 
-        'bank', 'gas_station', 'park', 'real_estate_agency', 'atm',
-        'bus_station', 'grocery_or_supermarket', 'pharmacy', 'gym', 'movie_theater',
+        'school', 'hospital', 'health', 'doctor', 'clinic', 'pharmacy',
+        'subway_station', 'bus_station', 'train_station', 'transit_station', 'light_rail_station',
+        'shopping_mall', 'supermarket', 'grocery_or_supermarket', 'store', 'convenience_store',
+        'restaurant', 'food', 'meal_takeaway', 'cafe', 'bakery',
+        'bank', 'atm', 'finance', 'post_office',
+        'gas_station', 'petrol_station', 'fuel',
+        'park', 'real_estate_agency', 'gym', 'spa', 'beauty_salon',
         'tourist_attraction', 'temple', 'church', 'mosque', 'zoo', 'museum',
-        'amusement_park', 'stadium', 'natural_feature', 'aquarium', 'art_gallery'
+        'amusement_park', 'movie_theater', 'stadium', 'natural_feature',
+        'electronics_store', 'clothing_store', 'jewelry_store', 'book_store',
+        'aquarium', 'art_gallery', 'night_club', 'casino'
       ];
       
       result.nearbyPlaces = await findNearbyPlaces(location.lat, location.lng, comprehensivePlaceTypes);
