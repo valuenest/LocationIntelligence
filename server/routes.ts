@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertAnalysisRequestSchema } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
+import { generateInvestmentRecommendations, findTopInvestmentLocations } from "./gemini";
 
 // Types for Google Maps APIs
 interface LocationData {
@@ -32,6 +33,14 @@ interface AnalysisResult {
   distances: Record<string, DistanceData>;
   streetViewUrl?: string;
   aiRecommendations?: string[];
+  topInvestmentLocations?: Array<{
+    address: string;
+    lat: number;
+    lng: number;
+    score: number;
+    reasoning: string;
+    distance: string;
+  }>;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -326,7 +335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return recommendations;
   };
 
-  // Analysis logic
+  // Tier-specific analysis logic
   const performAnalysis = async (location: LocationData, amount: number, propertyType: string, planType: string, propertyDetails?: any): Promise<AnalysisResult> => {
     const result: AnalysisResult = {
       locationScore: 0,
@@ -335,53 +344,149 @@ export async function registerRoutes(app: Express): Promise<Server> {
       distances: {},
     };
 
-    // Basic analysis for all plans
-    const keyPlaceTypes = ['school', 'hospital', 'subway_station'];
-    result.nearbyPlaces = await findNearbyPlaces(location.lat, location.lng, keyPlaceTypes);
-    result.distances = await calculateDistances(location, result.nearbyPlaces);
-
-    // Calculate location score based on proximity to key amenities
-    let score = 3.0; // Base score
-    Object.values(result.distances).forEach(dist => {
-      if (dist.distance.value < 1000) score += 0.5; // Very close
-      else if (dist.distance.value < 2000) score += 0.3; // Close
-      else if (dist.distance.value < 5000) score += 0.1; // Moderate
-    });
-    result.locationScore = Math.min(5.0, score);
-
-    // Enhanced analysis for paid plans
-    if (planType === 'paid' || planType === 'pro') {
-      // Add more place types for comprehensive analysis
-      const extendedPlaceTypes = ['shopping_mall', 'restaurant', 'bank', 'gas_station', 'park'];
-      const additionalPlaces = await findNearbyPlaces(location.lat, location.lng, extendedPlaceTypes);
-      result.nearbyPlaces.push(...additionalPlaces);
-
-      // Calculate growth prediction based on area development
-      const developmentFactor = result.nearbyPlaces.length / 10; // Simple heuristic
-      const baseGrowth = propertyType === 'apartment' ? 12 : 15; // Different growth for different property types
-      result.growthPrediction = Math.min(25, baseGrowth + developmentFactor * 5);
-
-      // Street View URL
-      result.streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${location.lat},${location.lng}&key=${GOOGLE_MAPS_API_KEY}`;
-    }
-
-    // Enhanced AI recommendations with property-specific analysis
-    if (planType === 'pro' && propertyDetails) {
-      const recommendations = generateInvestmentRecommendations(
-        location, 
-        amount, 
-        propertyType, 
-        propertyDetails, 
-        result.nearbyPlaces,
-        result.locationScore
-      );
-      result.aiRecommendations = recommendations;
-    } else if (planType === 'pro') {
-      result.aiRecommendations = [
-        'Consider checking upcoming infrastructure projects in this area',
-        'Look for similar properties 2-3 km away for better pricing',
-        'Metro connectivity planned for 2025 will boost property values',
+    if (planType === 'free') {
+      // FREE TIER: Only 3 basic landmarks (school, hospital, metro)
+      const basicPlaceTypes = ['school', 'hospital', 'subway_station'];
+      const allBasicPlaces = await findNearbyPlaces(location.lat, location.lng, basicPlaceTypes);
+      
+      // Limit to exactly 3 places (one of each type if available)
+      const schoolPlace = allBasicPlaces.find(p => p.types.includes('school'));
+      const hospitalPlace = allBasicPlaces.find(p => p.types.includes('hospital'));
+      const metroPlace = allBasicPlaces.find(p => p.types.includes('subway_station'));
+      
+      result.nearbyPlaces = [schoolPlace, hospitalPlace, metroPlace].filter(Boolean) as PlaceDetails[];
+      result.distances = await calculateDistances(location, result.nearbyPlaces);
+      
+      // Basic location score calculation
+      let score = 2.5;
+      Object.values(result.distances).forEach(dist => {
+        if (dist.distance.value < 2000) score += 0.5;
+        else if (dist.distance.value < 5000) score += 0.3;
+      });
+      result.locationScore = Math.min(5.0, score);
+      
+    } else if (planType === 'paid') {
+      // PAID TIER: Full analysis report + growth prediction + nearby developments + visual scoring + street view
+      const comprehensivePlaceTypes = [
+        'school', 'hospital', 'subway_station', 'shopping_mall', 'restaurant', 
+        'bank', 'gas_station', 'park', 'real_estate_agency', 'atm',
+        'bus_station', 'grocery_or_supermarket', 'pharmacy'
       ];
+      
+      result.nearbyPlaces = await findNearbyPlaces(location.lat, location.lng, comprehensivePlaceTypes);
+      result.distances = await calculateDistances(location, result.nearbyPlaces);
+      
+      // Advanced location scoring with multiple factors
+      let score = 3.0;
+      let amenityCount = 0;
+      Object.values(result.distances).forEach(dist => {
+        if (dist.distance.value < 1000) {
+          score += 0.4;
+          amenityCount++;
+        } else if (dist.distance.value < 2000) {
+          score += 0.3;
+          amenityCount++;
+        } else if (dist.distance.value < 5000) {
+          score += 0.1;
+          amenityCount++;
+        }
+      });
+      
+      // Bonus for high amenity density
+      if (amenityCount >= 10) score += 0.5;
+      else if (amenityCount >= 7) score += 0.3;
+      
+      result.locationScore = Math.min(5.0, score);
+      
+      // Growth prediction calculation based on multiple factors
+      const infraScore = Math.min(100, amenityCount * 5);
+      const connectivityBonus = result.nearbyPlaces.some(p => p.types.includes('subway_station')) ? 15 : 0;
+      const commercialBonus = result.nearbyPlaces.filter(p => 
+        p.types.includes('shopping_mall') || p.types.includes('restaurant')).length * 3;
+      
+      result.growthPrediction = Math.min(35, 8 + infraScore/5 + connectivityBonus + commercialBonus);
+      
+      // Street View URL for paid tier
+      result.streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${location.lat},${location.lng}&heading=0&pitch=0&key=${GOOGLE_MAPS_API_KEY}`;
+      
+    } else if (planType === 'pro') {
+      // PRO TIER: All paid features + AI-picked top 3 investment locations + AI reasoning
+      const comprehensivePlaceTypes = [
+        'school', 'hospital', 'subway_station', 'shopping_mall', 'restaurant', 
+        'bank', 'gas_station', 'park', 'real_estate_agency', 'atm',
+        'bus_station', 'grocery_or_supermarket', 'pharmacy', 'gym', 'movie_theater'
+      ];
+      
+      result.nearbyPlaces = await findNearbyPlaces(location.lat, location.lng, comprehensivePlaceTypes);
+      result.distances = await calculateDistances(location, result.nearbyPlaces);
+      
+      // Premium location scoring
+      let score = 3.2;
+      let amenityCount = 0;
+      let qualityScore = 0;
+      
+      Object.entries(result.distances).forEach(([name, dist]) => {
+        const place = result.nearbyPlaces.find(p => p.name === name);
+        const rating = place?.rating || 3.5;
+        
+        if (dist.distance.value < 1000) {
+          score += 0.4 + (rating - 3.5) * 0.1;
+          amenityCount++;
+          qualityScore += rating;
+        } else if (dist.distance.value < 2000) {
+          score += 0.3 + (rating - 3.5) * 0.05;
+          amenityCount++;
+          qualityScore += rating;
+        } else if (dist.distance.value < 5000) {
+          score += 0.1;
+          amenityCount++;
+          qualityScore += rating * 0.5;
+        }
+      });
+      
+      // Quality bonus for highly rated places
+      if (qualityScore / amenityCount > 4.0) score += 0.3;
+      
+      result.locationScore = Math.min(5.0, score);
+      
+      // Advanced growth prediction with AI insights
+      const infraScore = Math.min(100, amenityCount * 4);
+      const qualityBonus = (qualityScore / amenityCount - 3.5) * 10;
+      const connectivityBonus = result.nearbyPlaces.some(p => p.types.includes('subway_station')) ? 20 : 0;
+      const commercialDensity = result.nearbyPlaces.filter(p => 
+        p.types.includes('shopping_mall') || p.types.includes('restaurant') || 
+        p.types.includes('bank')).length * 2;
+      
+      result.growthPrediction = Math.min(45, 10 + infraScore/4 + qualityBonus + connectivityBonus + commercialDensity);
+      
+      // Street View URL
+      result.streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x600&location=${location.lat},${location.lng}&heading=0&pitch=0&key=${GOOGLE_MAPS_API_KEY}`;
+      
+      // AI-powered investment recommendations
+      try {
+        const aiAnalysisData = {
+          location,
+          amount,
+          propertyType,
+          nearbyPlaces: result.nearbyPlaces,
+          distances: result.distances
+        };
+        
+        result.aiRecommendations = await generateInvestmentRecommendations(aiAnalysisData);
+        
+        // Add AI-picked investment locations
+        const topLocations = await findTopInvestmentLocations(location, propertyType, amount);
+        result.topInvestmentLocations = topLocations;
+        
+      } catch (error) {
+        console.error('AI analysis failed:', error);
+        // Fallback recommendations
+        result.aiRecommendations = [
+          'Strong infrastructure development indicates good investment potential in this area',
+          'Consider proximity to metro stations for better rental yields and appreciation',
+          'Check upcoming commercial projects that could boost property values significantly'
+        ];
+      }
     }
 
     return result;
