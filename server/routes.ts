@@ -542,8 +542,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         result.distances = await calculateDistances(location, result.nearbyPlaces);
       }
 
-      // Count essential services within 3km radius for habitability assessment
+      // Count essential services within 2-3km radius for habitability assessment
       let closeEssentialServices = 0;
+      let veryCloseEssentialServices = 0;
       let totalEssentialServices = 0;
       const essentialTypes = ['hospital', 'school', 'bank', 'store', 'gas_station', 'restaurant'];
       
@@ -551,7 +552,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const place = result.nearbyPlaces.find(p => p.name === placeName);
         if (place && isEssentialService(place)) {
           totalEssentialServices++;
-          if (dist.distance.value <= 3000) { // 3km radius
+          if (dist.distance.value <= 2000) { // 2km radius - very close
+            veryCloseEssentialServices++;
+          }
+          if (dist.distance.value <= 3000) { // 3km radius - acceptable
             closeEssentialServices++;
           }
         }
@@ -560,9 +564,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // DESERT/REMOTE LOCATION DETECTION: Strict criteria for uninhabitable areas
       const addressLower = location.address.toLowerCase();
       const isDesertOrRemote = (
-        result.nearbyPlaces.length < 8 || // Less than 8 total places
-        totalEssentialServices < 4 || // Less than 4 essential services
-        closeEssentialServices < 2 || // Less than 2 essential services within 3km
+        result.nearbyPlaces.length < 10 || // Less than 10 total places
+        totalEssentialServices < 5 || // Less than 5 essential services total
+        veryCloseEssentialServices === 0 || // No essential services within 2km
+        closeEssentialServices < 3 || // Less than 3 essential services within 3km
         addressLower.includes('desert') ||
         addressLower.includes('canyon') ||
         addressLower.includes('wilderness') ||
@@ -585,12 +590,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return result;
       }
 
-      // Calculate location score based on nearby services (1-5 scale)
+      // Calculate location score based on nearby services within 2-3km (1-5 scale)
       const totalServices = result.nearbyPlaces.length;
-      const serviceScore = Math.min(totalServices / 10, 1.0); // Max score at 10+ services
-      const proximityScore = closeEssentialServices / Math.max(totalServices, 1);
+      const serviceScore = Math.min(totalServices / 15, 1.0); // Max score at 15+ services
+      const proximityScore = veryCloseEssentialServices / Math.max(totalEssentialServices, 1); // Services within 2km
+      const accessibilityScore = closeEssentialServices / Math.max(totalEssentialServices, 1); // Services within 3km
       
-      result.locationScore = (serviceScore * 0.6 + proximityScore * 0.4) * 5; // Scale to 5-star rating
+      // Weighted scoring: 40% total services, 35% very close services, 25% accessible services
+      result.locationScore = (serviceScore * 0.4 + proximityScore * 0.35 + accessibilityScore * 0.25) * 5;
 
       // Street View URL for all tiers
       result.streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${location.lat},${location.lng}&heading=0&pitch=0&key=${process.env.GOOGLE_MAPS_API_KEY}`;
