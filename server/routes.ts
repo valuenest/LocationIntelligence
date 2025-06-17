@@ -562,21 +562,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return result;
       }
 
-      // Calculate location score based on nearby services
+      // Calculate location score based on nearby services (1-5 scale)
       const totalServices = result.nearbyPlaces.length;
       const serviceScore = Math.min(totalServices / 10, 1.0); // Max score at 10+ services
       const proximityScore = closeEssentialServices / Math.max(totalServices, 1);
       
-      result.locationScore = (serviceScore * 0.6 + proximityScore * 0.4) * 100;
+      result.locationScore = (serviceScore * 0.6 + proximityScore * 0.4) * 5; // Scale to 5-star rating
 
       // Street View URL for all tiers
       result.streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${location.lat},${location.lng}&heading=0&pitch=0&key=${process.env.GOOGLE_MAPS_API_KEY}`;
 
-      // Base investment metrics
-      result.investmentViability = Math.min(result.locationScore * 0.8, 95); // Cap at 95%
-      result.businessGrowthRate = Math.min(result.locationScore * 0.15, 12); // Cap at 12%
-      result.populationGrowthRate = Math.min(result.locationScore * 0.08, 6); // Cap at 6%
-      result.growthPrediction = Math.min(result.locationScore * 0.2, 15); // Cap at 15%
+      // Base investment metrics (convert 5-star score to percentage)
+      const scoreAsPercentage = (result.locationScore / 5) * 100;
+      result.investmentViability = Math.min(scoreAsPercentage * 0.8, 95); // Cap at 95%
+      result.businessGrowthRate = Math.min(scoreAsPercentage * 0.15, 12); // Cap at 12%
+      result.populationGrowthRate = Math.min(scoreAsPercentage * 0.08, 6); // Cap at 6%
+      result.growthPrediction = Math.min(scoreAsPercentage * 0.2, 15); // Cap at 15%
 
       // Tier-specific enhancements
       if (planType === "basic" || planType === "pro") {

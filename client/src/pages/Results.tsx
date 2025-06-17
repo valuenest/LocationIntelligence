@@ -236,7 +236,7 @@ export default function Results() {
         {[...Array(emptyStars)].map((_, i) => (
           <Star key={i} className="h-5 w-5 text-gray-300" />
         ))}
-        <span className="ml-2 text-sm font-medium">{score.toFixed(1)}/5</span>
+        <span className="ml-2 text-sm font-medium">{Math.round(score * 10) / 10}/5</span>
       </div>
     );
   };
@@ -613,7 +613,7 @@ export default function Results() {
                         <div className="text-center">
                           <div className={`text-2xl font-bold ${(analysisResult.investmentViability || 0) >= 65 ? 'text-green-600' : 
                                                               (analysisResult.investmentViability || 0) >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
-                            {analysisResult.investmentViability || 0}%
+                            {Math.round(analysisResult.investmentViability || 0)}%
                           </div>
                           <div className="text-xs text-gray-600">Investment</div>
                         </div>
@@ -796,7 +796,7 @@ export default function Results() {
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-purple-600">
-                        {Math.round(Object.values(analysisResult.distances).reduce((avg, d) => avg + d.distance.value, 0) / Object.values(analysisResult.distances).length / 1000 * 10) / 10}km
+                        {Math.round((Object.values(analysisResult.distances).reduce((avg, d) => avg + d.distance.value, 0) / Object.values(analysisResult.distances).length / 1000) * 10) / 10}km
                       </div>
                       <div className="text-xs text-gray-600">Avg Distance</div>
                     </div>

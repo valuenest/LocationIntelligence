@@ -107,15 +107,8 @@ export default function Home() {
       return;
     }
     
-    // Always prompt user to select plan type first
-    // Scroll to pricing plans section to make it visible
-    const pricingSection = document.getElementById('pricing-plans');
-    if (pricingSection) {
-      pricingSection.scrollIntoView({ behavior: 'smooth' });
-    }
-    
-    // Show message to select plan
-    alert('Please select your analysis plan below to proceed with the property analysis.');
+    // Always prompt user to select plan type first using pricing modal
+    setPricingModalOpen(true);
   };
 
   const handlePropertySubmit = async (data: PropertyFormData) => {
