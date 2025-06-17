@@ -877,6 +877,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/get-ip', async (req, res) => {
+    try {
+      const clientIP = getClientIP(req);
+      res.json({ ip: clientIP });
+    } catch (error) {
+      console.error('Get IP error:', error);
+      res.status(500).json({ error: 'Failed to get IP address' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

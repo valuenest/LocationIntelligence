@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { generatePDF } from "@/lib/pdfGenerator";
+import { saveAnalysisToHistory } from "@/lib/historyStorage";
 
 interface AnalysisResult {
   locationScore: number;
