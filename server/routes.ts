@@ -518,14 +518,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
-      // Verify payment signature (simplified - in production, use proper verification)
-      // const expectedSignature = crypto
-      //   .createHmac('sha256', RAZORPAY_KEY_SECRET)
-      //   .update(orderId + '|' + paymentId)
-      //   .digest('hex');
-
-      // For demo purposes, accept all payments
-      const verified = true; // expectedSignature === signature;
+      // For test environment, accept all payments (in production, implement proper verification)
+      let verified = true;
+      
+      if (RAZORPAY_KEY_ID.includes('test') || process.env.NODE_ENV === 'development') {
+        // Test mode - accept all payments
+        verified = true;
+        console.log('Test payment accepted:', paymentId);
+      } else {
+        // Production mode - verify signature
+        const expectedSignature = crypto
+          .createHmac('sha256', RAZORPAY_KEY_SECRET)
+          .update(orderId + '|' + paymentId)
+          .digest('hex');
+        verified = expectedSignature === signature;
+      }
 
       if (!verified) {
         return res.status(400).json({ error: 'Payment verification failed' });
@@ -536,13 +543,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentId,
       });
 
-      // Re-run analysis with paid features
+      // Re-run analysis with paid features and property details
       const locationData = analysisRequest.location as LocationData;
+      const propertyDetails = {
+        propertySize: 1000, // Default values for existing requests
+        sizeUnit: 'sqft',
+        propertyAge: 'new',
+        bedrooms: 2,
+        furnished: 'unfurnished',
+        floor: 'ground',
+        parkingSpaces: 1,
+      };
+      
       const enhancedResult = await performAnalysis(
         locationData,
         analysisRequest.amount,
         analysisRequest.propertyType,
-        analysisRequest.planType
+        analysisRequest.planType,
+        propertyDetails
       );
 
       // Update with enhanced results
