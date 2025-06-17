@@ -747,15 +747,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return result;
       }
 
-      // Advanced infrastructure-based location scoring (1-5 scale)
-      const healthcareScore = Math.min(infrastructureScores.healthcare.total / 3, 1.0); // Max at 3+ healthcare facilities
-      const educationScore = Math.min(infrastructureScores.education.total / 4, 1.0); // Max at 4+ educational institutions
-      const transportScore = Math.min(infrastructureScores.transport.total / 5, 1.0); // Max at 5+ transport hubs
-      const commercialScore = Math.min(infrastructureScores.commercial.total / 6, 1.0); // Max at 6+ commercial facilities
-      const finalConnectivityScore = infrastructureScores.connectivity / 100; // Convert to 0-1 scale
+      // Enhanced infrastructure scoring for premium urban areas
+      const healthcareScore = Math.min(infrastructureScores.healthcare.total / 2.5, 1.2); // Allow scores above 1.0
+      const educationScore = Math.min(infrastructureScores.education.total / 3, 1.2); // Allow scores above 1.0
+      const transportScore = Math.min(infrastructureScores.transport.total / 3, 1.2); // Allow scores above 1.0
+      const commercialScore = Math.min(infrastructureScores.commercial.total / 4, 1.5); // Higher weighting for commercial
+      const finalConnectivityScore = Math.min(infrastructureScores.connectivity / 80, 1.2); // Allow connectivity bonus
       
       // Proximity bonus for services within 3km (adjusted for 5km radius)
       const proximityBonus = (infrastructureScores.essential.close / Math.max(infrastructureScores.essential.total, 1)) * 0.7;
+      
+      // Premium area detection bonuses
+      let premiumAreaBonus = 0;
+      
+      // Check for luxury/premium indicators in nearby places
+      const luxuryIndicators = result.nearbyPlaces.filter(place => {
+        const name = place.name.toLowerCase();
+        const isLuxury = name.includes('palace') || name.includes('luxury') || 
+                        name.includes('premium') || name.includes('resort') ||
+                        name.includes('five star') || name.includes('grand');
+        const isHighRated = place.rating && place.rating >= 4.5;
+        return isLuxury || isHighRated;
+      });
+      
+      if (luxuryIndicators.length >= 3) premiumAreaBonus += 1.0; // Significant premium area bonus
+      else if (luxuryIndicators.length >= 2) premiumAreaBonus += 0.5; // Moderate premium bonus
+      
+      // Tech hub detection for IT corridors
+      const techIndicators = result.nearbyPlaces.filter(place => {
+        const name = place.name.toLowerCase();
+        const vicinity = place.vicinity?.toLowerCase() || '';
+        return name.includes('tech') || name.includes('it ') || name.includes('software') ||
+               vicinity.includes('tech park') || vicinity.includes('it park') ||
+               place.types.includes('establishment');
+      });
+      
+      if (techIndicators.length >= 4) premiumAreaBonus += 0.8; // Tech hub bonus
       
       // Enhanced infrastructure scoring for premium urban recognition
       result.locationScore = (
@@ -764,14 +791,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         transportScore * 0.20 +       // 20% - Transport/Connectivity
         commercialScore * 0.30 +      // 30% - Commercial & lifestyle infrastructure (increased)
         finalConnectivityScore * 0.15      // 15% - Highway/Road connectivity
-      ) * 5 + proximityBonus; // Scale to 5-star + proximity bonus
+      ) * 5 + proximityBonus + premiumAreaBonus; // Scale to 5-star + bonuses
 
       // Street View URL for all tiers
       result.streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${location.lat},${location.lng}&heading=0&pitch=0&key=${process.env.GOOGLE_MAPS_API_KEY}`;
 
-      // Base investment metrics (convert 5-star score to percentage)
-      const scoreAsPercentage = (result.locationScore / 5) * 100;
-      result.investmentViability = Math.min(scoreAsPercentage * 0.8, 95); // Cap at 95%
+      // Enhanced investment viability calculation for premium areas
+      const scoreAsPercentage = Math.min((result.locationScore / 5) * 100, 120); // Allow higher base scores
+      
+      // Premium area multipliers
+      let viabilityMultiplier = 1.0;
+      if (premiumAreaBonus >= 1.0) viabilityMultiplier = 1.4; // Luxury areas get 40% boost
+      else if (premiumAreaBonus >= 0.5) viabilityMultiplier = 1.2; // Premium areas get 20% boost
+      
+      result.investmentViability = Math.min(scoreAsPercentage * viabilityMultiplier, 95); // Cap at 95%
       
       // Enhanced business growth rate based on infrastructure, amenities & population indicators
       const businessGrowthFactors = {
