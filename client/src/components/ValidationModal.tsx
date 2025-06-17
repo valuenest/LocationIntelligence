@@ -102,10 +102,10 @@ export default function ValidationModal({
 
           {/* Note for issues */}
           {validation.issues.length > 0 && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-              <p className="text-sm text-yellow-800">
-                <strong>Note:</strong> Property type and location compatibility issues detected. 
-                You can proceed to generate the analysis, but consider if the selected property type matches the location.
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-800">
+                <strong>Location Issue:</strong> The location you entered appears to be unbuildable or restricted (ocean, river, forest, government area). 
+                Please select a different location suitable for property development.
               </p>
             </div>
           )}

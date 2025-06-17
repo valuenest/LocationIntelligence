@@ -123,36 +123,28 @@ async function checkLocationViability(location: { lat: number; lng: number; addr
 async function validatePropertyTypeCompatibility(data: ValidationRequest) {
   const { location, propertyData } = data;
   const issues = [];
+  const address = location.address.toLowerCase();
   
-  // Check property type compatibility with location
-  if (propertyData.propertyType === 'villa' || propertyData.propertyType === 'house') {
-    // Houses/villas should not be in commercial or industrial areas
-    const address = location.address.toLowerCase();
-    if (address.includes('industrial') || address.includes('commercial zone') || address.includes('market')) {
-      issues.push(`You have selected "${propertyData.propertyType}" but the location appears to be in a commercial/industrial area. Consider selecting "commercial" property type instead.`);
-    }
-  }
+  // Check if location is unbuildable/unleasable
+  const unbuildableKeywords = [
+    'ocean', 'sea', 'river', 'lake', 'pond', 'water', 'beach', 'coast',
+    'forest', 'national park', 'wildlife', 'reserve', 'sanctuary',
+    'government office', 'military', 'army', 'navy', 'air force',
+    'restricted area', 'prohibited', 'cemetery', 'graveyard'
+  ];
   
-  if (propertyData.propertyType === 'plot') {
-    // Plots are fine in most areas, just warn about restrictions
-    const address = location.address.toLowerCase();
-    if (address.includes('reserved') || address.includes('government')) {
-      issues.push(`This appears to be a government or reserved area. Plot development may have restrictions or may not be permitted.`);
-    }
-  }
+  const hasUnbuildableKeyword = unbuildableKeywords.some(keyword => 
+    address.includes(keyword)
+  );
   
-  if (propertyData.propertyType === 'commercial') {
-    // Commercial properties should ideally be in commercial zones
-    const address = location.address.toLowerCase();
-    if (address.includes('residential') && !address.includes('mixed')) {
-      issues.push(`You have selected "commercial" property but this appears to be a residential area. Commercial activities may be restricted here.`);
-    }
+  if (hasUnbuildableKeyword) {
+    issues.push(`The property type you selected is not matching with the location you entered`);
   }
   
   return {
     isCompatible: issues.length === 0,
     issues,
-    confidence: Math.min(100, Math.max(0, 100 - (issues.length * 25)))
+    confidence: hasUnbuildableKeyword ? 20 : 95
   };
 }
 
@@ -165,31 +157,22 @@ async function performComprehensiveValidation(
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     
     const prompt = `
-    As a real estate expert, analyze this property selection for location and type compatibility:
+    Check if this location is buyable/leasable for the selected property type:
     
-    Location: ${data.location.address} (${data.location.lat}, ${data.location.lng})
-    Selected Property Type: ${data.propertyData.propertyType}
-    Size: ${data.propertyData.propertySize} ${data.propertyData.sizeUnit}
+    Location: ${data.location.address}
+    Property Type Selected: ${data.propertyData.propertyType}
     
-    Location Issues: ${locationCheck.issues.join(', ') || 'None'}
-    Property Type Issues: ${typeCheck.issues.join(', ') || 'None'}
+    Is this location suitable for buying/leasing the selected property type?
+    Check if location is: ocean, river, forest, government area, or other unbuildable land.
     
-    Focus on these key concerns:
-    1. Is this location suitable for the selected property type?
-    2. Are there government restrictions or forest/water body issues?
-    3. Is the property type appropriate for this area?
-    4. Any zoning or legal concerns?
-    
-    Provide a JSON response with:
+    Give one-liner response in JSON:
     {
       "isValid": boolean,
-      "issues": ["list of specific issues"],
-      "riskLevel": "low|medium|high",
-      "confidence": number (0-100),
-      "reasoning": "brief explanation of main concerns"
+      "issues": ["The property type you selected is not matching with the location you entered"],
+      "riskLevel": "high"
     }
     
-    Do not include price analysis or recommendations in this validation.
+    Only flag if location is clearly unbuildable (water, forest, government restricted).
     `;
     
     const result = await model.generateContent(prompt);
