@@ -352,7 +352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Infrastructure assessment
     const hasSchools = nearbyPlaces.some(place => place.types.includes('school'));
-    const hasHospitals = nearbyPlaces.some(place => place.types.includes('hospital'));
+    const hasHospitals = nearbyPlaces.some(place => place.types.some(t => ['hospital', 'health', 'doctor', 'clinic'].includes(t)));
     const hasTransport = nearbyPlaces.some(place => place.types.includes('transit_station'));
     const hasShops = nearbyPlaces.some(place => place.types.includes('store') || place.types.includes('shopping_mall'));
     
@@ -593,9 +593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       Object.entries(result.distances).forEach(([placeName, dist]) => {
         const place = result.nearbyPlaces.find(p => p.name === placeName);
         if (place && dist.distance.value <= 3000) { // 3km radius
-          if (place.types.includes('school') || place.types.includes('hospital') || 
-              place.types.includes('subway_station') || place.types.includes('bus_station') ||
-              place.types.includes('shopping_mall') || place.types.includes('grocery_or_supermarket')) {
+                    if (isEssentialService(place)) {
             closeEssentialServices++;
           }
         }
@@ -766,9 +764,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       Object.entries(result.distances).forEach(([placeName, dist]) => {
         const place = result.nearbyPlaces.find(p => p.name === placeName);
         if (place && dist.distance.value <= 3000) { // 3km radius
-          if (place.types.includes('school') || place.types.includes('hospital') || 
-              place.types.includes('subway_station') || place.types.includes('bus_station') ||
-              place.types.includes('shopping_mall') || place.types.includes('grocery_or_supermarket')) {
+                    if (isEssentialService(place)) {
             closeEssentialServices++;
           }
         }
