@@ -110,15 +110,13 @@ export class DatabaseStorage implements IStorage {
       usageLimit = await this.createUsageLimit({
         ipAddress,
         freeUsageCount: 1,
-        lastResetDate: new Date(),
+        lastUsageDate: new Date().toISOString().split('T')[0],
       });
     } else {
       // Check if we need to reset daily usage
-      const now = new Date();
-      const lastReset = new Date(usageLimit.lastResetDate);
-      const daysSinceReset = Math.floor((now.getTime() - lastReset.getTime()) / (1000 * 60 * 60 * 24));
+      const today = new Date().toISOString().split('T')[0];
       
-      if (daysSinceReset >= 1) {
+      if (usageLimit.lastUsageDate !== today) {
         usageLimit = await this.resetDailyUsage(ipAddress);
       }
       
@@ -136,13 +134,12 @@ export class DatabaseStorage implements IStorage {
       return await this.createUsageLimit({
         ipAddress,
         freeUsageCount: 0,
-        lastResetDate: new Date(),
+        lastUsageDate: new Date().toISOString().split('T')[0],
       });
     }
     
     return await this.updateUsageLimit(ipAddress, {
       freeUsageCount: 0,
-      lastResetDate: new Date(),
     });
   }
 }

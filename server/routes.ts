@@ -123,7 +123,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Perform analysis
-      const location = JSON.parse(analysisRequest.location);
+      const location = typeof analysisRequest.location === 'string' 
+        ? JSON.parse(analysisRequest.location) 
+        : analysisRequest.location;
       const propertyDetails = analysisRequest.propertyDetails ? JSON.parse(analysisRequest.propertyDetails) : null;
       
       const result = await performAnalysis(
