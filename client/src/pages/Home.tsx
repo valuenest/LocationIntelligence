@@ -74,9 +74,17 @@ export default function Home() {
       const result = await response.json();
       
       if (result.success) {
-        setValidationResult(result.validation);
-        setPendingFormData(data);
-        setValidationModalOpen(true);
+        const validation = result.validation;
+        
+        // Only show validation popup if there are actual issues or high risk
+        if (!validation.isValid || validation.riskLevel === 'high' || validation.issues.length > 0) {
+          setValidationResult(validation);
+          setPendingFormData(data);
+          setValidationModalOpen(true);
+        } else {
+          // Property data is realistic and valid - proceed directly to analysis
+          proceedWithAnalysis(data);
+        }
       } else {
         // If validation fails, proceed with the original flow
         proceedWithAnalysis(data);
