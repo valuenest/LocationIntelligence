@@ -845,7 +845,9 @@ export default function Results() {
                     </div>
 
                     {/* Investment Projection */}
-                    <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                    <div className={`rounded-lg p-6 mb-6 ${
+                      analysisResult.investmentViability === 0 ? 'bg-red-50 border border-red-200' : 'bg-gray-50'
+                    }`}>
                       <h4 className="font-semibold text-gray-900 mb-4">Investment Projection</h4>
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
@@ -854,18 +856,35 @@ export default function Results() {
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-gray-600">Projected Value (3 years)</span>
-                          <span className="font-bold text-green-600 text-lg">
+                          <span className={`font-bold text-lg ${
+                            analysisResult.investmentViability === 0 ? 'text-red-600' : 
+                            (analysisResult.growthPrediction || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
                             ₹{Math.round(analysis.amount * (1 + (analysisResult.growthPrediction || 0) / 100)).toLocaleString()}
                           </span>
                         </div>
                         <div className="border-t pt-2 mt-2">
                           <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Potential Gain</span>
-                            <span className="font-bold text-green-600 text-xl">
-                              +₹{Math.round(analysis.amount * ((analysisResult.growthPrediction || 0) / 100)).toLocaleString()}
+                            <span className="text-gray-600">
+                              {analysisResult.investmentViability === 0 ? 'Expected Loss' : 
+                               (analysisResult.growthPrediction || 0) >= 0 ? 'Potential Gain' : 'Potential Loss'}
+                            </span>
+                            <span className={`font-bold text-xl ${
+                              analysisResult.investmentViability === 0 ? 'text-red-600' : 
+                              (analysisResult.growthPrediction || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {(analysisResult.growthPrediction || 0) >= 0 ? '+' : ''}₹{Math.round(analysis.amount * ((analysisResult.growthPrediction || 0) / 100)).toLocaleString()}
                             </span>
                           </div>
                         </div>
+                        {analysisResult.investmentViability === 0 && (
+                          <div className="mt-4 p-3 bg-red-100 border border-red-300 rounded-lg">
+                            <p className="text-sm text-red-800 font-medium">
+                              ⚠️ High Risk: This location has no infrastructure, connectivity, or market activity. 
+                              Property values are likely to decline significantly due to lack of buyer interest and development potential.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -1044,23 +1063,37 @@ export default function Results() {
                 {isPaidPlan ? (
                   <div className="grid md:grid-cols-3 gap-6">
                     {/* Traffic Analysis */}
-                    <div className="bg-gradient-to-br from-blue-50 to-cyan-100 rounded-lg p-4">
+                    <div className={`bg-gradient-to-br rounded-lg p-4 ${
+                      analysisResult.investmentViability === 0 ? 'from-red-50 to-orange-100' : 'from-blue-50 to-cyan-100'
+                    }`}>
                       <div className="flex items-center mb-3">
-                        <Train className="h-5 w-5 text-blue-600 mr-2" />
+                        <Train className={`h-5 w-5 mr-2 ${
+                          analysisResult.investmentViability === 0 ? 'text-red-600' : 'text-blue-600'
+                        }`} />
                         <h4 className="font-semibold text-gray-900">Traffic Analysis</h4>
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between">
                           <span className="text-sm text-gray-600">Peak Hours:</span>
-                          <span className="text-sm font-medium">8-10 AM, 6-8 PM</span>
+                          <span className="text-sm font-medium">
+                            {analysisResult.investmentViability === 0 ? 'No Traffic' : '8-10 AM, 6-8 PM'}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-gray-600">Traffic Density:</span>
-                          <span className="text-sm font-medium text-yellow-600">Moderate</span>
+                          <span className={`text-sm font-medium ${
+                            analysisResult.investmentViability === 0 ? 'text-red-600' : 'text-yellow-600'
+                          }`}>
+                            {analysisResult.investmentViability === 0 ? 'None' : 'Moderate'}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-gray-600">Connectivity:</span>
-                          <span className="text-sm font-medium text-green-600">Good</span>
+                          <span className={`text-sm font-medium ${
+                            analysisResult.investmentViability === 0 ? 'text-red-600' : 'text-green-600'
+                          }`}>
+                            {analysisResult.investmentViability === 0 ? 'No Roads' : 'Good'}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1090,26 +1123,39 @@ export default function Results() {
                     </div>
 
                     {/* Population Demographics */}
-                    <div className="bg-gradient-to-br from-purple-50 to-violet-100 rounded-lg p-4">
+                    <div className={`bg-gradient-to-br rounded-lg p-4 ${
+                      analysisResult.investmentViability === 0 ? 'from-red-50 to-orange-100' : 'from-purple-50 to-violet-100'
+                    }`}>
                       <div className="flex items-center mb-3">
-                        <Home className="h-5 w-5 text-purple-600 mr-2" />
+                        <Home className={`h-5 w-5 mr-2 ${
+                          analysisResult.investmentViability === 0 ? 'text-red-600' : 'text-purple-600'
+                        }`} />
                         <h4 className="font-semibold text-gray-900">Demographics</h4>
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between">
                           <span className="text-sm text-gray-600">Population Growth:</span>
-                          <span className="text-sm font-medium text-green-600">
-                            +{analysisResult.populationGrowthRate?.toFixed(1) || '2.5'}% annually
+                          <span className={`text-sm font-medium ${
+                            analysisResult.investmentViability === 0 ? 'text-red-600' : 
+                            (analysisResult.populationGrowthRate || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {analysisResult.investmentViability === 0 ? 'No Data' : 
+                             `${(analysisResult.populationGrowthRate || 0) >= 0 ? '+' : ''}${(analysisResult.populationGrowthRate || 2.5).toFixed(1)}% annually`}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-gray-600">Family Profile:</span>
-                          <span className="text-sm font-medium">Mixed Residential</span>
+                          <span className="text-sm font-medium">
+                            {analysisResult.investmentViability === 0 ? 'Uninhabited' : 'Mixed Residential'}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-gray-600">Development:</span>
-                          <span className="text-sm font-medium text-blue-600">
-                            {analysisResult.nearbyPlaces.filter(p => p.types.includes('establishment')).length > 10 ? 'Established' : 'Developing'}
+                          <span className={`text-sm font-medium ${
+                            analysisResult.investmentViability === 0 ? 'text-red-600' : 'text-blue-600'
+                          }`}>
+                            {analysisResult.investmentViability === 0 ? 'No Infrastructure' : 
+                             analysisResult.nearbyPlaces.filter(p => p.types.includes('establishment')).length > 10 ? 'Established' : 'Developing'}
                           </span>
                         </div>
                       </div>
