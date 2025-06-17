@@ -460,7 +460,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const comprehensivePlaceTypes = [
         'school', 'hospital', 'subway_station', 'shopping_mall', 'restaurant', 
         'bank', 'gas_station', 'park', 'real_estate_agency', 'atm',
-        'bus_station', 'grocery_or_supermarket', 'pharmacy'
+        'bus_station', 'grocery_or_supermarket', 'pharmacy',
+        'tourist_attraction', 'temple', 'church', 'mosque', 'zoo', 'museum',
+        'amusement_park', 'movie_theater', 'stadium', 'natural_feature'
       ];
       
       result.nearbyPlaces = await findNearbyPlaces(location.lat, location.lng, comprehensivePlaceTypes);
@@ -582,7 +584,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const comprehensivePlaceTypes = [
         'school', 'hospital', 'subway_station', 'shopping_mall', 'restaurant', 
         'bank', 'gas_station', 'park', 'real_estate_agency', 'atm',
-        'bus_station', 'grocery_or_supermarket', 'pharmacy', 'gym', 'movie_theater'
+        'bus_station', 'grocery_or_supermarket', 'pharmacy', 'gym', 'movie_theater',
+        'tourist_attraction', 'temple', 'church', 'mosque', 'zoo', 'museum',
+        'amusement_park', 'stadium', 'natural_feature', 'aquarium', 'art_gallery'
       ];
       
       result.nearbyPlaces = await findNearbyPlaces(location.lat, location.lng, comprehensivePlaceTypes);

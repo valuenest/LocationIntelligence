@@ -1153,7 +1153,7 @@ export default function Results() {
                         
                         <div className="p-6">
                           <h3 className="text-lg font-bold text-gray-900 mb-2">{location.address}</h3>
-                          <p className="text-sm text-gray-600 mb-4">{location.distance.replace(/\*\*/g, '').replace(/\(Hypothetical\).*$/, '').replace(/\*Note:.*$/, '').trim()}</p>
+                          <p className="text-sm text-gray-600 mb-4">{location.distance.replace(/\*+/g, '').replace(/\(Hypothetical\).*$/, '').replace(/\*?Note:.*$/, '').trim()}</p>
                           
                           <div className="grid grid-cols-2 gap-4 mb-4">
                             <div className="text-center bg-indigo-50 rounded-lg p-3">
@@ -1221,11 +1221,15 @@ export default function Results() {
 
             <div className="grid md:grid-cols-3 gap-6">
               {analysisResult.nearbyPlaces
-                .filter(p => p.types.some(t => ['park', 'tourist_attraction', 'amusement_park', 'zoo', 'museum', 'temple', 'church', 'shopping_mall', 'movie_theater', 'stadium'].includes(t)))
+                .filter(p => p.types.some(t => [
+                  'park', 'tourist_attraction', 'amusement_park', 'zoo', 'museum', 
+                  'temple', 'church', 'mosque', 'shopping_mall', 'movie_theater', 
+                  'stadium', 'natural_feature', 'aquarium', 'art_gallery'
+                ].includes(t)))
                 .slice(0, 3)
                 .map((place, index) => {
                   const rawDistance = analysisResult.distances[place.name]?.distance?.text || 'Calculating...';
-                  const distance = rawDistance.replace(/\*\*/g, '').replace(/Note:.*$/, '').trim();
+                  const distance = rawDistance.replace(/\*+/g, '').replace(/\*?Note:.*$/, '').trim();
                   const duration = analysisResult.distances[place.name]?.duration?.text || '';
                   const areaName = place.vicinity ? place.vicinity.split(',')[0] : 'Nearby';
                   
@@ -1271,7 +1275,11 @@ export default function Results() {
 
                         <div className="flex flex-wrap gap-1 mb-4">
                           {place.types
-                            .filter(type => ['park', 'tourist_attraction', 'amusement_park', 'zoo', 'museum', 'temple', 'church', 'shopping_mall', 'movie_theater', 'stadium'].includes(type))
+                            .filter(type => [
+                              'park', 'tourist_attraction', 'amusement_park', 'zoo', 'museum', 
+                              'temple', 'church', 'mosque', 'shopping_mall', 'movie_theater', 
+                              'stadium', 'natural_feature', 'aquarium', 'art_gallery'
+                            ].includes(type))
                             .slice(0, 2)
                             .map((type, idx) => (
                               <span key={idx} className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">
@@ -1293,7 +1301,11 @@ export default function Results() {
                 })}
             </div>
 
-            {analysisResult.nearbyPlaces.filter(p => p.types.some(t => ['park', 'tourist_attraction', 'amusement_park', 'zoo', 'museum', 'temple', 'church', 'shopping_mall', 'movie_theater', 'stadium'].includes(t))).length === 0 && (
+            {analysisResult.nearbyPlaces.filter(p => p.types.some(t => [
+              'park', 'tourist_attraction', 'amusement_park', 'zoo', 'museum', 
+              'temple', 'church', 'mosque', 'shopping_mall', 'movie_theater', 
+              'stadium', 'natural_feature', 'aquarium', 'art_gallery'
+            ].includes(t))).length === 0 && (
               <div className="text-center py-8">
                 <Eye className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-700 mb-2">Limited Tourist Attractions</h3>
