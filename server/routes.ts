@@ -763,15 +763,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check for luxury/premium indicators in nearby places
       const luxuryIndicators = result.nearbyPlaces.filter(place => {
         const name = place.name.toLowerCase();
+        const vicinity = place.vicinity?.toLowerCase() || '';
         const isLuxury = name.includes('palace') || name.includes('luxury') || 
                         name.includes('premium') || name.includes('resort') ||
-                        name.includes('five star') || name.includes('grand');
-        const isHighRated = place.rating && place.rating >= 4.5;
-        return isLuxury || isHighRated;
+                        name.includes('five star') || name.includes('grand') ||
+                        name.includes('leela') || name.includes('keys select') ||
+                        name.includes('apollo') || vicinity.includes('hotel');
+        const isHighRated = place.rating && place.rating >= 4.2;
+        const isPremiumService = name.includes('apollo') || name.includes('vasan') ||
+                               name.includes('portico') || name.includes('lemon tree');
+        return isLuxury || isHighRated || isPremiumService;
       });
       
-      if (luxuryIndicators.length >= 3) premiumAreaBonus += 1.0; // Significant premium area bonus
-      else if (luxuryIndicators.length >= 2) premiumAreaBonus += 0.5; // Moderate premium bonus
+      if (luxuryIndicators.length >= 2) premiumAreaBonus += 1.0; // Significant premium area bonus
+      else if (luxuryIndicators.length >= 1) premiumAreaBonus += 0.5; // Moderate premium bonus
       
       // Tech hub detection for IT corridors
       const techIndicators = result.nearbyPlaces.filter(place => {
