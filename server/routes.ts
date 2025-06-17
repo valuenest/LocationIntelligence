@@ -187,6 +187,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return places;
   };
 
+  // Helper function to check if a place is an essential service using comprehensive place types
+  const isEssentialService = (place: PlaceDetails): boolean => {
+    return place.types.includes('school') || 
+           place.types.some(t => ['hospital', 'health', 'doctor', 'clinic', 'pharmacy'].includes(t)) || 
+           place.types.some(t => ['subway_station', 'bus_station', 'train_station', 'transit_station', 'light_rail_station'].includes(t)) ||
+           place.types.some(t => ['shopping_mall', 'supermarket', 'grocery_or_supermarket', 'store', 'convenience_store'].includes(t)) ||
+           place.types.some(t => ['restaurant', 'food', 'meal_takeaway', 'cafe', 'bakery'].includes(t)) ||
+           place.types.some(t => ['bank', 'atm', 'finance', 'post_office'].includes(t)) ||
+           place.types.some(t => ['gas_station', 'petrol_station', 'fuel'].includes(t));
+  };
+
   const calculateDistances = async (origin: LocationData, destinations: PlaceDetails[]): Promise<Record<string, DistanceData>> => {
     if (!GOOGLE_MAPS_API_KEY || destinations.length === 0) {
       return {};
@@ -432,15 +443,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hasTransport = result.nearbyPlaces.some(p => p.types.some(t => ['subway_station', 'bus_station', 'train_station', 'transit_station', 'light_rail_station'].includes(t)));
       const hasShopping = result.nearbyPlaces.some(p => p.types.some(t => ['shopping_mall', 'supermarket', 'grocery_or_supermarket', 'store', 'convenience_store'].includes(t)));
       
-      // Count services within 3km radius (critical for habitability)
+      // Count services within 3km radius (critical for habitability) - using comprehensive helper function
       Object.entries(result.distances).forEach(([placeName, dist]) => {
         const place = result.nearbyPlaces.find(p => p.name === placeName);
-        if (place && dist.distance.value <= 3000) { // 3km radius
-          if (place.types.includes('school') || place.types.includes('hospital') || 
-              place.types.includes('subway_station') || place.types.includes('bus_station') ||
-              place.types.includes('shopping_mall') || place.types.includes('grocery_or_supermarket')) {
-            closeEssentialServices++;
-          }
+        if (place && dist.distance.value <= 3000 && isEssentialService(place)) {
+          closeEssentialServices++;
         }
       });
       
