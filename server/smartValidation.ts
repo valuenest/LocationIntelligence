@@ -84,11 +84,11 @@ async function checkLocationViability(location: { lat: number; lng: number; addr
     for (const place of nearbyPlaces.slice(0, 10)) {
       const types = place.types || [];
       
-      if (types.some(type => unbuildableTypes.includes(type))) {
+      if (types.some((type: string) => unbuildableTypes.includes(type))) {
         issues.push(`Location appears to be near ${place.name} which may be unbuildable`);
       }
       
-      if (types.some(type => restrictedTypes.includes(type)) && place.geometry?.location) {
+      if (types.some((type: string) => restrictedTypes.includes(type)) && place.geometry?.location) {
         const distance = calculateDistance(
           location.lat, location.lng,
           place.geometry.location.lat, place.geometry.location.lng
