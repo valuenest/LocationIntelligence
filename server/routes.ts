@@ -132,7 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         propertyType,
         planType,
         propertyDetails: propertyDetails ? JSON.stringify(propertyDetails) : null,
-        paymentStatus: planType === "free" ? "completed" : "pending",
+        paymentStatus: "completed", // Bypass payment for all plans temporarily
         status: "pending"
       });
 
@@ -153,9 +153,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Analysis not found" });
       }
 
-      if (analysisRequest.paymentStatus !== "completed") {
-        return res.status(402).json({ error: "Payment required" });
-      }
+      // Temporarily bypass payment verification for all plans
+      // if (analysisRequest.paymentStatus !== "completed") {
+      //   return res.status(402).json({ error: "Payment required" });
+      // }
 
       if (analysisRequest.status === "completed" && analysisRequest.results) {
         const analysisData = JSON.parse(analysisRequest.results);
@@ -340,7 +341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         propertyType,
         planType,
         propertyDetails: JSON.stringify(propertyDetails),
-        paymentStatus: planType === "free" ? "completed" : "pending",
+        paymentStatus: "completed", // Bypass payment for all plans temporarily
         status: "pending"
       });
 

@@ -139,11 +139,9 @@ export default function Home() {
 
   const handlePlanSelect = (plan: string) => {
     setSelectedPlan(plan);
-    if (plan === 'paid' || plan === 'pro') {
-      setPaymentModalOpen(true);
-    } else if (propertyData) {
-      // Handle free plan directly
-      handleFreeAnalysis(propertyData);
+    if (propertyData) {
+      // Skip payment for now - proceed directly with analysis for all plans
+      handleAnalysisWithPlan(propertyData, plan);
     }
   };
 
@@ -153,7 +151,7 @@ export default function Home() {
     setPaymentModalOpen(true);
   };
 
-  const handleFreeAnalysis = async (formData: PropertyFormData) => {
+  const handleAnalysisWithPlan = async (formData: PropertyFormData, planType: string) => {
     if (!selectedLocation) {
       alert('Please select a location first');
       return;
@@ -176,7 +174,7 @@ export default function Home() {
           furnished: formData.furnished,
           floor: formData.floor,
           parkingSpaces: formData.parkingSpaces,
-          planType: 'free',
+          planType: planType,
         }),
       });
 
@@ -196,6 +194,10 @@ export default function Home() {
       console.error('Analysis error:', error);
       alert('Failed to perform analysis');
     }
+  };
+
+  const handleFreeAnalysis = async (formData: PropertyFormData) => {
+    return handleAnalysisWithPlan(formData, 'free');
   };
 
   return (
