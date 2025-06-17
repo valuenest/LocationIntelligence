@@ -19,7 +19,8 @@ import {
   ArrowLeft,
   Lock,
   Zap,
-  Crown
+  Crown,
+  Target
 } from "lucide-react";
 import { Link } from "wouter";
 import { generatePDF } from "@/lib/pdfGenerator";
