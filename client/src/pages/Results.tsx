@@ -993,7 +993,7 @@ export default function Results() {
                       AI-Discovered
                     </Badge>
                   </CardTitle>
-                  <p className="text-sm text-gray-600 mt-1">AI-analyzed locations within 25km with superior investment potential</p>
+                  <p className="text-sm text-gray-600 mt-1">AI-analyzed cities within 50km with superior investment potential</p>
                 </CardHeader>
                 <CardContent>
                   <div className="grid md:grid-cols-3 gap-6">
@@ -1100,7 +1100,7 @@ export default function Results() {
                 <Eye className="h-8 w-8 text-white" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Popular Visiting Places</h2>
-              <p className="text-gray-600">Tourist attractions and recreational spots within 10km</p>
+              <p className="text-gray-600">Tourist attractions and recreational spots within 50km that people actually visit</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">

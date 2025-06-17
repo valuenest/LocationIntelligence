@@ -85,7 +85,7 @@ export async function findTopInvestmentLocations(
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    const prompt = `As a real estate investment expert, suggest 3 specific investment locations within 25km of ${centerLocation.address}.
+    const prompt = `As a real estate investment expert, suggest 3 specific cities or major investment locations within 50km of ${centerLocation.address}.
 
 Consider:
 - Property Type: ${propertyType}
@@ -93,17 +93,18 @@ Consider:
 - Distance from current location: ${centerLocation.address}
 
 For each location, provide:
-1. Specific area/locality name
+1. Specific city/major area name (not just localities)
 2. Brief reasoning for investment potential
 3. Approximate distance from the center location
 
-Focus on areas with:
-- Infrastructure development
-- Metro/transport connectivity
-- Commercial growth potential
-- Upcoming projects
+Focus on cities/areas with:
+- Major infrastructure development
+- Metro/highway connectivity
+- Commercial and IT growth potential
+- Government development projects
+- Industrial corridors
 
-Format as: Area Name | Reasoning | Distance`;
+Format as: City/Area Name | Reasoning | Distance`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -117,7 +118,7 @@ Format as: Area Name | Reasoning | Distance`;
       const parts = lines[i].split('|').map(p => p.trim());
       if (parts.length >= 3) {
         // Generate approximate coordinates (this would ideally use geocoding)
-        const offsetLat = (Math.random() - 0.5) * 0.4; // ~25km range
+        const offsetLat = (Math.random() - 0.5) * 0.8; // ~50km range
         const offsetLng = (Math.random() - 0.5) * 0.4;
         
         locations.push({
