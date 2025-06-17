@@ -546,7 +546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const placesData = await placesResponse.json();
         
         if (placesData.results && placesData.results.length > 0) {
-          const placeWithPhoto = placesData.results.find(place => place.photos && place.photos.length > 0);
+          const placeWithPhoto = placesData.results.find((place: any) => place.photos && place.photos.length > 0);
           if (placeWithPhoto && placeWithPhoto.photos[0]) {
             result.locationImageUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=600&photoreference=${placeWithPhoto.photos[0].photo_reference}&key=${GOOGLE_MAPS_API_KEY}`;
           }

@@ -476,19 +476,43 @@ export default function Results() {
                       <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
                       Essential Services
                     </h4>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {analysisResult.nearbyPlaces
                         .filter(p => p.types.some(t => ['hospital', 'pharmacy', 'grocery_or_supermarket', 'gas_station'].includes(t)))
                         .slice(0, 3)
                         .map((place, index) => {
-                          const distance = analysisResult.distances[place.name]?.distance?.text || 'N/A';
+                          const distance = analysisResult.distances[place.name]?.distance?.text || 'Calculating...';
+                          const duration = analysisResult.distances[place.name]?.duration?.text || '';
                           return (
-                            <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                              <div className="flex items-center">
-                                {getPlaceIcon(place.types)}
-                                <span className="ml-2 text-sm text-gray-700">{place.name}</span>
+                            <div key={index} className="border border-gray-200 rounded-lg p-3 bg-white hover:shadow-sm transition-shadow">
+                              <div className="flex justify-between items-start mb-2">
+                                <div className="flex items-start flex-1">
+                                  {getPlaceIcon(place.types)}
+                                  <div className="ml-3 flex-1">
+                                    <div className="font-medium text-gray-900 text-sm">{place.name}</div>
+                                    <div className="text-xs text-gray-500 mt-1">{place.vicinity || 'Near your location'}</div>
+                                    {place.rating && (
+                                      <div className="flex items-center mt-1">
+                                        <Star className="h-3 w-3 text-yellow-500 mr-1" />
+                                        <span className="text-xs text-gray-600">{place.rating}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-right ml-4">
+                                  <div className="text-sm font-medium text-red-600">{distance}</div>
+                                  {duration && <div className="text-xs text-gray-500">{duration}</div>}
+                                </div>
                               </div>
-                              <span className="text-sm font-medium text-gray-900">{distance}</span>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="w-full text-xs h-7"
+                                onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(place.name + ' ' + (place.vicinity || ''))}`, '_blank')}
+                              >
+                                <MapPin className="h-3 w-3 mr-1" />
+                                Get Directions
+                              </Button>
                             </div>
                           );
                         })}
@@ -501,19 +525,43 @@ export default function Results() {
                       <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
                       Education & Transport
                     </h4>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {analysisResult.nearbyPlaces
                         .filter(p => p.types.some(t => ['school', 'subway_station', 'bus_station', 'bank'].includes(t)))
                         .slice(0, 3)
                         .map((place, index) => {
-                          const distance = analysisResult.distances[place.name]?.distance?.text || 'N/A';
+                          const distance = analysisResult.distances[place.name]?.distance?.text || 'Calculating...';
+                          const duration = analysisResult.distances[place.name]?.duration?.text || '';
                           return (
-                            <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                              <div className="flex items-center">
-                                {getPlaceIcon(place.types)}
-                                <span className="ml-2 text-sm text-gray-700">{place.name}</span>
+                            <div key={index} className="border border-gray-200 rounded-lg p-3 bg-white hover:shadow-sm transition-shadow">
+                              <div className="flex justify-between items-start mb-2">
+                                <div className="flex items-start flex-1">
+                                  {getPlaceIcon(place.types)}
+                                  <div className="ml-3 flex-1">
+                                    <div className="font-medium text-gray-900 text-sm">{place.name}</div>
+                                    <div className="text-xs text-gray-500 mt-1">{place.vicinity || 'Near your location'}</div>
+                                    {place.rating && (
+                                      <div className="flex items-center mt-1">
+                                        <Star className="h-3 w-3 text-yellow-500 mr-1" />
+                                        <span className="text-xs text-gray-600">{place.rating}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-right ml-4">
+                                  <div className="text-sm font-medium text-blue-600">{distance}</div>
+                                  {duration && <div className="text-xs text-gray-500">{duration}</div>}
+                                </div>
                               </div>
-                              <span className="text-sm font-medium text-gray-900">{distance}</span>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="w-full text-xs h-7"
+                                onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(place.name + ' ' + (place.vicinity || ''))}`, '_blank')}
+                              >
+                                <MapPin className="h-3 w-3 mr-1" />
+                                Get Directions
+                              </Button>
                             </div>
                           );
                         })}
