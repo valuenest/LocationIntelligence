@@ -138,7 +138,7 @@ export default function PaymentModal({ isOpen, onClose, selectedPlan, location, 
       if (verifyResult.success) {
         setIsLoading(false);
         onClose();
-        window.location.href = `/results?sessionId=${verifyResult.sessionId}`;
+        window.location.href = `/results/${verifyResult.sessionId}`;
       } else {
         setIsLoading(false);
         alert('Analysis processing failed. Please try again.');

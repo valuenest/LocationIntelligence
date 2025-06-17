@@ -115,7 +115,7 @@ export default function Home() {
         // Add delay for better UX with loading animation
         setTimeout(() => {
           setAnalysisLoading(false);
-          window.location.href = `/results?sessionId=${result.sessionId}`;
+          window.location.href = `/results/${result.sessionId}`;
         }, 3000);
       } else {
         setAnalysisLoading(false);
