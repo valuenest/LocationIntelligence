@@ -813,35 +813,52 @@ export default function Results() {
                     {/* Main Growth Metrics */}
                     <div className="grid md:grid-cols-3 gap-6 mb-6">
                       {/* Property Appreciation */}
-                      <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-100 rounded-lg">
-                        <div className="text-3xl font-bold text-green-600 mb-2">
-                          +{analysisResult.growthPrediction?.toFixed(1) || '0.0'}%
+                      <div className={`text-center p-4 bg-gradient-to-br rounded-lg ${
+                        analysisResult.investmentViability === 0 ? 'from-red-50 to-orange-100' : 
+                        (analysisResult.growthPrediction || 0) >= 0 ? 'from-green-50 to-emerald-100' : 'from-red-50 to-orange-100'
+                      }`}>
+                        <div className={`text-3xl font-bold mb-2 ${
+                          analysisResult.investmentViability === 0 ? 'text-red-600' : 
+                          (analysisResult.growthPrediction || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {analysisResult.investmentViability === 0 ? '-15.0' : 
+                           (analysisResult.growthPrediction || 0) >= 0 ? '+' : ''}{analysisResult.growthPrediction?.toFixed(1) || '0.0'}%
                         </div>
                         <div className="text-sm text-gray-700 font-medium">Property Appreciation</div>
                         <div className="text-xs text-gray-600">3-Year Projection</div>
                       </div>
                       
                       {/* Business Growth */}
-                      {analysisResult.businessGrowthRate && (
-                        <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-sky-100 rounded-lg">
-                          <div className="text-3xl font-bold text-blue-600 mb-2">
-                            {analysisResult.businessGrowthRate?.toFixed(1) || '0.0'}%
-                          </div>
-                          <div className="text-sm text-gray-700 font-medium">Business Growth</div>
-                          <div className="text-xs text-gray-600">Annual Rate</div>
+                      <div className={`text-center p-4 bg-gradient-to-br rounded-lg ${
+                        analysisResult.investmentViability === 0 ? 'from-red-50 to-orange-100' : 
+                        (analysisResult.businessGrowthRate || 0) >= 0 ? 'from-blue-50 to-sky-100' : 'from-red-50 to-orange-100'
+                      }`}>
+                        <div className={`text-3xl font-bold mb-2 ${
+                          analysisResult.investmentViability === 0 ? 'text-red-600' : 
+                          (analysisResult.businessGrowthRate || 0) >= 0 ? 'text-blue-600' : 'text-red-600'
+                        }`}>
+                          {analysisResult.investmentViability === 0 ? '0.0' : 
+                           (analysisResult.businessGrowthRate || 0) >= 0 ? '+' : ''}{analysisResult.businessGrowthRate?.toFixed(1) || '0.0'}%
                         </div>
-                      )}
+                        <div className="text-sm text-gray-700 font-medium">Business Growth</div>
+                        <div className="text-xs text-gray-600">Annual Rate</div>
+                      </div>
                       
                       {/* Population Growth */}
-                      {analysisResult.populationGrowthRate && (
-                        <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-violet-100 rounded-lg">
-                          <div className="text-3xl font-bold text-purple-600 mb-2">
-                            {analysisResult.populationGrowthRate?.toFixed(1) || '0.0'}%
-                          </div>
-                          <div className="text-sm text-gray-700 font-medium">Population Growth</div>
-                          <div className="text-xs text-gray-600">Annual Rate</div>
+                      <div className={`text-center p-4 bg-gradient-to-br rounded-lg ${
+                        analysisResult.investmentViability === 0 ? 'from-red-50 to-orange-100' : 
+                        (analysisResult.populationGrowthRate || 0) >= 0 ? 'from-purple-50 to-violet-100' : 'from-red-50 to-orange-100'
+                      }`}>
+                        <div className={`text-3xl font-bold mb-2 ${
+                          analysisResult.investmentViability === 0 ? 'text-red-600' : 
+                          (analysisResult.populationGrowthRate || 0) >= 0 ? 'text-purple-600' : 'text-red-600'
+                        }`}>
+                          {analysisResult.investmentViability === 0 ? '0.0' : 
+                           (analysisResult.populationGrowthRate || 0) >= 0 ? '+' : ''}{analysisResult.populationGrowthRate?.toFixed(1) || '0.0'}%
                         </div>
-                      )}
+                        <div className="text-sm text-gray-700 font-medium">Population Growth</div>
+                        <div className="text-xs text-gray-600">Annual Rate</div>
+                      </div>
                     </div>
 
                     {/* Investment Projection */}
