@@ -538,7 +538,8 @@ export default function Results() {
                         .filter(p => p.types.some(t => ['hospital', 'pharmacy', 'grocery_or_supermarket', 'gas_station'].includes(t)))
                         .slice(0, 4)
                         .map((place, index) => {
-                          const distance = analysisResult.distances[place.name]?.distance?.text || 'Calculating...';
+                          const rawDistance = analysisResult.distances[place.name]?.distance?.text || 'Calculating...';
+                          const distance = rawDistance.replace(/\*\*/g, '').replace(/Note:.*$/, '').trim();
                           const duration = analysisResult.distances[place.name]?.duration?.text || '';
                           const areaName = place.vicinity ? place.vicinity.split(',')[0] : 'Nearby';
                           return (
@@ -595,7 +596,8 @@ export default function Results() {
                         .filter(p => p.types.some(t => ['school', 'subway_station', 'bus_station', 'bank', 'transit_station'].includes(t)))
                         .slice(0, 4)
                         .map((place, index) => {
-                          const distance = analysisResult.distances[place.name]?.distance?.text || 'Calculating...';
+                          const rawDistance = analysisResult.distances[place.name]?.distance?.text || 'Calculating...';
+                          const distance = rawDistance.replace(/\*\*/g, '').replace(/Note:.*$/, '').trim();
                           const duration = analysisResult.distances[place.name]?.duration?.text || '';
                           const areaName = place.vicinity ? place.vicinity.split(',')[0] : 'Nearby';
                           return (
@@ -1153,7 +1155,8 @@ export default function Results() {
                 .filter(p => p.types.some(t => ['park', 'tourist_attraction', 'amusement_park', 'zoo', 'museum', 'temple', 'church', 'shopping_mall', 'movie_theater', 'stadium'].includes(t)))
                 .slice(0, 3)
                 .map((place, index) => {
-                  const distance = analysisResult.distances[place.name]?.distance?.text || 'Calculating...';
+                  const rawDistance = analysisResult.distances[place.name]?.distance?.text || 'Calculating...';
+                  const distance = rawDistance.replace(/\*\*/g, '').replace(/Note:.*$/, '').trim();
                   const duration = analysisResult.distances[place.name]?.duration?.text || '';
                   const areaName = place.vicinity ? place.vicinity.split(',')[0] : 'Nearby';
                   

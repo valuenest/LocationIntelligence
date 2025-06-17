@@ -190,7 +190,7 @@ export const generatePDF = (analysis: AnalysisData) => {
           ${Object.entries(analysis.analysisData.distances).map(([name, data]) => `
             <li>
               <span>${name}</span>
-              <span>${data.distance.text}</span>
+              <span>${data.distance.text.replace(/\*\*/g, '').replace(/Note:.*$/, '').trim()}</span>
             </li>
           `).join('')}
         </ul>
