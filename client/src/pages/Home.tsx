@@ -112,11 +112,11 @@ export default function Home() {
 
       const result = await response.json();
       if (result.success) {
-        // Add delay for better UX with loading animation
+        // Ensure minimum loading time for better UX
         setTimeout(() => {
           setAnalysisLoading(false);
           window.location.href = `/results/${result.sessionId}`;
-        }, 3000);
+        }, 4500);
       } else {
         setAnalysisLoading(false);
         alert(result.error || 'Analysis failed');

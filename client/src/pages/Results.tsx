@@ -241,7 +241,23 @@ export default function Results() {
                 src={analysisResult.locationImageUrl} 
                 alt="Location Overview" 
                 className="w-full h-64 object-cover rounded-lg border"
+                onError={(e) => {
+                  // Hide image if it fails to load
+                  e.currentTarget.style.display = 'none';
+                  // Show fallback map placeholder
+                  const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                  if (fallback) (fallback as any).style.display = 'flex';
+                }}
               />
+              <div 
+                className="w-full h-64 bg-gradient-to-br from-blue-100 to-green-100 rounded-lg border flex items-center justify-center"
+                style={{ display: 'none' }}
+              >
+                <div className="text-center text-gray-600">
+                  <MapPin className="h-12 w-12 mx-auto mb-2" />
+                  <p className="text-sm">Location: {analysis.location.address}</p>
+                </div>
+              </div>
             </CardContent>
           )}
         </Card>
@@ -557,11 +573,27 @@ export default function Results() {
                     {analysisResult.topInvestmentLocations.map((location, index) => (
                       <div key={index} className="border rounded-lg overflow-hidden bg-gradient-to-r from-purple-50 to-indigo-50">
                         {location.imageUrl && (
-                          <img 
-                            src={location.imageUrl} 
-                            alt={`${location.address} location`} 
-                            className="w-full h-32 object-cover"
-                          />
+                          <>
+                            <img 
+                              src={location.imageUrl} 
+                              alt={`${location.address} location`} 
+                              className="w-full h-32 object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                                if (fallback) (fallback as any).style.display = 'flex';
+                              }}
+                            />
+                            <div 
+                              className="w-full h-32 bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center"
+                              style={{ display: 'none' }}
+                            >
+                              <div className="text-center text-gray-600">
+                                <MapPin className="h-8 w-8 mx-auto mb-1" />
+                                <p className="text-xs">Investment Location</p>
+                              </div>
+                            </div>
+                          </>
                         )}
                         <div className="p-4">
                           <div className="flex items-center justify-between mb-2">
