@@ -602,30 +602,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      // Enhanced connectivity scoring using Google Roads API and place analysis
-      let baseConnectivityScore = 0;
+      // Comprehensive connectivity scoring for National Highways, airports, ports, helipads
+      let connectivityAnalysis = {
+        nationalHighways: 0,
+        localRoads: 0,
+        airports: 0,
+        ports: 0,
+        helipads: 0,
+        railwayStations: 0
+      };
       
-      // Base connectivity from transport infrastructure
-      baseConnectivityScore += infrastructureScores.transport.total * 15; // 15 points per transport hub
+      // Analyze connectivity infrastructure within 5km
+      result.nearbyPlaces.forEach(place => {
+        const distance = result.distances[place.name];
+        if (!distance || distance.distance.value > 5000) return; // Only within 5km
+        
+        const placeName = place.name.toLowerCase();
+        const placeVicinity = place.vicinity?.toLowerCase() || '';
+        const placeTypes = place.types || [];
+        
+        // National Highways and Major Roads
+        if (placeName.includes('national highway') || placeName.includes('nh-') || 
+            placeName.includes('highway') || placeName.includes('expressway') ||
+            placeVicinity.includes('highway') || placeVicinity.includes('expressway')) {
+          connectivityAnalysis.nationalHighways += 40; // High score for NH
+        }
+        
+        // Gas stations indicate major road networks
+        if (placeTypes.includes('gas_station')) {
+          connectivityAnalysis.localRoads += 15;
+        }
+        
+        // Airports and Aerodromes
+        if (placeTypes.includes('airport') || placeName.includes('airport') || 
+            placeName.includes('aerodrome') || placeName.includes('airfield')) {
+          connectivityAnalysis.airports += 50; // Highest connectivity score
+        }
+        
+        // Helipads
+        if (placeName.includes('helipad') || placeName.includes('helicopter') ||
+            placeTypes.includes('heliport')) {
+          connectivityAnalysis.helipads += 30;
+        }
+        
+        // Ports and Harbors
+        if (placeName.includes('port') || placeName.includes('harbor') || 
+            placeName.includes('harbour') || placeTypes.includes('marina')) {
+          connectivityAnalysis.ports += 45;
+        }
+        
+        // Railway Stations
+        if (placeTypes.includes('transit_station') || placeTypes.includes('train_station') ||
+            placeName.includes('railway') || placeName.includes('station')) {
+          connectivityAnalysis.railwayStations += 35;
+        }
+      });
       
-      // Check for highway/major road indicators in nearby places
-      const roadIndicators = result.nearbyPlaces.filter(place => 
-        place.types.includes('gas_station') || 
-        place.types.includes('rest_stop') ||
-        place.name.toLowerCase().includes('highway') ||
-        place.name.toLowerCase().includes('interstate') ||
-        place.name.toLowerCase().includes('expressway') ||
-        place.vicinity.toLowerCase().includes('highway') ||
-        place.vicinity.toLowerCase().includes('interstate')
+      // Calculate final connectivity score
+      const totalConnectivityScore = Math.min(
+        connectivityAnalysis.nationalHighways + 
+        connectivityAnalysis.localRoads + 
+        connectivityAnalysis.airports + 
+        connectivityAnalysis.ports + 
+        connectivityAnalysis.helipads + 
+        connectivityAnalysis.railwayStations, 
+        100
       );
       
-      baseConnectivityScore += roadIndicators.length * 25; // 25 points per highway indicator
-      
-      // Bonus for multiple gas stations (indicates major road network)
-      const gasStations = result.nearbyPlaces.filter(place => place.types.includes('gas_station'));
-      if (gasStations.length >= 3) baseConnectivityScore += 30; // Highway corridor bonus
-      
-      infrastructureScores.connectivity = Math.min(baseConnectivityScore, 100); // Cap at 100%
+      infrastructureScores.connectivity = totalConnectivityScore;
       
       // DESERT/REMOTE LOCATION DETECTION: Enhanced criteria with error handling
       const addressLower = location.address.toLowerCase();
@@ -694,8 +738,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Base investment metrics (convert 5-star score to percentage)
       const scoreAsPercentage = (result.locationScore / 5) * 100;
       result.investmentViability = Math.min(scoreAsPercentage * 0.8, 95); // Cap at 95%
-      result.businessGrowthRate = Math.min(scoreAsPercentage * 0.15, 12); // Cap at 12%
-      result.populationGrowthRate = Math.min(scoreAsPercentage * 0.08, 6); // Cap at 6%
+      
+      // Enhanced business growth rate based on infrastructure, amenities & population indicators
+      const businessGrowthFactors = {
+        infrastructure: infrastructureScores.essential.total * 0.8, // Essential services drive business
+        commercial: infrastructureScores.commercial.total * 1.2, // Commercial density indicates business activity
+        connectivity: infrastructureScores.connectivity * 0.06, // Transport connectivity enables business (scaled down)
+        education: infrastructureScores.education.total * 0.9, // Education creates skilled workforce
+        population: Math.min(infrastructureScores.healthcare.total * 0.7, 10) // Healthcare indicates population density
+      };
+      
+      const totalBusinessScore = Object.values(businessGrowthFactors).reduce((sum, score) => sum + score, 0);
+      result.businessGrowthRate = Math.max(-8, Math.min(18, 
+        (totalBusinessScore / 8) + // Base growth from infrastructure
+        (result.locationScore / 12) - 2 // Location score adjustment
+      ));
+      
+      // Population growth rate based on infrastructure capacity and amenities
+      const populationGrowthFactors = {
+        housing: Math.min(infrastructureScores.essential.total * 0.5, 8), // Essential services support population
+        healthcare: infrastructureScores.healthcare.total * 0.8, // Healthcare capacity indicates population support
+        education: infrastructureScores.education.total * 0.7, // Schools indicate family-friendly areas
+        transport: infrastructureScores.transport.total * 0.6, // Transport enables population movement
+        connectivity: infrastructureScores.connectivity * 0.04 // External connectivity attracts migration (scaled down)
+      };
+      
+      const totalPopulationScore = Object.values(populationGrowthFactors).reduce((sum, score) => sum + score, 0);
+      result.populationGrowthRate = Math.max(-5, Math.min(12, 
+        (totalPopulationScore / 10) + // Base growth from infrastructure capacity
+        (result.locationScore / 20) - 1.5 // Location score adjustment
+      ));
+      
       result.growthPrediction = Math.min(scoreAsPercentage * 0.2, 15); // Cap at 15%
 
       // Tier-specific enhancements
