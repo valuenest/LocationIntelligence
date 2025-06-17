@@ -205,6 +205,55 @@ export default function Results() {
           </CardHeader>
         </Card>
 
+        {/* Report Tier Summary */}
+        {analysis.planType === 'free' && (
+          <Card className="mb-8 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <CardContent className="p-6">
+              <div className="text-center">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Your Free Report is Ready!</h3>
+                <p className="text-gray-600 mb-6">You're seeing the basic analysis. Unlock detailed insights with our paid plans.</p>
+                
+                <div className="grid md:grid-cols-3 gap-4 text-sm">
+                  <div className="bg-white rounded-lg p-4 border">
+                    <div className="font-semibold text-green-600 mb-2">✓ Free Report</div>
+                    <div className="text-gray-600">
+                      • Location Score<br/>
+                      • Basic Nearby Places<br/>
+                      • Distance Information
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white rounded-lg p-4 border border-orange-200">
+                    <div className="font-semibold text-orange-600 mb-2 flex items-center">
+                      <Lock className="h-4 w-4 mr-1" />
+                      Paid Report - ₹99
+                    </div>
+                    <div className="text-gray-600">
+                      • Growth Predictions<br/>
+                      • Market Analysis<br/>
+                      • Investment Returns<br/>
+                      • PDF Download
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white rounded-lg p-4 border border-purple-200">
+                    <div className="font-semibold text-purple-600 mb-2 flex items-center">
+                      <Crown className="h-4 w-4 mr-1" />
+                      Pro Report - ₹199
+                    </div>
+                    <div className="text-gray-600">
+                      • AI Recommendations<br/>
+                      • Risk Assessment<br/>
+                      • Investment Strategy<br/>
+                      • Priority Support
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Analysis */}
           <div className="lg:col-span-2 space-y-6">
