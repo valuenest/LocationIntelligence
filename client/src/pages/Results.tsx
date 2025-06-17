@@ -23,7 +23,8 @@ import {
   Lock,
   Zap,
   Crown,
-  Car
+  Car,
+  AlertTriangle
 } from "lucide-react";
 import { Link } from "wouter";
 import { generatePDF } from "@/lib/pdfGenerator";
@@ -1328,9 +1329,19 @@ export default function Results() {
               'stadium', 'natural_feature', 'aquarium', 'art_gallery'
             ].includes(t))).length === 0 && (
               <div className="text-center py-8">
-                <Eye className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">Limited Tourist Attractions</h3>
-                <p className="text-gray-600">This area appears to be more residential/commercial. Major attractions may be in nearby city centers.</p>
+                {analysisResult.investmentViability === 0 || analysisResult.investmentRecommendation?.includes('Uninhabitable') ? (
+                  <>
+                    <AlertTriangle className="h-16 w-16 text-red-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-red-700 mb-2">No Tourist Attractions Found</h3>
+                    <p className="text-red-600">This remote location has no recreational or tourist facilities within 100km radius. The area lacks basic infrastructure and is unsuitable for tourism or entertainment activities.</p>
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">Limited Tourist Attractions</h3>
+                    <p className="text-gray-600">This area appears to be more residential/commercial. Major attractions may be in nearby city centers.</p>
+                  </>
+                )}
               </div>
             )}
 
