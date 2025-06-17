@@ -18,9 +18,12 @@ interface LocationData {
 }
 
 interface PropertyFormData {
+  amount: number;
   propertyType: string;
   currency: string;
   country: string;
+  propertySize: number;
+  sizeUnit: string;
   propertyAge: string;
   bedrooms: number;
   furnished: string;
@@ -153,7 +156,10 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           location: selectedLocation,
+          amount: formData.amount,
           propertyType: formData.propertyType,
+          propertySize: formData.propertySize,
+          sizeUnit: formData.sizeUnit,
           propertyAge: formData.propertyAge,
           bedrooms: formData.bedrooms,
           furnished: formData.furnished,

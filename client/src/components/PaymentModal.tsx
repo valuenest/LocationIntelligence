@@ -13,9 +13,12 @@ interface LocationData {
 }
 
 interface PropertyFormData {
+  amount: number;
   propertyType: string;
   currency: string;
   country: string;
+  propertySize: number;
+  sizeUnit: string;
   propertyAge: string;
   bedrooms: number;
   furnished: string;
@@ -82,7 +85,10 @@ export default function PaymentModal({ isOpen, onClose, selectedPlan, location, 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           location,
+          amount: propertyData.amount,
           propertyType: propertyData.propertyType,
+          propertySize: propertyData.propertySize,
+          sizeUnit: propertyData.sizeUnit,
           propertyAge: propertyData.propertyAge,
           bedrooms: propertyData.bedrooms,
           furnished: propertyData.furnished,
@@ -199,14 +205,14 @@ export default function PaymentModal({ isOpen, onClose, selectedPlan, location, 
                     </span>
                   </div>
                   <div className="flex justify-between">
+                    <span className="text-gray-600">Investment Amount:</span>
+                    <span className="text-gray-900">₹{propertyData.amount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-gray-600">Property Type:</span>
                     <span className="text-gray-900 capitalize">
                       {propertyData.propertyType.replace('_', ' ')}
                     </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Country:</span>
-                    <span className="text-gray-900">{propertyData.country}</span>
                   </div>
                 </div>
               </CardContent>
