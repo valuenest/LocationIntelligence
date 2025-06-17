@@ -320,6 +320,9 @@ export default function Home() {
         isLoading={isValidating}
       />
 
+      {/* Analysis Loading Modal */}
+      <AnalysisLoadingModal isOpen={analysisLoading} />
+
       {/* Floating Action Button for Mobile */}
       <div className="fixed bottom-6 right-6 md:hidden z-50">
         <Button className="bg-[#FF5A5F] hover:bg-[#e54852] text-white w-16 h-16 rounded-full airbnb-shadow-lg">
