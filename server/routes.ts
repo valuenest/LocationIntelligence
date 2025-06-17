@@ -227,9 +227,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Analysis not found" });
       }
 
-      if (analysisRequest.paymentStatus !== "completed") {
-        return res.status(402).json({ error: "Payment required" });
-      }
+      // Temporarily bypass payment verification for all plans
+      // if (analysisRequest.paymentStatus !== "completed") {
+      //   return res.status(402).json({ error: "Payment required" });
+      // }
 
       if (analysisRequest.status === "completed" && analysisRequest.results) {
         const analysisData = JSON.parse(analysisRequest.results);
@@ -250,11 +251,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Analysis not completed yet
-      return res.status(202).json({ 
-        success: false, 
-        message: "Analysis in progress",
-        status: analysisRequest.status 
+      // Perform analysis if not completed yet
+      const location = typeof analysisRequest.location === 'string' 
+        ? JSON.parse(analysisRequest.location) 
+        : analysisRequest.location;
+      const propertyDetails = analysisRequest.propertyDetails ? JSON.parse(analysisRequest.propertyDetails) : null;
+      
+      const result = await performAnalysis(
+        location,
+        analysisRequest.amount,
+        analysisRequest.propertyType,
+        analysisRequest.planType,
+        propertyDetails
+      );
+
+      // Update analysis request with results
+      await storage.updateAnalysisRequest(analysisRequest.id, {
+        status: "completed",
+        results: JSON.stringify(result)
+      });
+
+      // Return wrapped result
+      res.json({
+        success: true,
+        analysis: {
+          id: analysisRequest.id,
+          sessionId: analysisRequest.sessionId,
+          location: location,
+          amount: analysisRequest.amount,
+          propertyType: analysisRequest.propertyType,
+          planType: analysisRequest.planType,
+          analysisData: result,
+          createdAt: analysisRequest.createdAt
+        }
       });
     } catch (error) {
       console.error("Error getting analysis result:", error);
