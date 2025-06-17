@@ -270,7 +270,7 @@ export default function Results() {
                 <p className="text-gray-600 mt-1">{analysis.location.address}</p>
                 {/* Investment Recommendation */}
                 {analysisResult.investmentRecommendation && (
-                  <div className="mt-3">
+                  <div className="mt-3 flex items-center gap-3">
                     <Badge 
                       variant="outline" 
                       className={`text-sm px-3 py-1 ${
@@ -283,6 +283,30 @@ export default function Results() {
                     >
                       {analysisResult.investmentRecommendation}
                     </Badge>
+                    <div className="flex items-center gap-2">
+                      <div className={`flex items-center px-2 py-1 rounded-md text-sm font-medium ${
+                        analysisResult.investmentRecommendation.includes('Outstanding') || analysisResult.investmentRecommendation.includes('Exceptional') 
+                          ? 'bg-green-50 text-green-700' 
+                          : analysisResult.investmentRecommendation.includes('Excellent') || analysisResult.investmentRecommendation.includes('Good')
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'bg-orange-50 text-orange-700'
+                      }`}>
+                        <span className="mr-1">
+                          {analysisResult.investmentRecommendation.includes('Outstanding') || analysisResult.investmentRecommendation.includes('Exceptional') 
+                            ? '85-95%' 
+                            : analysisResult.investmentRecommendation.includes('Excellent') || analysisResult.investmentRecommendation.includes('Good')
+                            ? '70-84%'
+                            : '50-69%'
+                          }
+                        </span>
+                        {analysisResult.investmentRecommendation.includes('Outstanding') || analysisResult.investmentRecommendation.includes('Exceptional') 
+                          ? <TrendingUp className="h-3 w-3 text-green-600" />
+                          : analysisResult.investmentRecommendation.includes('Excellent') || analysisResult.investmentRecommendation.includes('Good')
+                          ? <TrendingUp className="h-3 w-3 text-blue-600" />
+                          : <TrendingDown className="h-3 w-3 text-orange-600" />
+                        }
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
