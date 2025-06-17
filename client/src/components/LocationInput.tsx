@@ -82,6 +82,7 @@ export default function LocationInput({ onLocationSelect, selectedLocation }: Lo
       const map = new window.google.maps.Map(mapRef.current, {
         center: { lat: 28.6139, lng: 77.2090 }, // Delhi coordinates
         zoom: 18, // Plot-level zoom for precise location selection
+        maxZoom: 21, // Allow maximum zoom for plot precision
         mapTypeControl: true,
         streetViewControl: true,
         fullscreenControl: false,
