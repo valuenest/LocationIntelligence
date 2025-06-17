@@ -344,7 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Tier-specific analysis logic
-  const performAnalysis = async (location: LocationData, amount: number, propertyType: string, planType: string, propertyDetails?: any): Promise<AnalysisResult> => {
+  const performAnalysis = async (location: LocationData, propertyType: string, planType: string, propertyDetails?: any): Promise<AnalysisResult> => {
     const result: AnalysisResult = {
       locationScore: 0,
       growthPrediction: 0,
@@ -626,10 +626,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/analyze', async (req, res) => {
     try {
       const clientIP = getClientIP(req);
-      const { location, amount, propertyType, planType, propertySize, sizeUnit, propertyAge, bedrooms, furnished, floor, parkingSpaces } = req.body;
+      const { location, propertyType, planType, propertyAge, bedrooms, furnished, floor, parkingSpaces } = req.body;
 
       // Validate input
-      if (!location || !amount || !propertyType || !planType) {
+      if (!location || !propertyType || !planType) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
@@ -638,12 +638,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         location: typeof location === 'string' ? 
           await geocodeAddress(location) || { lat: 0, lng: 0, address: location } : location,
         propertyData: {
-          amount,
           propertyType,
           currency: 'INR',
           country: 'India',
-          propertySize: propertySize || 1000,
-          sizeUnit: sizeUnit || 'sqft',
           propertyAge: propertyAge || 'new',
           bedrooms: bedrooms || 2,
           furnished: furnished || 'unfurnished',
@@ -691,12 +688,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate session ID
       const sessionId = crypto.randomUUID();
 
-      // Create analysis request
+      // Create analysis request with default amount for database compatibility
       const analysisRequest = await storage.createAnalysisRequest({
         sessionId,
         ipAddress: clientIP,
         location: locationData,
-        amount,
+        amount: 0, // Default value since amount field removed from frontend
         propertyType,
         planType,
         paymentId: null,
@@ -705,8 +702,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Perform analysis with property details
       const propertyDetails = {
-        propertySize: propertySize || 1000,
-        sizeUnit: sizeUnit || 'sqft',
         propertyAge: propertyAge || 'new',
         bedrooms: bedrooms || 2,
         furnished: furnished || 'unfurnished',
@@ -714,7 +709,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         parkingSpaces: parkingSpaces || 1,
       };
 
-      const analysisResult = await performAnalysis(locationData, amount, propertyType, planType, propertyDetails);
+      const analysisResult = await performAnalysis(locationData, propertyType, planType, propertyDetails);
 
       // Update analysis request with results
       await storage.updateAnalysisRequest(analysisRequest.id, {
