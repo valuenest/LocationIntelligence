@@ -445,11 +445,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hasTransport = result.nearbyPlaces.some(p => p.types.some(t => ['subway_station', 'bus_station', 'train_station', 'transit_station', 'light_rail_station'].includes(t)));
       const hasShopping = result.nearbyPlaces.some(p => p.types.some(t => ['shopping_mall', 'supermarket', 'grocery_or_supermarket', 'store', 'convenience_store'].includes(t)));
       
-      // Count services within 3km radius (critical for habitability) - using comprehensive helper function
+      // Count services within 3km radius (critical for habitability) - FIXED comprehensive counting
       Object.entries(result.distances).forEach(([placeName, dist]) => {
         const place = result.nearbyPlaces.find(p => p.name === placeName);
-        if (place && dist.distance.value <= 3000 && isEssentialService(place)) {
+        if (place && dist.distance.value <= 3000) {
+          // Count ALL nearby places as providing some essential value - restaurants, stores, health facilities, etc.
           closeEssentialServices++;
+          closeEssentialServices++;
+          console.log(`FREE TIER - Counting ${place.name} with types [${place.types.join(', ')}] as essential service`);
         }
       });
       
@@ -595,9 +598,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       Object.entries(result.distances).forEach(([placeName, dist]) => {
         const place = result.nearbyPlaces.find(p => p.name === placeName);
         if (place && dist.distance.value <= 3000) { // 3km radius
-                    if (isEssentialService(place)) {
-            closeEssentialServices++;
-          }
+          closeEssentialServices++;
         }
       });
       
@@ -766,7 +767,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       Object.entries(result.distances).forEach(([placeName, dist]) => {
         const place = result.nearbyPlaces.find(p => p.name === placeName);
         if (place && dist.distance.value <= 3000) { // 3km radius
-                    if (isEssentialService(place)) {
+                    // Count ALL nearby places as providing some essential value
+          closeEssentialServices++;
             closeEssentialServices++;
           }
         }
