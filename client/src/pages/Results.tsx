@@ -294,7 +294,76 @@ export default function Results() {
               </div>
             </div>
           </CardHeader>
-          {/* Location Image */}
+          <CardContent className="pt-6">
+            {/* AI Investment Analysis */}
+            <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+              <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                <Brain className="h-5 w-5 mr-2 text-blue-600" />
+                AI Investment Analysis
+              </h4>
+              <div className="text-sm text-gray-700 leading-relaxed mb-3">
+                {analysisResult.investmentRecommendation?.includes('Outstanding') || analysisResult.investmentRecommendation?.includes('Exceptional') ? (
+                  <div>
+                    <p className="mb-2">
+                      Based on our comprehensive analysis, this {analysis.propertyType.replace('_', ' ')} property shows exceptional investment potential. 
+                      The location demonstrates strong infrastructure connectivity, favorable demographic trends, and proximity to key amenities that drive property appreciation.
+                    </p>
+                    {!isPaidPlan && (
+                      <p className="text-blue-700 font-medium">
+                        Upgrade to our Paid plan (₹99) for detailed market comparisons, rental yield projections, and 3-year growth forecasts to maximize your investment strategy.
+                      </p>
+                    )}
+                    {isPaidPlan && !isProPlan && (
+                      <p className="text-indigo-700 font-medium">
+                        Consider our Pro plan (₹199) for AI-discovered alternative investment locations, advanced market analytics, and personalized investment recommendations within 50km radius.
+                      </p>
+                    )}
+                  </div>
+                ) : analysisResult.investmentRecommendation?.includes('Good') || analysisResult.investmentRecommendation?.includes('Excellent') ? (
+                  <div>
+                    <p className="mb-2">
+                      This property presents a solid investment opportunity with good growth potential. The area shows steady development patterns and reasonable connectivity to essential services, 
+                      making it suitable for long-term appreciation.
+                    </p>
+                    {!isPaidPlan && (
+                      <p className="text-blue-700 font-medium">
+                        Unlock detailed investment projections and risk analysis with our Paid plan (₹99) to make more informed decisions about this property.
+                      </p>
+                    )}
+                    {isPaidPlan && !isProPlan && (
+                      <p className="text-indigo-700 font-medium">
+                        Explore better investment alternatives in nearby cities with our Pro plan (₹199) featuring AI-analyzed locations with superior growth potential.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <p className="mb-2">
+                      While this location has basic infrastructure and amenities, our analysis suggests considering factors like future development plans, 
+                      transportation improvements, and market demand trends before proceeding with investment.
+                    </p>
+                    {!isPaidPlan && (
+                      <p className="text-blue-700 font-medium">
+                        Get comprehensive risk assessment and alternative investment suggestions with our Paid plan (₹99) to explore better opportunities.
+                      </p>
+                    )}
+                    {isPaidPlan && !isProPlan && (
+                      <p className="text-indigo-700 font-medium">
+                        Discover high-potential investment cities within 50km using our Pro plan (₹199) with AI-powered location scoring and detailed market analysis.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="border-t border-blue-200 pt-3 mt-3">
+                <p className="text-xs text-gray-600 italic">
+                  <strong>Disclaimer:</strong> These recommendations are calculated purely based on available data and market analysis. 
+                  This recommendation does not include the amount you entered for the property purchase. Our calculations are based on location factors, 
+                  infrastructure, and market trends only.
+                </p>
+              </div>
+            </div>
+          </CardContent>
           <CardContent className="pt-0">
             <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
               <div className="px-4 py-2 bg-gray-100 border-b border-gray-200">
