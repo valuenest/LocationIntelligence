@@ -10,6 +10,7 @@ import UsageLimitModal from "@/components/UsageLimitModal";
 import ValidationModal from "@/components/ValidationModal";
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, TrendingUp, Brain } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface LocationData {
   lat: number;
@@ -320,6 +321,29 @@ export default function Home() {
         validation={validationResult}
         isLoading={isValidating}
       />
+
+      {/* Pricing Modal */}
+      <Dialog open={pricingModalOpen} onOpenChange={setPricingModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Select Your Analysis Plan</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <PricingPlans
+              onPlanSelect={(plan) => {
+                setSelectedPlan(plan);
+                setPricingModalOpen(false);
+                if (propertyData) {
+                  handleAnalysisWithPlan(propertyData, plan);
+                }
+              }}
+              canUseFree={canUseFree}
+              freeUsageCount={freeUsageCount}
+              isFormValid={true}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Analysis Loading Modal */}
       <AnalysisLoadingModal isOpen={analysisLoading} />

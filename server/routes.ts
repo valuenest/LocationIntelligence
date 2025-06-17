@@ -542,17 +542,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         result.distances = await calculateDistances(location, result.nearbyPlaces);
       }
 
-      // Count services within 3km radius for habitability assessment
+      // Count essential services within 3km radius for habitability assessment
       let closeEssentialServices = 0;
+      let totalEssentialServices = 0;
+      const essentialTypes = ['hospital', 'school', 'bank', 'store', 'gas_station', 'restaurant'];
+      
       Object.entries(result.distances).forEach(([placeName, dist]) => {
         const place = result.nearbyPlaces.find(p => p.name === placeName);
-        if (place && dist.distance.value <= 3000) { // 3km radius
-          closeEssentialServices++;
+        if (place && isEssentialService(place)) {
+          totalEssentialServices++;
+          if (dist.distance.value <= 3000) { // 3km radius
+            closeEssentialServices++;
+          }
         }
       });
       
-      // DESERT/REMOTE LOCATION DETECTION: Zero infrastructure = 0% recommendation
-      if (result.nearbyPlaces.length === 0 || closeEssentialServices === 0) {
+      // DESERT/REMOTE LOCATION DETECTION: Strict criteria for uninhabitable areas
+      const addressLower = location.address.toLowerCase();
+      const isDesertOrRemote = (
+        result.nearbyPlaces.length < 8 || // Less than 8 total places
+        totalEssentialServices < 4 || // Less than 4 essential services
+        closeEssentialServices < 2 || // Less than 2 essential services within 3km
+        addressLower.includes('desert') ||
+        addressLower.includes('canyon') ||
+        addressLower.includes('wilderness') ||
+        addressLower.includes('national park') ||
+        addressLower.includes('grand canyon') ||
+        addressLower.includes('death valley') ||
+        addressLower.includes('sahara') ||
+        addressLower.includes('mojave') ||
+        addressLower.includes('badlands') ||
+        addressLower.includes('monument valley')
+      );
+      
+      if (isDesertOrRemote) {
         result.locationScore = 0.0;
         result.investmentViability = 0;
         result.growthPrediction = -10; // Negative growth for uninhabitable areas
