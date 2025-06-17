@@ -60,32 +60,35 @@ export default function ValidationModal({
         </DialogHeader>
 
         <div className="space-y-6">
-
-
-          {/* Issues Section */}
-          {validation.issues.length > 0 && (
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-orange-500" />
-                Issues Detected ({validation.issues.length})
-              </h4>
-              <div className="space-y-2">
-                {validation.issues.map((issue, index) => (
-                  <div key={index} className="bg-red-50 border border-red-200 rounded-lg p-3">
-                    <p className="text-sm text-red-800">{issue}</p>
+          {/* Location Status */}
+          {validation.issues.length > 0 ? (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-6 w-6 text-red-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 className="font-semibold text-red-800 mb-2">Location Not Suitable</h4>
+                  <div className="space-y-2">
+                    {validation.issues.map((issue, index) => (
+                      <p key={index} className="text-sm text-red-700">{issue}</p>
+                    ))}
                   </div>
-                ))}
+                  <p className="text-sm text-red-600 mt-3 font-medium">
+                    Please select a different location for property analysis.
+                  </p>
+                </div>
               </div>
             </div>
-          )}
-
-          {/* Note for issues */}
-          {validation.issues.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-sm text-red-800">
-                <strong>Location Issue:</strong> The location you entered appears to be unbuildable or restricted (ocean, river, forest, government area). 
-                Please select a different location suitable for property development.
-              </p>
+          ) : (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="h-6 w-6 text-green-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 className="font-semibold text-green-800 mb-2">Location Verified</h4>
+                  <p className="text-sm text-green-700">
+                    This location is suitable for property development and analysis.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
