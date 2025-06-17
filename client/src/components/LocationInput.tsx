@@ -122,7 +122,7 @@ export default function LocationInput({ onLocationSelect, selectedLocation }: Lo
             
             if (map && marker) {
               map.setCenter(locationData);
-              map.setZoom(15);
+              map.setZoom(20); // Maintain high zoom level for manual search
               marker.setPosition(locationData);
             }
           }
@@ -236,7 +236,7 @@ export default function LocationInput({ onLocationSelect, selectedLocation }: Lo
             
             if (map && marker) {
               map.setCenter(locationData);
-              map.setZoom(15);
+              map.setZoom(20); // Maintain high zoom level for autocomplete
               marker.setPosition(locationData);
             }
           }
