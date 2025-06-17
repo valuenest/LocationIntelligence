@@ -1,4 +1,6 @@
 import { users, analysisRequests, usageLimits, type User, type InsertUser, type AnalysisRequest, type InsertAnalysisRequest, type UsageLimit, type InsertUsageLimit } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -17,93 +19,81 @@ export interface IStorage {
   resetDailyUsage(ipAddress: string): Promise<UsageLimit>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private analysisRequests: Map<number, AnalysisRequest>;
-  private usageLimits: Map<string, UsageLimit>;
-  private currentUserId: number;
-  private currentAnalysisId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.analysisRequests = new Map();
-    this.usageLimits = new Map();
-    this.currentUserId = 1;
-    this.currentAnalysisId = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
     return user;
   }
 
   async createAnalysisRequest(request: InsertAnalysisRequest): Promise<AnalysisRequest> {
-    const id = this.currentAnalysisId++;
-    const analysisRequest: AnalysisRequest = {
-      ...request,
-      id,
-      paymentId: request.paymentId || null,
-      analysisData: request.analysisData || null,
-      createdAt: new Date(),
-    };
-    this.analysisRequests.set(id, analysisRequest);
+    const [analysisRequest] = await db
+      .insert(analysisRequests)
+      .values(request)
+      .returning();
     return analysisRequest;
   }
 
   async getAnalysisRequest(id: number): Promise<AnalysisRequest | undefined> {
-    return this.analysisRequests.get(id);
+    const [request] = await db.select().from(analysisRequests).where(eq(analysisRequests.id, id));
+    return request || undefined;
   }
 
   async getAnalysisRequestByPaymentId(paymentId: string): Promise<AnalysisRequest | undefined> {
-    return Array.from(this.analysisRequests.values()).find(
-      (request) => request.paymentId === paymentId
-    );
+    const [request] = await db.select().from(analysisRequests).where(eq(analysisRequests.paymentId, paymentId));
+    return request || undefined;
   }
 
   async updateAnalysisRequest(id: number, data: Partial<AnalysisRequest>): Promise<AnalysisRequest> {
-    const existing = this.analysisRequests.get(id);
-    if (!existing) {
+    const [updated] = await db
+      .update(analysisRequests)
+      .set(data)
+      .where(eq(analysisRequests.id, id))
+      .returning();
+    
+    if (!updated) {
       throw new Error(`Analysis request with id ${id} not found`);
     }
-    const updated = { ...existing, ...data };
-    this.analysisRequests.set(id, updated);
+    
     return updated;
   }
 
   async getUsageLimit(ipAddress: string): Promise<UsageLimit | undefined> {
-    return this.usageLimits.get(ipAddress);
+    const [limit] = await db.select().from(usageLimits).where(eq(usageLimits.ipAddress, ipAddress));
+    return limit || undefined;
   }
 
   async createUsageLimit(limit: InsertUsageLimit): Promise<UsageLimit> {
-    const usageLimit: UsageLimit = {
-      ...limit,
-      id: Date.now(), // Simple ID for in-memory storage
-      freeUsageCount: limit.freeUsageCount || 0,
-      lastResetDate: limit.lastResetDate || new Date(),
-    };
-    this.usageLimits.set(limit.ipAddress, usageLimit);
+    const [usageLimit] = await db
+      .insert(usageLimits)
+      .values(limit)
+      .returning();
     return usageLimit;
   }
 
   async updateUsageLimit(ipAddress: string, data: Partial<UsageLimit>): Promise<UsageLimit> {
-    const existing = this.usageLimits.get(ipAddress);
-    if (!existing) {
+    const [updated] = await db
+      .update(usageLimits)
+      .set(data)
+      .where(eq(usageLimits.ipAddress, ipAddress))
+      .returning();
+    
+    if (!updated) {
       throw new Error(`Usage limit for IP ${ipAddress} not found`);
     }
-    const updated = { ...existing, ...data };
-    this.usageLimits.set(ipAddress, updated);
+    
     return updated;
   }
 
@@ -135,7 +125,7 @@ export class MemStorage implements IStorage {
   }
 
   async resetDailyUsage(ipAddress: string): Promise<UsageLimit> {
-    const existing = this.usageLimits.get(ipAddress);
+    const existing = await this.getUsageLimit(ipAddress);
     if (!existing) {
       return await this.createUsageLimit({
         ipAddress,
@@ -151,4 +141,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
