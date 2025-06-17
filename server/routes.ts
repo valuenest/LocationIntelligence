@@ -426,11 +426,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let essentialServices = 0;
       let closeEssentialServices = 0; // Within 3km
       
-      // Check for essential services and their proximity
+      // Check for essential services and their proximity - updated for comprehensive place types
       const hasSchool = result.nearbyPlaces.some(p => p.types.includes('school'));
-      const hasHospital = result.nearbyPlaces.some(p => p.types.includes('hospital'));
-      const hasTransport = result.nearbyPlaces.some(p => p.types.includes('subway_station') || p.types.includes('bus_station'));
-      const hasShopping = result.nearbyPlaces.some(p => p.types.includes('shopping_mall') || p.types.includes('grocery_or_supermarket'));
+      const hasHospital = result.nearbyPlaces.some(p => p.types.some(t => ['hospital', 'health', 'doctor', 'clinic'].includes(t)));
+      const hasTransport = result.nearbyPlaces.some(p => p.types.some(t => ['subway_station', 'bus_station', 'train_station', 'transit_station', 'light_rail_station'].includes(t)));
+      const hasShopping = result.nearbyPlaces.some(p => p.types.some(t => ['shopping_mall', 'supermarket', 'grocery_or_supermarket', 'store', 'convenience_store'].includes(t)));
       
       // Count services within 3km radius (critical for habitability)
       Object.entries(result.distances).forEach(([placeName, dist]) => {
