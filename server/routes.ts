@@ -36,8 +36,8 @@ interface AnalysisResult {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_API_KEY || "";
-  const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "";
-  const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
+  const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "rzp_test_HjCkUTAogW4sKD";
+  const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "khd5TZuDEg6b7ENFCDkN3aLa";
 
   // Middleware to get client IP
   const getClientIP = (req: any) => {
