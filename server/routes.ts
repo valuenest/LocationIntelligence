@@ -5,6 +5,7 @@ import { insertAnalysisRequestSchema } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
 import { generateInvestmentRecommendations, findTopInvestmentLocations } from "./gemini";
+import { performSmartValidation } from "./smartValidation";
 
 // Types for Google Maps APIs
 interface LocationData {
@@ -601,6 +602,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Smart validation endpoint
+  app.post("/api/validate-inputs", async (req, res) => {
+    try {
+      const validationData = req.body;
+      
+      // Perform comprehensive validation
+      const validationResult = await performSmartValidation(validationData);
+      
+      res.json({
+        success: true,
+        validation: validationResult
+      });
+    } catch (error) {
+      console.error('Validation error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to validate inputs'
+      });
+    }
+  });
+
   app.post('/api/analyze', async (req, res) => {
     try {
       const clientIP = getClientIP(req);
@@ -609,6 +631,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate input
       if (!location || !amount || !propertyType || !planType) {
         return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      // Perform smart validation before analysis
+      const validationData = {
+        location: typeof location === 'string' ? 
+          await geocodeAddress(location) || { lat: 0, lng: 0, address: location } : location,
+        propertyData: {
+          amount,
+          propertyType,
+          currency: 'INR',
+          country: 'India',
+          propertySize: propertySize || 1000,
+          sizeUnit: sizeUnit || 'sqft',
+          propertyAge: propertyAge || 'new',
+          bedrooms: bedrooms || 2,
+          furnished: furnished || 'unfurnished',
+          floor: floor || 'ground',
+          parkingSpaces: parkingSpaces || 1
+        }
+      };
+
+      const validationResult = await performSmartValidation(validationData);
+      
+      if (!validationResult.isValid && validationResult.riskLevel === 'high') {
+        return res.status(400).json({
+          success: false,
+          error: 'Input validation failed',
+          validation: validationResult
+        });
       }
 
       // Check usage limits for free plan
