@@ -1286,11 +1286,15 @@ export default function Results() {
                         
                         <div className="grid grid-cols-2 gap-4 mb-4">
                           <div className="text-center bg-emerald-50 rounded-lg p-3">
-                            <div className="text-lg font-bold text-emerald-600">{distance}</div>
+                            <div className="text-lg font-bold text-emerald-600">
+                              {distance === 'Calculating...' ? 'Unknown' : distance}
+                            </div>
                             <div className="text-xs text-gray-600">Distance</div>
                           </div>
                           <div className="text-center bg-blue-50 rounded-lg p-3">
-                            <div className="text-lg font-bold text-blue-600">{duration || '~15 min'}</div>
+                            <div className="text-lg font-bold text-blue-600">
+                              {duration && duration !== '' ? duration : 'Unknown'}
+                            </div>
                             <div className="text-xs text-gray-600">Travel Time</div>
                           </div>
                         </div>
