@@ -7,12 +7,9 @@ import { IndianRupee, Home, Globe, TrendingUp, AlertTriangle, CheckCircle } from
 // Removed price validation imports
 
 interface PropertyFormData {
-  amount: number;
   propertyType: string;
   currency: string;
   country: string;
-  propertySize: number;
-  sizeUnit: string;
   propertyAge: string;
   bedrooms: number;
   furnished: string;
@@ -52,10 +49,7 @@ const countries: Country[] = [
 ];
 
 export default function PropertyForm({ onSubmit, selectedLocation }: PropertyFormProps) {
-  const [amount, setAmount] = useState<string>('');
   const [propertyType, setPropertyType] = useState<string>('');
-  const [propertySize, setPropertySize] = useState<string>('');
-  const [sizeUnit, setSizeUnit] = useState<string>('sqft');
   const [propertyAge, setPropertyAge] = useState<string>('');
   const [bedrooms, setBedrooms] = useState<string>('');
   const [furnished, setFurnished] = useState<string>('');
@@ -95,9 +89,9 @@ export default function PropertyForm({ onSubmit, selectedLocation }: PropertyFor
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Basic validation for all property types
-    if (!amount || !propertyType || !propertySize) {
-      alert('Please fill in all required fields');
+    // Basic validation for property type
+    if (!propertyType) {
+      alert('Please select a property type');
       return;
     }
 
@@ -118,20 +112,11 @@ export default function PropertyForm({ onSubmit, selectedLocation }: PropertyFor
       return;
     }
 
-    const numericAmount = parseFloat(amount);
-    if (isNaN(numericAmount) || numericAmount <= 0) {
-      alert('Please enter a valid amount');
-      return;
-    }
-
     // Set default values for conditional fields
     const formData = {
-      amount: numericAmount,
       propertyType,
       currency: selectedCountry.currency,
       country: selectedCountry.name,
-      propertySize: parseFloat(propertySize),
-      sizeUnit,
       propertyAge: propertyAge || 'not-applicable',
       bedrooms: parseInt(bedrooms) || 0,
       furnished: furnished || 'not-applicable',
@@ -144,42 +129,25 @@ export default function PropertyForm({ onSubmit, selectedLocation }: PropertyFor
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Amount Input with Currency */}
+      {/* Country Selection */}
       <div>
-        <Label htmlFor="amount" className="text-lg font-medium text-gray-900 mb-3 flex items-center">
-          <IndianRupee className="text-[#FC642D] mr-2" />
-          Property Amount
+        <Label htmlFor="country" className="text-lg font-medium text-gray-900 mb-3 flex items-center">
+          <Globe className="text-[#FC642D] mr-2" />
+          Country
         </Label>
-        <div className="flex gap-3">
-          <div className="relative flex-1">
-            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">
-              {selectedCountry.symbol}
-            </span>
-            <Input
-              id="amount"
-              type="number"
-              placeholder="Enter amount"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="pl-12 pr-4 py-4 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#FC642D] focus:border-transparent"
-              min="0"
-              step="1000"
-            />
-          </div>
-          <div className="w-32">
-            <Select value={selectedCountry.code} onValueChange={handleCountryChange}>
-              <SelectTrigger className="w-full p-4 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#FC642D] focus:border-transparent">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {countries.map((country) => (
-                  <SelectItem key={country.code} value={country.code}>
-                    {country.currency}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="w-full">
+          <Select value={selectedCountry.code} onValueChange={handleCountryChange}>
+            <SelectTrigger className="w-full p-4 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#FC642D] focus:border-transparent">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {countries.map((country) => (
+                <SelectItem key={country.code} value={country.code}>
+                  {country.currency}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -202,40 +170,6 @@ export default function PropertyForm({ onSubmit, selectedLocation }: PropertyFor
             <SelectItem value="warehouse">Warehouse</SelectItem>
           </SelectContent>
         </Select>
-      </div>
-
-      {/* Property Size */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2">
-          <Label htmlFor="propertySize" className="text-lg font-medium text-gray-900 mb-3 block">
-            Property Size
-          </Label>
-          <Input
-            id="propertySize"
-            type="number"
-            placeholder="Enter size"
-            value={propertySize}
-            onChange={(e) => setPropertySize(e.target.value)}
-            className="w-full p-4 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A699] focus:border-transparent"
-            min="1"
-          />
-        </div>
-        <div>
-          <Label htmlFor="sizeUnit" className="text-lg font-medium text-gray-900 mb-3 block">
-            Unit
-          </Label>
-          <Select value={sizeUnit} onValueChange={setSizeUnit}>
-            <SelectTrigger id="sizeUnit" className="w-full p-4 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A699] focus:border-transparent">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="sqft">Sq Ft</SelectItem>
-              <SelectItem value="sqm">Sq Meter</SelectItem>
-              <SelectItem value="acres">Acres</SelectItem>
-              <SelectItem value="hectares">Hectares</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
 
