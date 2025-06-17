@@ -207,121 +207,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
   ): string[] => {
     const recommendations: string[] = [];
     
-    // Calculate investment viability percentage based on multiple factors
+    // Realistic investment scoring with proper negative assessment
     let investmentScore = 0;
-    let maxScore = 100;
+    let negativeFactors: string[] = [];
+    let positiveFactors: string[] = [];
     
-    // Location score factor (30% weight)
-    const locationFactor = (locationScore / 5.0) * 30;
+    // Location score factor (40% weight) - most critical factor
+    const locationFactor = (locationScore / 5.0) * 40;
     investmentScore += locationFactor;
     
-    // Property size factor (15% weight)
-    let sizeFactor = 0;
+    if (locationScore < 2.0) {
+      negativeFactors.push("Poor location connectivity and limited infrastructure");
+    } else if (locationScore < 3.0) {
+      negativeFactors.push("Below average location with limited growth prospects");
+    } else if (locationScore >= 4.0) {
+      positiveFactors.push("Excellent location with strong infrastructure");
+    }
+    
+    // Amenities factor (30% weight) - critical for property viability
+    let amenityFactor = 0;
+    const amenityCount = nearbyPlaces.length;
+    if (amenityCount >= 12) {
+      amenityFactor = 30;
+      positiveFactors.push("Excellent amenity coverage");
+    } else if (amenityCount >= 6) {
+      amenityFactor = 18;
+    } else if (amenityCount >= 3) {
+      amenityFactor = 8;
+      negativeFactors.push("Limited amenities may affect property value");
+    } else {
+      amenityFactor = 0;
+      negativeFactors.push("Very few amenities - major investment risk");
+    }
+    investmentScore += amenityFactor;
+    
+    // Property characteristics (20% weight)
+    let propertyFactor = 0;
     const propertySize = propertyDetails?.propertySize || 1000;
     const sizeUnit = propertyDetails?.sizeUnit || 'sqft';
-    if (sizeUnit === 'sqft') {
-      if (propertySize >= 2000) sizeFactor = 15;
-      else if (propertySize >= 1200) sizeFactor = 12;
-      else if (propertySize >= 800) sizeFactor = 8;
-      else sizeFactor = 5;
-    } else if (sizeUnit === 'acres') {
-      if (propertySize >= 1) sizeFactor = 15;
-      else if (propertySize >= 0.5) sizeFactor = 10;
-      else sizeFactor = 6;
-    }
-    investmentScore += sizeFactor;
     
-    // Property age factor (10% weight)
-    let ageFactor = 0;
+    // Age penalty system
     switch (propertyDetails?.propertyAge) {
       case 'new':
       case '0-1':
-        ageFactor = 10;
+        propertyFactor += 12;
         break;
       case '1-5':
-        ageFactor = 8;
+        propertyFactor += 8;
         break;
       case '5-10':
-        ageFactor = 6;
+        propertyFactor += 4;
         break;
       case '10-20':
-        ageFactor = 4;
+        propertyFactor += 0;
+        negativeFactors.push("Older property requires maintenance investment");
         break;
       default:
-        ageFactor = 2;
+        propertyFactor -= 5;
+        negativeFactors.push("Very old property - high depreciation risk");
     }
-    investmentScore += ageFactor;
     
-    // Property type factor (15% weight)
-    let typeFactor = 0;
+    // Property type realistic assessment
     switch (propertyType) {
       case 'apartment':
-        typeFactor = 12;
+        propertyFactor += 6;
         break;
       case 'house':
-        typeFactor = 15;
+        propertyFactor += 8;
         break;
       case 'plot':
-        typeFactor = 10;
+        propertyFactor += 2;
+        negativeFactors.push("Land investment has no immediate rental income");
         break;
       case 'commercial':
-        typeFactor = 8;
+        propertyFactor += 3;
+        negativeFactors.push("Commercial properties have higher vacancy risks");
+        break;
+      case 'farmland':
+        propertyFactor -= 2;
+        negativeFactors.push("Agricultural land has limited liquidity and regulatory restrictions");
         break;
       default:
-        typeFactor = 6;
+        propertyFactor += 2;
     }
-    investmentScore += typeFactor;
     
-    // Amenities factor (20% weight)
-    let amenityFactor = 0;
-    const amenityCount = nearbyPlaces.length;
-    if (amenityCount >= 15) amenityFactor = 20;
-    else if (amenityCount >= 10) amenityFactor = 15;
-    else if (amenityCount >= 5) amenityFactor = 10;
-    else amenityFactor = 5;
-    investmentScore += amenityFactor;
+    investmentScore += propertyFactor;
     
-    // Additional factors (10% weight)
-    let additionalFactor = 0;
-    if (propertyDetails?.parkingSpaces >= 2) additionalFactor += 3;
-    if (propertyDetails?.furnished === 'fully-furnished') additionalFactor += 2;
-    if (propertyDetails?.floor === 'penthouse' || propertyDetails?.floor === '4-7') additionalFactor += 2;
-    if (propertyDetails?.bedrooms >= 3) additionalFactor += 3;
-    investmentScore += additionalFactor;
+    // Critical penalty factors (10% weight)
+    let penaltyFactor = 0;
     
-    const finalScore = Math.min(95, Math.round(investmentScore));
+    // Remote location penalty
+    const address = location.address.toLowerCase();
+    if (address.includes('rural') || address.includes('village') || nearbyPlaces.length < 3) {
+      penaltyFactor -= 15;
+      negativeFactors.push("Remote location with poor accessibility");
+    }
     
-    // Generate personalized recommendations based on analysis
-    if (finalScore >= 80) {
-      recommendations.push(`🎯 STRONG BUY: ${finalScore}% investment viability - This property shows excellent potential with superior location score (${locationScore.toFixed(1)}/5) and ${amenityCount} nearby amenities.`);
-      
-      if (propertyType === 'apartment' && propertyDetails?.propertyAge === 'new') {
-        recommendations.push(`📈 Growth Potential: New apartments in this location typically appreciate 18-25% annually. Your ${propertySize} ${sizeUnit} unit is optimally sized for rental income.`);
-      }
-      
-      if (propertyDetails?.parkingSpaces >= 2) {
-        recommendations.push(`🚗 Premium Feature: Multiple parking spaces add 8-12% to property value and ensure higher rental demand in this area.`);
-      }
-      
-    } else if (finalScore >= 60) {
-      recommendations.push(`⚠️ MODERATE BUY: ${finalScore}% investment viability - Good potential but consider these factors before investing.`);
-      
-      if (locationScore < 3.5) {
-        recommendations.push(`📍 Location Concern: Limited nearby amenities may affect resale value. Consider properties closer to metro/commercial hubs for better appreciation.`);
-      }
-      
-      if (propertyDetails?.propertyAge === '10-20' || propertyDetails?.propertyAge === '20+') {
-        recommendations.push(`🏗️ Renovation Factor: Older properties may need 15-20% additional investment for modernization, but can offer 25-30% higher returns post-renovation.`);
-      }
-      
+    // Infrastructure assessment
+    const hasSchools = nearbyPlaces.some(place => place.types.includes('school'));
+    const hasHospitals = nearbyPlaces.some(place => place.types.includes('hospital'));
+    const hasTransport = nearbyPlaces.some(place => place.types.includes('transit_station'));
+    const hasShops = nearbyPlaces.some(place => place.types.includes('store') || place.types.includes('shopping_mall'));
+    
+    if (!hasSchools && !hasHospitals && !hasTransport && !hasShops) {
+      penaltyFactor -= 20;
+      negativeFactors.push("Critical infrastructure missing - very high risk");
     } else {
-      recommendations.push(`❌ CAUTION: ${finalScore}% investment viability - Several factors suggest reconsidering this investment.`);
-      
-      recommendations.push(`🔍 Alternative Suggestion: Look for properties with better location scores or in emerging areas with planned infrastructure development.`);
-      
-      if (propertySize < 800 && sizeUnit === 'sqft') {
-        recommendations.push(`📏 Size Limitation: Properties under 800 sq ft have limited appreciation potential. Consider larger units for better long-term returns.`);
-      }
+      if (!hasSchools) negativeFactors.push("No nearby schools affects family appeal");
+      if (!hasHospitals) negativeFactors.push("No healthcare facilities nearby");
+      if (!hasTransport) negativeFactors.push("Poor public transport connectivity");
+    }
+    
+    investmentScore += penaltyFactor;
+    
+    // Final realistic score with proper range
+    const finalScore = Math.max(10, Math.min(95, Math.round(investmentScore)));
+    
+    // Generate realistic recommendations
+    if (finalScore >= 75) {
+      recommendations.push(`Outstanding Investment - Highly Recommended`);
+    } else if (finalScore >= 55) {
+      recommendations.push(`Good Investment Opportunity`);
+    } else if (finalScore >= 35) {
+      recommendations.push(`Moderate Investment - Proceed with Caution`);
+    } else if (finalScore >= 20) {
+      recommendations.push(`Poor Investment - Not Recommended`);
+    } else {
+      recommendations.push(`Very Poor Investment - Strongly Advised Against`);
     }
     
     // Add property-specific insights
