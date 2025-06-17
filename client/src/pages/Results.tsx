@@ -987,7 +987,10 @@ export default function Results() {
                         ✓ Infrastructure & connectivity analysis
                       </p>
                     </div>
-                    <Button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-2">
+                    <Button 
+                      className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-2"
+                      onClick={handleUpgradeClick}
+                    >
                       Upgrade to Paid Plan - ₹99
                     </Button>
                   </div>
@@ -1075,7 +1078,10 @@ export default function Results() {
                         ✓ Step-by-step action plan for investment success
                       </p>
                     </div>
-                    <Button className="bg-purple-500 hover:bg-purple-600 text-white px-8 py-2">
+                    <Button 
+                      className="bg-purple-500 hover:bg-purple-600 text-white px-8 py-2"
+                      onClick={handleUpgradeClick}
+                    >
                       Upgrade to Pro Plan - ₹199
                     </Button>
                   </div>
@@ -1458,6 +1464,41 @@ export default function Results() {
           </div>
         </div>
       </div>
+
+      {/* Pricing Plans Modal */}
+      {showPricingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Choose Your Plan</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPricingModal(false)}
+                >
+                  ×
+                </Button>
+              </div>
+              <PricingPlans
+                onPlanSelect={handlePlanSelect}
+                canUseFree={false}
+                freeUsageCount={0}
+                isFormValid={true}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={handlePaymentClose}
+        selectedPlan={selectedPlan}
+        location={analysis?.location || null}
+        propertyData={null}
+      />
     </div>
   );
 }
