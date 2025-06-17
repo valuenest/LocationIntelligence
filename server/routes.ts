@@ -325,15 +325,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const allPlaces: PlaceDetails[] = [];
       
-      // Search for places in batches to avoid overwhelming the API
-      for (const type of placeTypes) {
+      // Search for places in optimized batches to avoid API timeouts
+      const priorityTypes = ['restaurant', 'hospital', 'school', 'bank', 'store', 'gas_station', 'park', 'transit_station'];
+      const searchTypes = priorityTypes.slice(0, 8); // Limit to 8 most important types
+      
+      for (const type of searchTypes) {
         try {
-          const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=50000&type=${type}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+          const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=10000&type=${type}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
           const response = await fetch(url);
           const data = await response.json();
           
           if (data.status === 'OK' && data.results) {
-            const places = data.results.slice(0, 5).map((place: any) => ({
+            const places = data.results.slice(0, 3).map((place: any) => ({
               place_id: place.place_id,
               name: place.name,
               vicinity: place.vicinity || place.formatted_address || '',
@@ -344,8 +347,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             allPlaces.push(...places);
           }
           
-          // Rate limiting
-          await new Promise(resolve => setTimeout(resolve, 50));
+          // Reduced rate limiting for faster processing
+          await new Promise(resolve => setTimeout(resolve, 100));
         } catch (error) {
           console.error(`Error searching for ${type}:`, error);
         }
