@@ -694,12 +694,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dist.distance.value > 500000 // More than 500km indicates API error
       );
       
-      // If API errors, use basic place count and address analysis
+      // Enhanced desert detection - more lenient for business districts
       const isDesertOrRemote = !hasDistanceErrors ? (
-        result.nearbyPlaces.length < 8 || 
-        totalInfrastructure < 6 || 
-        infrastructureScores.essential.close < 2 || 
-        infrastructureScores.connectivity < 20
+        result.nearbyPlaces.length < 3 || 
+        (totalInfrastructure < 2 && infrastructureScores.essential.total < 1) ||
+        (infrastructureScores.connectivity < 5 && infrastructureScores.commercial.total < 1 && infrastructureScores.essential.total < 1)
       ) : false; // Don't flag as desert if API has errors
       
       // Always check address-based desert detection
