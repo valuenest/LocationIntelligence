@@ -119,21 +119,30 @@ export default function PaymentModal({ isOpen, onClose, selectedPlan, location, 
         throw new Error(orderResult.error || 'Failed to create payment order');
       }
 
-      // Initiate Razorpay payment
-      await initiateRazorpayPayment({
-        orderId: orderResult.orderId,
-        amount: orderResult.amount,
-        currency: orderResult.currency,
-        key: orderResult.key,
-        analysisId: analysisResult.analysisId,
-        onSuccess: (sessionId: string) => {
-          onClose();
-          window.location.href = `/results/${sessionId}`;
-        },
-        onError: (error: string) => {
-          alert(`Payment failed: ${error}`);
-        },
+      // Temporary bypass: Skip payment and proceed directly to enhanced analysis
+      console.log('Bypassing payment for development - proceeding to enhanced analysis');
+      
+      // Simulate payment verification by calling the verify endpoint directly
+      const verifyResponse = await fetch('/api/verify-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentId: 'test_payment_bypass',
+          orderId: orderResult.orderId,
+          signature: 'test_signature',
+          analysisId: analysisResult.analysisId,
+        }),
       });
+
+      const verifyResult = await verifyResponse.json();
+      if (verifyResult.success) {
+        setIsLoading(false);
+        onClose();
+        window.location.href = `/results?sessionId=${verifyResult.sessionId}`;
+      } else {
+        setIsLoading(false);
+        alert('Analysis processing failed. Please try again.');
+      }
 
     } catch (error) {
       console.error('Payment error:', error);
@@ -230,17 +239,21 @@ export default function PaymentModal({ isOpen, onClose, selectedPlan, location, 
           <Button
             onClick={handlePayment}
             disabled={isLoading}
-            className="w-full bg-[#FF5A5F] hover:bg-[#e54852] text-white py-3 text-lg font-semibold"
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg font-semibold"
           >
             {isLoading ? (
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                Processing...
+                Processing Analysis...
               </div>
             ) : (
-              `Pay ₹${plan.price} & Get Analysis`
+              `Get Enhanced Analysis (Payment Bypassed)`
             )}
           </Button>
+          
+          <p className="text-center text-sm text-gray-500 mt-2">
+            Development Mode: Payment gateway temporarily bypassed
+          </p>
 
           <p className="text-xs text-gray-500 text-center">
             By proceeding, you agree to our Terms of Service and Privacy Policy. 
