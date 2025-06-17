@@ -107,12 +107,15 @@ export default function Home() {
       return;
     }
     
-    // Proceed with free analysis
-    if (selectedLocation) {
-      handleFreeAnalysis(data);
-    } else {
-      alert('Please select a location first');
+    // Always prompt user to select plan type first
+    // Scroll to pricing plans section to make it visible
+    const pricingSection = document.getElementById('pricing-plans');
+    if (pricingSection) {
+      pricingSection.scrollIntoView({ behavior: 'smooth' });
     }
+    
+    // Show message to select plan
+    alert('Please select your analysis plan below to proceed with the property analysis.');
   };
 
   const handlePropertySubmit = async (data: PropertyFormData) => {
@@ -242,12 +245,14 @@ export default function Home() {
       )}
 
       {/* Pricing Plans */}
-      <PricingPlans 
-        onPlanSelect={handlePlanSelect} 
-        canUseFree={canUseFree}
-        freeUsageCount={freeUsageCount}
-        isFormValid={!!selectedLocation && !!propertyData}
-      />
+      <div id="pricing-plans">
+        <PricingPlans 
+          onPlanSelect={handlePlanSelect} 
+          canUseFree={canUseFree}
+          freeUsageCount={freeUsageCount}
+          isFormValid={!!selectedLocation && !!propertyData}
+        />
+      </div>
 
       {/* Sample Analysis */}
       <SampleAnalysis />

@@ -158,7 +158,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (analysisRequest.status === "completed" && analysisRequest.results) {
-        return res.json(JSON.parse(analysisRequest.results));
+        const analysisData = JSON.parse(analysisRequest.results);
+        return res.json({
+          success: true,
+          analysis: {
+            id: analysisRequest.id,
+            sessionId: analysisRequest.sessionId,
+            location: typeof analysisRequest.location === 'string' 
+              ? JSON.parse(analysisRequest.location) 
+              : analysisRequest.location,
+            amount: analysisRequest.amount,
+            propertyType: analysisRequest.propertyType,
+            planType: analysisRequest.planType,
+            analysisData: analysisData,
+            createdAt: analysisRequest.createdAt
+          }
+        });
       }
 
       // Perform analysis
@@ -181,7 +196,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         results: JSON.stringify(result)
       });
 
-      res.json(result);
+      // Return wrapped result
+      res.json({
+        success: true,
+        analysis: {
+          id: analysisRequest.id,
+          sessionId: analysisRequest.sessionId,
+          location: location,
+          amount: analysisRequest.amount,
+          propertyType: analysisRequest.propertyType,
+          planType: analysisRequest.planType,
+          analysisData: result,
+          createdAt: analysisRequest.createdAt
+        }
+      });
     } catch (error) {
       console.error("Error getting analysis:", error);
       res.status(500).json({ error: "Internal server error" });
