@@ -538,11 +538,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         result.investmentRecommendation = "Good Investment Potential";
       }
       
-      // High-quality location image for pro tier
-      result.locationImageUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${location.lat},${location.lng}&zoom=17&size=600x500&maptype=satellite&markers=color:red%7C${location.lat},${location.lng}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+      // High-quality location image using Google Places Photo API
+      try {
+        const placesResponse = await fetch(
+          `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=500&type=establishment&key=${GOOGLE_MAPS_API_KEY}`
+        );
+        const placesData = await placesResponse.json();
+        
+        if (placesData.results && placesData.results.length > 0) {
+          const placeWithPhoto = placesData.results.find(place => place.photos && place.photos.length > 0);
+          if (placeWithPhoto && placeWithPhoto.photos[0]) {
+            result.locationImageUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=600&photoreference=${placeWithPhoto.photos[0].photo_reference}&key=${GOOGLE_MAPS_API_KEY}`;
+          }
+        }
+        
+        // Fallback to Street View if no photo found
+        if (!result.locationImageUrl) {
+          result.locationImageUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${location.lat},${location.lng}&heading=0&pitch=0&key=${GOOGLE_MAPS_API_KEY}`;
+        }
+      } catch (error) {
+        console.error('Error fetching location photo:', error);
+        result.locationImageUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${location.lat},${location.lng}&heading=0&pitch=0&key=${GOOGLE_MAPS_API_KEY}`;
+      }
       
       // Street View URL
-      result.streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x600&location=${location.lat},${location.lng}&heading=0&pitch=0&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+      result.streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x600&location=${location.lat},${location.lng}&heading=0&pitch=0&key=${GOOGLE_MAPS_API_KEY}`;
       
       // AI-powered investment recommendations
       try {

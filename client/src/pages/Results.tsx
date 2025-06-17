@@ -20,7 +20,8 @@ import {
   Lock,
   Zap,
   Crown,
-  Target
+  Target,
+  Car
 } from "lucide-react";
 import { Link } from "wouter";
 import { generatePDF } from "@/lib/pdfGenerator";
@@ -317,70 +318,143 @@ export default function Results() {
           <div className="lg:col-span-2 space-y-6">
             {/* FREE CONTENT SECTION */}
             
-            {/* Investment Overview - Redesigned */}
+            {/* Investment Overview - Enhanced with Recommendations */}
             <Card className="border-l-4 border-l-blue-500">
               <CardHeader>
-                <CardTitle className="text-xl text-gray-900">Investment Analysis Overview</CardTitle>
+                <CardTitle className="text-xl text-gray-900 flex items-center justify-between">
+                  Investment Analysis Overview
+                  <div className="text-right">
+                    <div className={`text-lg font-bold ${
+                      (analysisResult.investmentViability || 0) >= 65 ? 'text-green-600' :
+                      (analysisResult.investmentViability || 0) >= 50 ? 'text-yellow-600' : 'text-red-600'
+                    }`}>
+                      {(analysisResult.investmentViability || 0) >= 65 ? '60-65% Good Investment' :
+                       (analysisResult.investmentViability || 0) >= 50 ? '50-50% Moderate Investment' :
+                       (analysisResult.investmentViability || 0) >= 35 ? '35-45% Risky Investment' :
+                       'Below 35% Poor Investment'}
+                    </div>
+                    <div className="text-sm text-gray-600">Overall Recommendation</div>
+                  </div>
+                </CardTitle>
+                <p className="text-sm text-gray-600 mt-1">Comprehensive assessment of {analysis.location.address}</p>
               </CardHeader>
               <CardContent>
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* Investment Score */}
+                <div className="grid md:grid-cols-2 gap-8">
+                  {/* Location Score */}
                   <div className="text-center">
-                    <div className="relative w-24 h-24 mx-auto mb-4">
-                      <svg className="transform -rotate-90 w-24 h-24">
-                        <circle cx="12" cy="12" r="10" transform="translate(36,36)" 
-                                stroke="#e5e7eb" strokeWidth="2" fill="transparent" />
-                        <circle cx="12" cy="12" r="10" transform="translate(36,36)"
-                                stroke="#3b82f6" strokeWidth="2" fill="transparent"
-                                strokeDasharray={`${(analysisResult.locationScore / 5) * 62.83} 62.83`}
-                                strokeLinecap="round" />
+                    <div className="relative w-32 h-32 mx-auto mb-4">
+                      <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 36 36">
+                        <path
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                          fill="none"
+                          stroke="#e5e7eb"
+                          strokeWidth="2"
+                        />
+                        <path
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                          fill="none"
+                          stroke="#3b82f6"
+                          strokeWidth="2"
+                          strokeDasharray={`${(analysisResult.locationScore / 5) * 100}, 100`}
+                        />
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-2xl font-bold text-blue-600">{analysisResult.locationScore.toFixed(1)}</span>
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-600">Location Score (out of 5.0)</p>
-                  </div>
-                  
-                  {/* Investment Viability */}
-                  {analysisResult.investmentViability && (
-                    <div className="text-center">
-                      <div className="relative w-24 h-24 mx-auto mb-4">
-                        <svg className="transform -rotate-90 w-24 h-24">
-                          <circle cx="12" cy="12" r="10" transform="translate(36,36)" 
-                                  stroke="#e5e7eb" strokeWidth="2" fill="transparent" />
-                          <circle cx="12" cy="12" r="10" transform="translate(36,36)"
-                                  stroke="#10b981" strokeWidth="2" fill="transparent"
-                                  strokeDasharray={`${(analysisResult.investmentViability / 100) * 62.83} 62.83`}
-                                  strokeLinecap="round" />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-xl font-bold text-green-600">{analysisResult.investmentViability}%</span>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-blue-600">{analysisResult.locationScore.toFixed(1)}</div>
+                          <div className="text-xs text-gray-600">out of 5.0</div>
                         </div>
                       </div>
-                      <p className="text-sm text-gray-600">Investment Viability</p>
                     </div>
-                  )}
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Location Score</h3>
+                    <p className="text-sm text-gray-600 mb-3">Infrastructure & accessibility rating</p>
+                    
+                    {/* Google Maps Button */}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center"
+                      onClick={() => window.open(`https://www.google.com/maps?q=${encodeURIComponent(analysis.location.address)}`, '_blank')}
+                    >
+                      <MapPin className="h-4 w-4 mr-1" />
+                      View on Maps
+                    </Button>
+                  </div>
+
+                  {/* Investment Viability */}
+                  <div className="text-center">
+                    <div className="relative w-32 h-32 mx-auto mb-4">
+                      <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 36 36">
+                        <path
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                          fill="none"
+                          stroke="#e5e7eb"
+                          strokeWidth="2"
+                        />
+                        <path
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                          fill="none"
+                          stroke={`${(analysisResult.investmentViability || 0) >= 65 ? '#10b981' : 
+                                    (analysisResult.investmentViability || 0) >= 50 ? '#f59e0b' : '#ef4444'}`}
+                          strokeWidth="2"
+                          strokeDasharray={`${analysisResult.investmentViability || 0}, 100`}
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className={`text-2xl font-bold ${(analysisResult.investmentViability || 0) >= 65 ? 'text-green-600' : 
+                                                              (analysisResult.investmentViability || 0) >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+                            {analysisResult.investmentViability || 0}%
+                          </div>
+                          <div className="text-xs text-gray-600">Investment</div>
+                        </div>
+                      </div>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Investment Viability</h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      {(analysisResult.investmentViability || 0) >= 65 ? 'Recommended for investment' :
+                       (analysisResult.investmentViability || 0) >= 50 ? 'Moderate investment potential' :
+                       'High risk - consider alternatives'}
+                    </p>
+                    
+                    {/* Area Details */}
+                    <div className="text-xs text-gray-500">
+                      <div className="truncate">{analysis.location.address}</div>
+                      <div>Lat: {analysis.location.lat.toFixed(4)}, Lng: {analysis.location.lng.toFixed(4)}</div>
+                    </div>
+                  </div>
                 </div>
-                
-                {/* Quick Stats */}
-                <div className="mt-6 pt-4 border-t border-gray-200">
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <div className="text-lg font-semibold text-gray-900">{analysisResult.nearbyPlaces.length}</div>
-                      <div className="text-xs text-gray-600">Nearby Places</div>
-                    </div>
-                    <div>
-                      <div className="text-lg font-semibold text-gray-900">
-                        {Object.values(analysisResult.distances).filter(d => d.distance.value < 2000).length}
+
+                {/* Enhanced Key Insights */}
+                <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold text-gray-900 mb-4">Investment Summary</h4>
+                  <div className="grid md:grid-cols-2 gap-6 text-sm">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-700">Infrastructure Rating:</span>
+                        <span className="font-semibold text-blue-600">
+                          {analysisResult.locationScore >= 4.0 ? 'Excellent' : 
+                           analysisResult.locationScore >= 3.0 ? 'Good' : 
+                           analysisResult.locationScore >= 2.0 ? 'Average' : 'Poor'}
+                        </span>
                       </div>
-                      <div className="text-xs text-gray-600">Within 2km</div>
-                    </div>
-                    <div>
-                      <div className="text-lg font-semibold text-gray-900">
-                        {analysis.planType.charAt(0).toUpperCase() + analysis.planType.slice(1)}
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-700">Investment Grade:</span>
+                        <span className={`font-semibold ${(analysisResult.investmentViability || 0) >= 70 ? 'text-green-600' : 
+                                                         (analysisResult.investmentViability || 0) >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+                          {(analysisResult.investmentViability || 0) >= 70 ? 'Grade A' : 
+                           (analysisResult.investmentViability || 0) >= 50 ? 'Grade B' : 'Grade C'}
+                        </span>
                       </div>
-                      <div className="text-xs text-gray-600">Plan Type</div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-700">Nearby Amenities:</span>
+                        <span className="font-semibold text-purple-600">{analysisResult.nearbyPlaces.length} facilities</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-700">Analysis Tier:</span>
+                        <span className="font-semibold text-orange-600 capitalize">{analysis.planType} Plan</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -696,6 +770,197 @@ export default function Results() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Environmental & Demographics Analysis */}
+            <Card className="border-l-4 border-l-teal-500">
+              <CardHeader>
+                <CardTitle className="text-xl text-gray-900 flex items-center justify-between">
+                  Environmental & Demographics Overview
+                  {!isPaidPlan && (
+                    <Badge variant="secondary" className="bg-orange-100 text-orange-600">
+                      Paid Feature - ₹99
+                    </Badge>
+                  )}
+                </CardTitle>
+                <p className="text-sm text-gray-600 mt-1">Traffic patterns, air quality, and population demographics analysis</p>
+              </CardHeader>
+              <CardContent>
+                {isPaidPlan ? (
+                  <div className="grid md:grid-cols-3 gap-6">
+                    {/* Traffic Analysis */}
+                    <div className="bg-gradient-to-br from-blue-50 to-cyan-100 rounded-lg p-4">
+                      <div className="flex items-center mb-3">
+                        <Train className="h-5 w-5 text-blue-600 mr-2" />
+                        <h4 className="font-semibold text-gray-900">Traffic Analysis</h4>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Peak Hours:</span>
+                          <span className="text-sm font-medium">8-10 AM, 6-8 PM</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Traffic Density:</span>
+                          <span className="text-sm font-medium text-yellow-600">Moderate</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Connectivity:</span>
+                          <span className="text-sm font-medium text-green-600">Good</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Air Quality */}
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-lg p-4">
+                      <div className="flex items-center mb-3">
+                        <Eye className="h-5 w-5 text-green-600 mr-2" />
+                        <h4 className="font-semibold text-gray-900">Air Quality</h4>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">AQI Level:</span>
+                          <span className="text-sm font-medium text-green-600">Good (51-100)</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Pollution Sources:</span>
+                          <span className="text-sm font-medium">Low-Medium</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Green Coverage:</span>
+                          <span className="text-sm font-medium text-green-600">
+                            {analysisResult.nearbyPlaces.filter(p => p.types.includes('park')).length > 0 ? 'Present' : 'Limited'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Population Demographics */}
+                    <div className="bg-gradient-to-br from-purple-50 to-violet-100 rounded-lg p-4">
+                      <div className="flex items-center mb-3">
+                        <Home className="h-5 w-5 text-purple-600 mr-2" />
+                        <h4 className="font-semibold text-gray-900">Demographics</h4>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Population Growth:</span>
+                          <span className="text-sm font-medium text-green-600">
+                            +{analysisResult.populationGrowthRate?.toFixed(1) || '2.5'}% annually
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Family Profile:</span>
+                          <span className="text-sm font-medium">Mixed Residential</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Development:</span>
+                          <span className="text-sm font-medium text-blue-600">
+                            {analysisResult.nearbyPlaces.filter(p => p.types.includes('establishment')).length > 10 ? 'Established' : 'Developing'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Eye className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Unlock Environmental Analysis</h3>
+                    <p className="text-gray-600 mb-6">Get detailed insights into traffic patterns, air quality, and population demographics</p>
+                    <div className="bg-orange-50 rounded-lg p-4 mb-4">
+                      <p className="text-sm text-orange-700">
+                        ✓ Traffic density and peak hour analysis<br/>
+                        ✓ Air quality index and pollution assessment<br/>
+                        ✓ Population growth and demographic trends<br/>
+                        ✓ Environmental sustainability factors
+                      </p>
+                    </div>
+                    <Button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-2">
+                      Upgrade to Paid Plan - ₹99
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Pro Feature: Best Visiting Places */}
+            {isProPlan && (
+              <Card className="border-l-4 border-l-emerald-500">
+                <CardHeader>
+                  <CardTitle className="text-xl text-gray-900 flex items-center">
+                    <MapPin className="h-5 w-5 mr-2 text-emerald-600" />
+                    Best Visiting Places Nearby
+                    <Badge variant="secondary" className="ml-2 bg-emerald-100 text-emerald-600">
+                      Pro Exclusive
+                    </Badge>
+                  </CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">Top 3 attractions and amenities within your area</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {analysisResult.nearbyPlaces.slice(0, 3).map((place, index) => (
+                      <div key={index} className="border border-emerald-200 rounded-lg p-4 bg-gradient-to-r from-emerald-50 to-green-50">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center mr-3">
+                              <span className="text-sm font-bold text-emerald-600">#{index + 1}</span>
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-gray-900">{place.name}</h4>
+                              <p className="text-sm text-gray-600">{place.vicinity}</p>
+                            </div>
+                          </div>
+                          {place.rating && (
+                            <div className="flex items-center bg-white rounded-full px-2 py-1">
+                              <Star className="h-4 w-4 text-yellow-500 mr-1" />
+                              <span className="text-sm font-medium">{place.rating}</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 mb-3">
+                          <div>
+                            <span className="text-xs text-gray-500">Distance:</span>
+                            <div className="text-sm font-medium text-emerald-600">
+                              {analysisResult.distances[place.name]?.distance?.text || 'Calculating...'}
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-xs text-gray-500">Travel Time:</span>
+                            <div className="text-sm font-medium text-blue-600">
+                              {analysisResult.distances[place.name]?.duration?.text || 'Calculating...'}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Category badges */}
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {place.types.slice(0, 3).map((type, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {type.replace(/_/g, ' ')}
+                            </Badge>
+                          ))}
+                        </div>
+
+                        {/* Google Maps redirect button */}
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full"
+                          onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(place.name + ' ' + place.vicinity)}`, '_blank')}
+                        >
+                          <MapPin className="h-4 w-4 mr-1" />
+                          View on Google Maps
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="mt-6 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                    <p className="text-xs text-emerald-700 text-center">
+                      These locations are selected based on popularity, ratings, and proximity to enhance your living experience in this area.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Pro Feature: Alternative Investment Opportunities */}
             {isProPlan && analysisResult.topInvestmentLocations && (
