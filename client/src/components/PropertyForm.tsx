@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { IndianRupee, Home, Globe, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react";
-import { predictPropertyPrice, validateUserAmount, generateInvestmentAdvice } from "@/lib/pricePredictor";
+// Removed price validation imports
 
 interface PropertyFormData {
   amount: number;
