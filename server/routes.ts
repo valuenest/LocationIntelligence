@@ -458,16 +458,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       result.investmentViability = Math.max(5, Math.min(85, Math.round(viability)));
       
-      // Realistic Free tier growth statistics aligned with investment viability
-      if (result.investmentViability >= 45) {
-        result.businessGrowthRate = 3.0 + Math.random() * 2.5; // 3.0-5.5% for good locations
-        result.populationGrowthRate = 1.5 + Math.random() * 1.5; // 1.5-3.0% for good locations
+      // Deterministic growth rates based on actual location characteristics
+      const businessDensity = result.nearbyPlaces.filter(p => 
+        p.types.some(t => ['restaurant', 'shopping_mall', 'store', 'bank', 'gas_station'].includes(t))
+      ).length;
+      
+      const infrastructureDensity = result.nearbyPlaces.filter(p => 
+        p.types.some(t => ['school', 'hospital', 'subway_station', 'bus_station'].includes(t))
+      ).length;
+      
+      // Calculate growth based on real factors, not random numbers
+      if (result.investmentViability === 0) {
+        result.businessGrowthRate = 0.0; // No business activity in uninhabitable areas
+        result.populationGrowthRate = 0.0; // No population in uninhabitable areas
+        result.growthPrediction = -15.0; // Severe depreciation
+      } else if (result.investmentViability >= 45) {
+        result.businessGrowthRate = 2.5 + (businessDensity * 0.3); // Based on actual business density
+        result.populationGrowthRate = 1.2 + (infrastructureDensity * 0.2); // Based on infrastructure
+        result.growthPrediction = 8.0 + (result.locationScore * 2.0); // Positive growth
       } else if (result.investmentViability >= 25) {
-        result.businessGrowthRate = 0.5 + Math.random() * 2.0; // 0.5-2.5% for moderate locations
-        result.populationGrowthRate = 0.2 + Math.random() * 1.0; // 0.2-1.2% for moderate locations
+        result.businessGrowthRate = 0.8 + (businessDensity * 0.2);
+        result.populationGrowthRate = 0.4 + (infrastructureDensity * 0.1);
+        result.growthPrediction = 2.0 + (result.locationScore * 1.0);
       } else {
-        result.businessGrowthRate = -1.5 + Math.random() * 2.5; // -1.5 to 1.0% for poor locations
-        result.populationGrowthRate = -0.8 + Math.random() * 1.0; // -0.8 to 0.2% for poor locations
+        result.businessGrowthRate = -1.0 + (businessDensity * 0.1); // Negative for poor areas
+        result.populationGrowthRate = -0.5 + (infrastructureDensity * 0.1);
+        result.growthPrediction = -5.0 + (result.locationScore * 0.5); // Negative growth
       }
       
       // Realistic investment recommendations for free tier
@@ -607,16 +623,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       result.investmentViability = Math.max(5, Math.min(95, Math.round(viability)));
       
-      // Realistic growth statistics aligned with investment viability
-      if (result.investmentViability >= 55) {
-        result.businessGrowthRate = 4.5 + Math.random() * 3.0; // 4.5-7.5% for good locations
-        result.populationGrowthRate = 2.0 + Math.random() * 1.5; // 2.0-3.5% for good locations
+      // Deterministic growth rates based on actual location characteristics for paid tier
+      const businessDensity = result.nearbyPlaces.filter(p => 
+        p.types.some(t => ['restaurant', 'shopping_mall', 'store', 'bank', 'gas_station'].includes(t))
+      ).length;
+      
+      const infrastructureDensity = result.nearbyPlaces.filter(p => 
+        p.types.some(t => ['school', 'hospital', 'subway_station', 'bus_station'].includes(t))
+      ).length;
+      
+      // Calculate growth based on real factors for paid tier
+      if (result.investmentViability === 0) {
+        result.businessGrowthRate = 0.0;
+        result.populationGrowthRate = 0.0;
+      } else if (result.investmentViability >= 55) {
+        result.businessGrowthRate = 4.0 + (businessDensity * 0.4) + (essentialServices * 0.3);
+        result.populationGrowthRate = 1.8 + (infrastructureDensity * 0.25) + (closeEssentialServices * 0.2);
       } else if (result.investmentViability >= 35) {
-        result.businessGrowthRate = 1.5 + Math.random() * 2.0; // 1.5-3.5% for moderate locations
-        result.populationGrowthRate = 0.8 + Math.random() * 1.2; // 0.8-2.0% for moderate locations
+        result.businessGrowthRate = 1.2 + (businessDensity * 0.25) + (essentialServices * 0.15);
+        result.populationGrowthRate = 0.6 + (infrastructureDensity * 0.15) + (closeEssentialServices * 0.1);
       } else {
-        result.businessGrowthRate = -2.0 + Math.random() * 3.0; // -2.0 to 1.0% for poor locations
-        result.populationGrowthRate = -1.0 + Math.random() * 1.5; // -1.0 to 0.5% for poor locations
+        result.businessGrowthRate = -1.5 + (businessDensity * 0.15);
+        result.populationGrowthRate = -0.8 + (infrastructureDensity * 0.1);
       }
       
       // Realistic investment recommendations based on new scoring
@@ -772,16 +800,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       result.investmentViability = Math.max(5, Math.min(95, Math.round(viability)));
       
-      // Realistic Pro growth statistics aligned with investment viability
-      if (result.investmentViability >= 55) {
-        result.businessGrowthRate = 5.0 + Math.random() * 3.5; // 5.0-8.5% for good locations
-        result.populationGrowthRate = 2.5 + Math.random() * 2.0; // 2.5-4.5% for good locations
+      // Deterministic growth rates based on actual location characteristics for Pro tier
+      const businessDensity = result.nearbyPlaces.filter(p => 
+        p.types.some(t => ['restaurant', 'shopping_mall', 'store', 'bank', 'gas_station'].includes(t))
+      ).length;
+      
+      const infrastructureDensity = result.nearbyPlaces.filter(p => 
+        p.types.some(t => ['school', 'hospital', 'subway_station', 'bus_station'].includes(t))
+      ).length;
+      
+      const qualityFactor = amenityCount > 0 ? (qualityScore / amenityCount) - 3.5 : 0;
+      
+      // Calculate growth based on real factors for Pro tier
+      if (result.investmentViability === 0) {
+        result.businessGrowthRate = 0.0;
+        result.populationGrowthRate = 0.0;
+      } else if (result.investmentViability >= 55) {
+        result.businessGrowthRate = 4.5 + (businessDensity * 0.5) + (essentialServices * 0.4) + (qualityFactor * 0.8);
+        result.populationGrowthRate = 2.2 + (infrastructureDensity * 0.3) + (closeEssentialServices * 0.25) + (qualityFactor * 0.4);
       } else if (result.investmentViability >= 35) {
-        result.businessGrowthRate = 2.0 + Math.random() * 2.5; // 2.0-4.5% for moderate locations
-        result.populationGrowthRate = 1.0 + Math.random() * 1.5; // 1.0-2.5% for moderate locations
+        result.businessGrowthRate = 1.8 + (businessDensity * 0.3) + (essentialServices * 0.2) + (qualityFactor * 0.4);
+        result.populationGrowthRate = 0.9 + (infrastructureDensity * 0.2) + (closeEssentialServices * 0.15) + (qualityFactor * 0.2);
       } else {
-        result.businessGrowthRate = -3.0 + Math.random() * 4.0; // -3.0 to 1.0% for poor locations
-        result.populationGrowthRate = -1.5 + Math.random() * 2.0; // -1.5 to 0.5% for poor locations
+        result.businessGrowthRate = -2.0 + (businessDensity * 0.2) + (qualityFactor * 0.3);
+        result.populationGrowthRate = -1.0 + (infrastructureDensity * 0.15) + (qualityFactor * 0.2);
       }
       
       // Realistic Pro investment recommendations
