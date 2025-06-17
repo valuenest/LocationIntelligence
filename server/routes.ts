@@ -365,17 +365,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
 
     if (planType === 'free') {
-      // FREE TIER: Only 3 basic landmarks (school, hospital, metro)
-      const basicPlaceTypes = ['school', 'hospital', 'subway_station'];
-      const allBasicPlaces = await findNearbyPlaces(location.lat, location.lng, basicPlaceTypes);
-      
-      // Limit to exactly 3 places (one of each type if available)
-      const schoolPlace = allBasicPlaces.find(p => p.types.includes('school'));
-      const hospitalPlace = allBasicPlaces.find(p => p.types.includes('hospital'));
-      const metroPlace = allBasicPlaces.find(p => p.types.includes('subway_station'));
-      
-      result.nearbyPlaces = [schoolPlace, hospitalPlace, metroPlace].filter((place): place is PlaceDetails => place !== undefined);
+      // FREE TIER: Search for essential services - let real location data determine results
+      const basicPlaceTypes = ['school', 'hospital', 'subway_station', 'bus_station', 'shopping_mall', 'grocery_or_supermarket', 'restaurant', 'bank'];
+      result.nearbyPlaces = await findNearbyPlaces(location.lat, location.lng, basicPlaceTypes);
       result.distances = await calculateDistances(location, result.nearbyPlaces);
+      
+      // DEBUG: Log what we actually found
+      console.log(`\n=== FREE TIER DEBUG: ${location.address} ===`);
+      console.log(`Total places found: ${result.nearbyPlaces.length}`);
+      console.log(`Places: ${result.nearbyPlaces.map(p => `${p.name} (${p.types[0]})`).join(', ')}`);
+      if (result.nearbyPlaces.length === 0) {
+        console.log('NO PLACES FOUND - This should be a desert/remote location!');
+      }
       
       // STRICT Geographic validation - reject desert/remote locations
       let score = 0.0;
@@ -401,12 +402,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // DESERT/REMOTE LOCATION DETECTION: Zero infrastructure = 0% recommendation
+      console.log(`FREE TIER - Close essential services: ${closeEssentialServices}, Total places: ${result.nearbyPlaces.length}`);
+      console.log(`FREE TIER - Essential services breakdown - School: ${hasSchool}, Hospital: ${hasHospital}, Transport: ${hasTransport}, Shopping: ${hasShopping}`);
+      
       if (result.nearbyPlaces.length === 0 || closeEssentialServices === 0) {
+        console.log('FREE TIER - DETECTED UNINHABITABLE LOCATION - Returning 0% across all metrics');
         result.locationScore = 0.0;
         result.investmentViability = 0;
-        result.growthPrediction = -10; // Negative growth for uninhabitable areas
-        result.businessGrowthRate = -5.0;
-        result.populationGrowthRate = -3.0;
+        result.growthPrediction = -15; // Severe depreciation
+        result.businessGrowthRate = 0.0; // No business activity
+        result.populationGrowthRate = 0.0; // No population
         result.investmentRecommendation = "Uninhabitable Location - 0% Investment Potential";
         return result;
       }
@@ -458,6 +463,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       result.investmentViability = Math.max(5, Math.min(85, Math.round(viability)));
       
+      console.log(`FREE TIER - Final viability: ${result.investmentViability}%, Location score: ${result.locationScore}/5`);
+      
       // Deterministic growth rates based on actual location characteristics
       const businessDensity = result.nearbyPlaces.filter(p => 
         p.types.some(t => ['restaurant', 'shopping_mall', 'store', 'bank', 'gas_station'].includes(t))
@@ -485,6 +492,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         result.populationGrowthRate = -0.5 + (infrastructureDensity * 0.1);
         result.growthPrediction = -5.0 + (result.locationScore * 0.5); // Negative growth
       }
+      
+      console.log(`FREE TIER - Final metrics: Business Growth: ${result.businessGrowthRate.toFixed(1)}%, Population Growth: ${result.populationGrowthRate.toFixed(1)}%, Property Growth: ${result.growthPrediction.toFixed(1)}%`);
       
       // Realistic investment recommendations for free tier
       if (result.investmentViability >= 65) {
