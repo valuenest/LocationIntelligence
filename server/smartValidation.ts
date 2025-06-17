@@ -115,7 +115,7 @@ async function validatePropertyPrice(data: ValidationRequest) {
   
   // Calculate expected price range based on location and property details
   const cityTier = getCityTier(location.address);
-  const baseRates = getBaseRates(cityTier, propertyData.country);
+  const baseRates = getBaseRates(cityTier, propertyData.country, propertyData.propertyType);
   
   // Calculate expected price per sqft
   const sizeInSqFt = propertyData.sizeUnit === 'sqm' ? 
@@ -127,12 +127,13 @@ async function validatePropertyPrice(data: ValidationRequest) {
   const userPrice = propertyData.amount;
   const issues = [];
   
-  if (userPrice < expectedMinPrice * 0.3) {
-    issues.push(`Property price ₹${userPrice.toLocaleString()} seems unusually low for ${location.address}. Expected range: ₹${expectedMinPrice.toLocaleString()} - ₹${expectedMaxPrice.toLocaleString()}`);
+  // More realistic validation thresholds
+  if (userPrice < expectedMinPrice * 0.5) {
+    issues.push(`Property price ₹${userPrice.toLocaleString()} seems unusually low for a ${propertyData.propertyType} in ${location.address}. Expected range: ₹${expectedMinPrice.toLocaleString()} - ₹${expectedMaxPrice.toLocaleString()}`);
   }
   
-  if (userPrice > expectedMaxPrice * 3) {
-    issues.push(`Property price ₹${userPrice.toLocaleString()} seems unusually high for ${location.address}. Expected range: ₹${expectedMinPrice.toLocaleString()} - ₹${expectedMaxPrice.toLocaleString()}`);
+  if (userPrice > expectedMaxPrice * 2) {
+    issues.push(`Property price ₹${userPrice.toLocaleString()} seems unusually high for a ${propertyData.propertyType} in ${location.address}. Expected range: ₹${expectedMinPrice.toLocaleString()} - ₹${expectedMaxPrice.toLocaleString()}`);
   }
   
   return {
@@ -239,16 +240,37 @@ function getCityTier(address: string): 'tier1' | 'tier2' | 'tier3' | 'rural' {
   return 'tier3';
 }
 
-function getBaseRates(cityTier: string, country: string) {
-  // Base rates per sqft in INR
-  const rates = {
-    tier1: { min: 8000, max: 25000 },
-    tier2: { min: 4000, max: 12000 },
-    tier3: { min: 2000, max: 6000 },
-    rural: { min: 500, max: 2000 }
+function getBaseRates(cityTier: string, country: string, propertyType: string) {
+  // Base rates per sqft in INR based on property type and location
+  const rates: any = {
+    tier1: {
+      'apartment': { min: 8000, max: 20000 },
+      'villa': { min: 12000, max: 35000 },
+      'plot': { min: 4000, max: 15000 },
+      'commercial': { min: 15000, max: 50000 }
+    },
+    tier2: {
+      'apartment': { min: 3000, max: 8000 },
+      'villa': { min: 5000, max: 15000 },
+      'plot': { min: 1500, max: 5000 },
+      'commercial': { min: 8000, max: 25000 }
+    },
+    tier3: {
+      'apartment': { min: 1500, max: 4000 },
+      'villa': { min: 2500, max: 8000 },
+      'plot': { min: 800, max: 3000 },
+      'commercial': { min: 4000, max: 12000 }
+    },
+    rural: {
+      'apartment': { min: 500, max: 1500 },
+      'villa': { min: 800, max: 2500 },
+      'plot': { min: 200, max: 1000 },
+      'commercial': { min: 1000, max: 4000 }
+    }
   };
   
-  return rates[cityTier as keyof typeof rates] || rates.tier3;
+  const tierRates = rates[cityTier as keyof typeof rates] || rates.tier3;
+  return tierRates[propertyType] || tierRates['apartment'];
 }
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {

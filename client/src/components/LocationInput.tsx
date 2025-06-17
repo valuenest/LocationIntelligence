@@ -81,10 +81,11 @@ export default function LocationInput({ onLocationSelect, selectedLocation }: Lo
     if (isLoaded && mapRef.current && window.google) {
       const map = new window.google.maps.Map(mapRef.current, {
         center: { lat: 28.6139, lng: 77.2090 }, // Delhi coordinates
-        zoom: 10,
-        mapTypeControl: false,
-        streetViewControl: false,
+        zoom: 18, // Plot-level zoom for precise location selection
+        mapTypeControl: true,
+        streetViewControl: true,
         fullscreenControl: false,
+        mapTypeId: 'satellite', // Satellite view for better plot identification
       });
 
       const marker = new window.google.maps.Marker({

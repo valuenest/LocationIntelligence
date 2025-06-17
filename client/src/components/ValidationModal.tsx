@@ -52,8 +52,11 @@ export default function ValidationModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             {getRiskIcon(validation.riskLevel)}
-            Smart Analysis Results
+            Input Validation Check
           </DialogTitle>
+          <p className="text-sm text-gray-600 mt-2">
+            Quick verification of your inputs before generating the detailed analysis report
+          </p>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -97,20 +100,13 @@ export default function ValidationModal({
             </div>
           )}
 
-          {/* Recommendations Section */}
-          {validation.recommendations.length > 0 && (
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <Lightbulb className="h-5 w-5 text-blue-500" />
-                Recommendations ({validation.recommendations.length})
-              </h4>
-              <div className="space-y-2">
-                {validation.recommendations.map((recommendation, index) => (
-                  <div key={index} className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <p className="text-sm text-blue-800">{recommendation}</p>
-                  </div>
-                ))}
-              </div>
+          {/* Note for issues */}
+          {validation.issues.length > 0 && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <p className="text-sm text-yellow-800">
+                <strong>Note:</strong> These issues may affect the accuracy of your analysis. 
+                You can proceed to generate the report, but consider reviewing your inputs for better results.
+              </p>
             </div>
           )}
 
@@ -134,10 +130,10 @@ export default function ValidationModal({
                 }`}
                 disabled={isLoading}
               >
-                {isLoading ? 'Generating Report...' : 
-                 validation.riskLevel === 'high' ? 'Proceed Anyway (Not Recommended)' :
-                 validation.riskLevel === 'medium' ? 'Proceed with Caution' :
-                 'Generate Report'}
+                {isLoading ? 'Generating Analysis Report...' : 
+                 validation.riskLevel === 'high' ? 'Continue to Analysis (Not Recommended)' :
+                 validation.riskLevel === 'medium' ? 'Continue to Analysis' :
+                 'Continue to Analysis'}
               </Button>
             )}
           </div>
