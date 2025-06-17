@@ -507,13 +507,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Advanced growth prediction with AI insights
       const infraScore = Math.min(100, amenityCount * 4);
-      const qualityBonus = (qualityScore / amenityCount - 3.5) * 10;
+      const qualityBonus = amenityCount > 0 ? (qualityScore / amenityCount - 3.5) * 10 : 0;
       const connectivityBonus = result.nearbyPlaces.some(p => p.types.includes('subway_station')) ? 20 : 0;
       const commercialDensity = result.nearbyPlaces.filter(p => 
         p.types.includes('shopping_mall') || p.types.includes('restaurant') || 
         p.types.includes('bank')).length * 2;
       
-      result.growthPrediction = Math.min(45, 10 + infraScore/4 + qualityBonus + connectivityBonus + commercialDensity);
+      result.growthPrediction = Math.max(8.5, Math.min(45, 10 + infraScore/4 + qualityBonus + connectivityBonus + commercialDensity));
       
       // Premium investment viability for pro tier
       let viability = 60; // Highest base for pro

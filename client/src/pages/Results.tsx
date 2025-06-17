@@ -418,7 +418,7 @@ export default function Results() {
                 {isPaidPlan ? (
                   <>
                     <div className="text-center mb-4">
-                      <span className="text-4xl font-bold text-green-600">+{analysisResult.growthPrediction.toFixed(2)}%</span>
+                      <span className="text-4xl font-bold text-green-600">+{analysisResult.growthPrediction?.toFixed(2) || '0.00'}%</span>
                       <p className="text-gray-600">Expected appreciation in 3 years</p>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-4 mb-4">
@@ -438,11 +438,11 @@ export default function Results() {
                     {analysisResult.businessGrowthRate && analysisResult.populationGrowthRate && (
                       <div className="grid grid-cols-2 gap-4 mb-4">
                         <div className="bg-blue-50 rounded-lg p-3 text-center">
-                          <div className="text-lg font-bold text-blue-600">{analysisResult.businessGrowthRate.toFixed(2)}%</div>
+                          <div className="text-lg font-bold text-blue-600">{analysisResult.businessGrowthRate?.toFixed(2) || '0.00'}%</div>
                           <div className="text-xs text-blue-700">Annual Business Growth</div>
                         </div>
                         <div className="bg-purple-50 rounded-lg p-3 text-center">
-                          <div className="text-lg font-bold text-purple-600">{analysisResult.populationGrowthRate.toFixed(2)}%</div>
+                          <div className="text-lg font-bold text-purple-600">{analysisResult.populationGrowthRate?.toFixed(2) || '0.00'}%</div>
                           <div className="text-xs text-purple-700">Annual Population Growth</div>
                         </div>
                       </div>
