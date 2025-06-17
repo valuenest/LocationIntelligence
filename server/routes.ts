@@ -140,25 +140,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     const places: PlaceDetails[] = [];
     
-    for (const type of types) {
-      try {
-        const response = await fetch(
-          `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=50000&type=${type}&key=${GOOGLE_MAPS_API_KEY}`
-        );
-        const data = await response.json();
-        
-        if (data.status === 'OK' && data.results.length > 0) {
-          places.push(...data.results.slice(0, 3).map((place: any) => ({
+    try {
+      // Single comprehensive search to reduce API calls
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=25000&key=${GOOGLE_MAPS_API_KEY}`
+      );
+      const data = await response.json();
+      
+      console.log(`Places API Response Status: ${data.status}, Results: ${data.results?.length || 0}`);
+      
+      if (data.status === 'OVER_QUERY_LIMIT') {
+        console.error('Google Places API quota exceeded - implementing fallback logic');
+        // Return empty array to trigger desert detection logic
+        return [];
+      }
+      
+      if (data.status === 'OK' && data.results.length > 0) {
+        // Filter and categorize results by type
+        const filteredPlaces = data.results
+          .filter((place: any) => place.types.some((type: string) => types.includes(type)))
+          .slice(0, 20) // Limit to prevent overwhelming analysis
+          .map((place: any) => ({
             place_id: place.place_id,
             name: place.name,
-            vicinity: place.vicinity,
-            rating: place.rating,
+            vicinity: place.vicinity || place.formatted_address || 'Nearby',
+            rating: place.rating || 3.5,
             types: place.types,
-          })));
-        }
-      } catch (error) {
-        console.error(`Error finding ${type} places:`, error);
+          }));
+        
+        places.push(...filteredPlaces);
+        console.log(`Found ${places.length} relevant places for analysis`);
+      } else if (data.status === 'ZERO_RESULTS') {
+        console.log('Zero results - likely remote/desert location');
+      } else {
+        console.log(`Places API returned status: ${data.status}`);
       }
+    } catch (error) {
+      console.error('Error finding places:', error);
+      return []; // Return empty to trigger desert detection
     }
     
     return places;
@@ -170,13 +189,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
-      const destinationCoords = destinations.map(dest => `${dest.vicinity}`).join('|');
+      // Use vicinity addresses for distance calculation
+      const destinationCoords = destinations.slice(0, 10).map(dest => {
+        return dest.vicinity || 'Unknown Location';
+      }).join('|');
+      
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origin.lat},${origin.lng}&destinations=${encodeURIComponent(destinationCoords)}&key=${GOOGLE_MAPS_API_KEY}`
       );
       const data = await response.json();
       
+      console.log(`Distance Matrix API Status: ${data.status}`);
+      
       const distances: Record<string, DistanceData> = {};
+      
+      if (data.status === 'OVER_QUERY_LIMIT') {
+        console.error('Distance Matrix API quota exceeded - returning empty distances');
+        // Return empty to indicate no distance data available
+        return {};
+      }
       
       if (data.status === 'OK' && data.rows.length > 0) {
         data.rows[0].elements.forEach((element: any, index: number) => {
@@ -186,6 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               duration: element.duration,
             };
           }
+          // Skip places where distance calculation failed
         });
       }
       
