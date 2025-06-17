@@ -38,11 +38,11 @@ export async function performSmartValidation(data: ValidationRequest): Promise<V
     // First, check location viability using Google Places
     const locationCheck = await checkLocationViability(data.location);
     
-    // Then validate property price against market rates
-    const priceCheck = await validatePropertyPrice(data);
+    // Then validate property type compatibility with location
+    const typeCheck = await validatePropertyTypeCompatibility(data);
     
     // Combine all validation results
-    const validationResult = await performComprehensiveValidation(data, locationCheck, priceCheck);
+    const validationResult = await performComprehensiveValidation(data, locationCheck, typeCheck);
     
     return validationResult;
   } catch (error) {
@@ -66,15 +66,21 @@ async function checkLocationViability(location: { lat: number; lng: number; addr
     
     const data = await response.json();
     
-    // Check for water bodies, forests, rivers, etc.
+    // Check for water bodies, forests, government areas, etc.
     const unbuildableTypes = [
       'natural_feature', 'park', 'campground', 'rv_park', 
-      'national_park', 'zoo', 'aquarium', 'cemetery'
+      'national_park', 'zoo', 'aquarium', 'cemetery',
+      'establishment', 'political' // Government buildings/areas
+    ];
+    
+    const governmentRestrictedTypes = [
+      'government_office', 'local_government_office', 'courthouse',
+      'police', 'fire_station', 'military_base', 'embassy'
     ];
     
     const restrictedTypes = [
       'airport', 'bus_station', 'subway_station', 'train_station',
-      'gas_station', 'hospital', 'police', 'fire_station'
+      'gas_station', 'hospital'
     ];
     
     const nearbyPlaces = data.results || [];
@@ -85,7 +91,11 @@ async function checkLocationViability(location: { lat: number; lng: number; addr
       const types = place.types || [];
       
       if (types.some((type: string) => unbuildableTypes.includes(type))) {
-        issues.push(`Location appears to be near ${place.name} which may be unbuildable`);
+        issues.push(`Location appears to be near ${place.name} which may be unbuildable or protected area`);
+      }
+      
+      if (types.some((type: string) => governmentRestrictedTypes.includes(type))) {
+        issues.push(`This area contains ${place.name} - government property where private construction may be prohibited`);
       }
       
       if (types.some((type: string) => restrictedTypes.includes(type)) && place.geometry?.location) {
@@ -110,76 +120,76 @@ async function checkLocationViability(location: { lat: number; lng: number; addr
   }
 }
 
-async function validatePropertyPrice(data: ValidationRequest) {
+async function validatePropertyTypeCompatibility(data: ValidationRequest) {
   const { location, propertyData } = data;
-  
-  // Calculate expected price range based on location and property details
-  const cityTier = getCityTier(location.address);
-  const baseRates = getBaseRates(cityTier, propertyData.country, propertyData.propertyType);
-  
-  // Calculate expected price per sqft
-  const sizeInSqFt = propertyData.sizeUnit === 'sqm' ? 
-    propertyData.propertySize * 10.764 : propertyData.propertySize;
-  
-  const expectedMinPrice = baseRates.min * sizeInSqFt;
-  const expectedMaxPrice = baseRates.max * sizeInSqFt;
-  
-  const userPrice = propertyData.amount;
   const issues = [];
   
-  // More realistic validation thresholds
-  if (userPrice < expectedMinPrice * 0.5) {
-    issues.push(`Property price ₹${userPrice.toLocaleString()} seems unusually low for a ${propertyData.propertyType} in ${location.address}. Expected range: ₹${expectedMinPrice.toLocaleString()} - ₹${expectedMaxPrice.toLocaleString()}`);
+  // Check property type compatibility with location
+  if (propertyData.propertyType === 'villa' || propertyData.propertyType === 'house') {
+    // Houses/villas should not be in commercial or industrial areas
+    const address = location.address.toLowerCase();
+    if (address.includes('industrial') || address.includes('commercial zone') || address.includes('market')) {
+      issues.push(`You have selected "${propertyData.propertyType}" but the location appears to be in a commercial/industrial area. Consider selecting "commercial" property type instead.`);
+    }
   }
   
-  if (userPrice > expectedMaxPrice * 2) {
-    issues.push(`Property price ₹${userPrice.toLocaleString()} seems unusually high for a ${propertyData.propertyType} in ${location.address}. Expected range: ₹${expectedMinPrice.toLocaleString()} - ₹${expectedMaxPrice.toLocaleString()}`);
+  if (propertyData.propertyType === 'plot') {
+    // Plots are fine in most areas, just warn about restrictions
+    const address = location.address.toLowerCase();
+    if (address.includes('reserved') || address.includes('government')) {
+      issues.push(`This appears to be a government or reserved area. Plot development may have restrictions or may not be permitted.`);
+    }
+  }
+  
+  if (propertyData.propertyType === 'commercial') {
+    // Commercial properties should ideally be in commercial zones
+    const address = location.address.toLowerCase();
+    if (address.includes('residential') && !address.includes('mixed')) {
+      issues.push(`You have selected "commercial" property but this appears to be a residential area. Commercial activities may be restricted here.`);
+    }
   }
   
   return {
-    isRealistic: issues.length === 0,
+    isCompatible: issues.length === 0,
     issues,
-    expectedRange: { min: expectedMinPrice, max: expectedMaxPrice },
-    confidence: Math.min(100, Math.max(0, 100 - (issues.length * 30)))
+    confidence: Math.min(100, Math.max(0, 100 - (issues.length * 25)))
   };
 }
 
 async function performComprehensiveValidation(
   data: ValidationRequest, 
   locationCheck: any, 
-  priceCheck: any
+  typeCheck: any
 ): Promise<ValidationResult> {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     
     const prompt = `
-    As a real estate expert, analyze this property investment for potential issues:
+    As a real estate expert, analyze this property selection for location and type compatibility:
     
     Location: ${data.location.address} (${data.location.lat}, ${data.location.lng})
-    Property: ${data.propertyData.propertyType}
-    Price: ₹${data.propertyData.amount.toLocaleString()}
+    Selected Property Type: ${data.propertyData.propertyType}
     Size: ${data.propertyData.propertySize} ${data.propertyData.sizeUnit}
-    Age: ${data.propertyData.propertyAge}
-    Bedrooms: ${data.propertyData.bedrooms}
     
-    Location Analysis Issues: ${locationCheck.issues.join(', ') || 'None'}
-    Price Analysis Issues: ${priceCheck.issues.join(', ') || 'None'}
+    Location Issues: ${locationCheck.issues.join(', ') || 'None'}
+    Property Type Issues: ${typeCheck.issues.join(', ') || 'None'}
+    
+    Focus on these key concerns:
+    1. Is this location suitable for the selected property type?
+    2. Are there government restrictions or forest/water body issues?
+    3. Is the property type appropriate for this area?
+    4. Any zoning or legal concerns?
     
     Provide a JSON response with:
     {
       "isValid": boolean,
       "issues": ["list of specific issues"],
-      "recommendations": ["list of actionable recommendations"],
       "riskLevel": "low|medium|high",
       "confidence": number (0-100),
-      "reasoning": "brief explanation"
+      "reasoning": "brief explanation of main concerns"
     }
     
-    Consider:
-    1. Is this location buildable for residential/commercial property?
-    2. Is the price realistic for the area and property specifications?
-    3. Are there any red flags in the property details?
-    4. What recommendations would you give?
+    Do not include price analysis or recommendations in this validation.
     `;
     
     const result = await model.generateContent(prompt);
@@ -194,24 +204,24 @@ async function performComprehensiveValidation(
       // Combine with our technical checks
       const allIssues = [
         ...locationCheck.issues,
-        ...priceCheck.issues,
+        ...typeCheck.issues,
         ...validation.issues
       ];
       
       return {
         isValid: allIssues.length === 0 && validation.isValid,
         issues: allIssues,
-        recommendations: validation.recommendations || [],
+        recommendations: [], // Removed recommendations from validation
         riskLevel: allIssues.length > 3 ? 'high' : allIssues.length > 1 ? 'medium' : 'low',
-        confidence: Math.min(validation.confidence, priceCheck.confidence)
+        confidence: Math.min(validation.confidence, typeCheck.confidence)
       };
     }
     
     // Fallback if JSON parsing fails
     return {
-      isValid: locationCheck.isViable && priceCheck.isRealistic,
-      issues: [...locationCheck.issues, ...priceCheck.issues],
-      recommendations: ['Please verify property details and location suitability'],
+      isValid: locationCheck.isViable && typeCheck.isCompatible,
+      issues: [...locationCheck.issues, ...typeCheck.issues],
+      recommendations: [],
       riskLevel: 'medium',
       confidence: 50
     };
@@ -228,50 +238,7 @@ async function performComprehensiveValidation(
   }
 }
 
-function getCityTier(address: string): 'tier1' | 'tier2' | 'tier3' | 'rural' {
-  const tier1Cities = ['mumbai', 'delhi', 'bangalore', 'hyderabad', 'pune', 'chennai', 'kolkata', 'ahmedabad'];
-  const tier2Cities = ['jaipur', 'lucknow', 'kanpur', 'nagpur', 'indore', 'thane', 'bhopal', 'visakhapatnam', 'patna', 'vadodara'];
-  
-  const lowerAddress = address.toLowerCase();
-  
-  if (tier1Cities.some(city => lowerAddress.includes(city))) return 'tier1';
-  if (tier2Cities.some(city => lowerAddress.includes(city))) return 'tier2';
-  if (lowerAddress.includes('village') || lowerAddress.includes('rural')) return 'rural';
-  return 'tier3';
-}
 
-function getBaseRates(cityTier: string, country: string, propertyType: string) {
-  // Base rates per sqft in INR based on property type and location
-  const rates: any = {
-    tier1: {
-      'apartment': { min: 8000, max: 20000 },
-      'villa': { min: 12000, max: 35000 },
-      'plot': { min: 4000, max: 15000 },
-      'commercial': { min: 15000, max: 50000 }
-    },
-    tier2: {
-      'apartment': { min: 3000, max: 8000 },
-      'villa': { min: 5000, max: 15000 },
-      'plot': { min: 1500, max: 5000 },
-      'commercial': { min: 8000, max: 25000 }
-    },
-    tier3: {
-      'apartment': { min: 1500, max: 4000 },
-      'villa': { min: 2500, max: 8000 },
-      'plot': { min: 800, max: 3000 },
-      'commercial': { min: 4000, max: 12000 }
-    },
-    rural: {
-      'apartment': { min: 500, max: 1500 },
-      'villa': { min: 800, max: 2500 },
-      'plot': { min: 200, max: 1000 },
-      'commercial': { min: 1000, max: 4000 }
-    }
-  };
-  
-  const tierRates = rates[cityTier as keyof typeof rates] || rates.tier3;
-  return tierRates[propertyType] || tierRates['apartment'];
-}
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // Radius of the Earth in kilometers

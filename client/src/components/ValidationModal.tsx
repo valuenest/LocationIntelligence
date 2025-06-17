@@ -75,10 +75,10 @@ export default function ValidationModal({
               </div>
               <p className="text-sm">
                 {validation.riskLevel === 'high' ? 
-                  'Significant issues detected that may prevent successful property investment.' :
+                  'Property type and location compatibility issues detected.' :
                   validation.riskLevel === 'medium' ?
-                  'Some concerns identified that should be considered before proceeding.' :
-                  'Your inputs appear realistic and suitable for analysis.'}
+                  'Some property type or location concerns identified.' :
+                  'Property type and location appear compatible for analysis.'}
               </p>
             </CardContent>
           </Card>
@@ -104,8 +104,8 @@ export default function ValidationModal({
           {validation.issues.length > 0 && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
               <p className="text-sm text-yellow-800">
-                <strong>Note:</strong> These issues may affect the accuracy of your analysis. 
-                You can proceed to generate the report, but consider reviewing your inputs for better results.
+                <strong>Note:</strong> Property type and location compatibility issues detected. 
+                You can proceed to generate the analysis, but consider if the selected property type matches the location.
               </p>
             </div>
           )}
