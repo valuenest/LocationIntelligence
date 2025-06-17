@@ -1,0 +1,145 @@
+📌 Project Name (Suggested): Value Next AI– A Real Estate Location Intelligence Tool
+
+
+
+Payments: Razorpay integration (I will provide keys)
+
+APIs: Google Maps Platform (only triggered based on plan)
+
+🧠 Core Idea:
+Build a single-page web app that lets users input or pin a location and amount they're paying for land/plot/property. The tool evaluates if it’s a good investment using Google Maps APIs. Offers three plans: Free, Paid (₹99), Pro (₹199).
+
+🖥️ Pages (1 Main Page + 1 Result Page for Paid/Pro)
+1️⃣ MAIN PAGE (Airbnb-like design):
+Hero section with brand name, tagline ("Smartest Way to Judge Land Value")
+
+2 input options:
+
+Pin on Map (Google Maps JS API)
+
+Enter Location Manually (Geocoding API)
+
+Field: “Enter the amount you are paying”
+
+Select dropdown: Type of property → Plot, Farm Land, House, Apartment, etc.
+
+CTA buttons:
+
+“Get Free Report”
+
+“Unlock Full Report – ₹99”
+
+“Get Investment Suggestions – ₹199”
+
+Minimalistic pricing box showing 3 plans (Free, Paid, Pro)
+
+Below: 3 cards showing sample analysis (non-clickable for teaser effect)
+
+2️⃣ RESULT PAGE (only if Paid or Pro is clicked and payment is done):
+Download PDF / Shareable Card (optional)
+
+Report generated using API results
+
+GPT-powered summary using ChatGPT API (optional, if added)
+
+🔐 PLAN TIERS & API Access Rules
+Tier	Features	APIs Used
+Free	- Show location
+- Show address
+- Distance to 3 landmarks (school, hospital, metro)	Maps JS API
+Geocoding API
+Places API
+Distance Matrix API
+Paid (₹99)	- Full analysis report
+- % growth prediction
+- Nearby developments
+- Visual scoring
+- Street View	+ Places Advanced
++ Distance Matrix (extended)
++ Street View API
++ Google Charts
+Pro (₹199)	All Paid features +
+AI-picked top 3 nearby investment locations within 25km
+Investment reasoning using AI	+ AI Logic Layer
++ Optional ChatGPT API
+
+📦 Logic Controls (Critical):
+Do NOT load any paid-tier API unless:
+
+Razorpay payment is completed
+
+Proper plan is selected
+
+Limit API calls by:
+
+Free: Max 3 uses/day per IP
+
+Paid/Pro: Unlimited
+
+All API usage must be scoped based on selected plan before loading scripts
+
+💰 Payment Flow
+Use Razorpay Checkout for ₹99 (Paid) and ₹199 (Pro)
+
+On payment success:
+
+Store session key (local/sessionStorage)
+
+Unlock corresponding APIs and redirect to Report page
+
+Show fallback if payment fails
+
+🎯 Bonus Suggestions (if time permits):
+Google Charts to show trend graphs in Paid
+
+Google Street View image for visual context
+
+Generate downloadable report card using JS/PDF
+
+Future: Add crime/traffic/air-quality APIs (not now)
+
+🧠 Custom Logic for Investment Decision:
+Based on:
+
+Distance to 5 key places
+
+Density of businesses via Places API
+
+Number of recent developments nearby
+
+Travel time analysis
+
+Result: Show rating (1 to 5 stars) and % expected appreciation
+
+🎨 Design & UX Guidelines:
+Follow Airbnb UI principles:
+
+Large clean fonts
+
+Soft shadows, pastel background
+
+Centered input box with icon
+
+Use Tailwind’s responsive grid
+
+CTAs: 3 buttons fixed at top/right based on screen size
+
+Add icon indicators for each report section
+
+📌 Domain / Brand Integration
+Show brand (e.g., PlotterAI) on top-left
+
+Footer: Contact | Disclaimer | Privacy | “No data saved”
+
+✅ Final Deliverables:
+Single-page front UI (responsive)
+
+Razorpay integrated with plan selector
+
+Smart API handling based on plan
+
+Modular report generation UI
+
+All text copy, tooltips, labels
+
+Optional: AI-powered summary with GPT if added later
