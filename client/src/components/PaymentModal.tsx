@@ -17,6 +17,13 @@ interface PropertyFormData {
   propertyType: string;
   currency: string;
   country: string;
+  propertySize: number;
+  sizeUnit: string;
+  propertyAge: string;
+  bedrooms: number;
+  furnished: string;
+  floor: string;
+  parkingSpaces: number;
 }
 
 interface PaymentModalProps {

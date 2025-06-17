@@ -10,6 +10,13 @@ interface PropertyFormData {
   propertyType: string;
   currency: string;
   country: string;
+  propertySize: number;
+  sizeUnit: string;
+  propertyAge: string;
+  bedrooms: number;
+  furnished: string;
+  floor: string;
+  parkingSpaces: number;
 }
 
 interface PropertyFormProps {
@@ -39,6 +46,13 @@ const countries: Country[] = [
 export default function PropertyForm({ onSubmit }: PropertyFormProps) {
   const [amount, setAmount] = useState<string>('');
   const [propertyType, setPropertyType] = useState<string>('');
+  const [propertySize, setPropertySize] = useState<string>('');
+  const [sizeUnit, setSizeUnit] = useState<string>('sqft');
+  const [propertyAge, setPropertyAge] = useState<string>('');
+  const [bedrooms, setBedrooms] = useState<string>('');
+  const [furnished, setFurnished] = useState<string>('');
+  const [floor, setFloor] = useState<string>('');
+  const [parkingSpaces, setParkingSpaces] = useState<string>('');
   const [selectedCountry, setSelectedCountry] = useState<Country>(countries[0]); // Default to India
 
   // Auto-detect country based on user's location
@@ -72,8 +86,8 @@ export default function PropertyForm({ onSubmit }: PropertyFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!amount || !propertyType) {
-      alert('Please fill in all fields');
+    if (!amount || !propertyType || !propertySize || !propertyAge || !bedrooms || !furnished || !floor || !parkingSpaces) {
+      alert('Please fill in all required fields');
       return;
     }
 
@@ -88,6 +102,13 @@ export default function PropertyForm({ onSubmit }: PropertyFormProps) {
       propertyType,
       currency: selectedCountry.currency,
       country: selectedCountry.name,
+      propertySize: parseFloat(propertySize),
+      sizeUnit,
+      propertyAge,
+      bedrooms: parseInt(bedrooms),
+      furnished,
+      floor,
+      parkingSpaces: parseInt(parkingSpaces),
     });
   };
 
@@ -156,6 +177,139 @@ export default function PropertyForm({ onSubmit }: PropertyFormProps) {
             <SelectItem value="apartment">Apartment</SelectItem>
             <SelectItem value="commercial">Commercial Space</SelectItem>
             <SelectItem value="warehouse">Warehouse</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Property Size */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="col-span-2">
+          <Label htmlFor="propertySize" className="text-lg font-medium text-gray-900 mb-3 block">
+            Property Size
+          </Label>
+          <Input
+            id="propertySize"
+            type="number"
+            placeholder="Enter size"
+            value={propertySize}
+            onChange={(e) => setPropertySize(e.target.value)}
+            className="w-full p-4 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A699] focus:border-transparent"
+            min="1"
+          />
+        </div>
+        <div>
+          <Label htmlFor="sizeUnit" className="text-lg font-medium text-gray-900 mb-3 block">
+            Unit
+          </Label>
+          <Select value={sizeUnit} onValueChange={setSizeUnit}>
+            <SelectTrigger id="sizeUnit" className="w-full p-4 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A699] focus:border-transparent">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="sqft">Sq Ft</SelectItem>
+              <SelectItem value="sqm">Sq Meter</SelectItem>
+              <SelectItem value="acres">Acres</SelectItem>
+              <SelectItem value="hectares">Hectares</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Property Details Grid */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Property Age */}
+        <div>
+          <Label htmlFor="propertyAge" className="text-lg font-medium text-gray-900 mb-3 block">
+            Property Age
+          </Label>
+          <Select value={propertyAge} onValueChange={setPropertyAge}>
+            <SelectTrigger id="propertyAge" className="w-full p-4 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A699] focus:border-transparent">
+              <SelectValue placeholder="Select age..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="new">Under Construction</SelectItem>
+              <SelectItem value="0-1">0-1 Years</SelectItem>
+              <SelectItem value="1-5">1-5 Years</SelectItem>
+              <SelectItem value="5-10">5-10 Years</SelectItem>
+              <SelectItem value="10-20">10-20 Years</SelectItem>
+              <SelectItem value="20+">20+ Years</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Bedrooms */}
+        <div>
+          <Label htmlFor="bedrooms" className="text-lg font-medium text-gray-900 mb-3 block">
+            Bedrooms
+          </Label>
+          <Select value={bedrooms} onValueChange={setBedrooms}>
+            <SelectTrigger id="bedrooms" className="w-full p-4 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A699] focus:border-transparent">
+              <SelectValue placeholder="Select..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">Studio/No Bedroom</SelectItem>
+              <SelectItem value="1">1 BHK</SelectItem>
+              <SelectItem value="2">2 BHK</SelectItem>
+              <SelectItem value="3">3 BHK</SelectItem>
+              <SelectItem value="4">4 BHK</SelectItem>
+              <SelectItem value="5">5+ BHK</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Furnished Status */}
+        <div>
+          <Label htmlFor="furnished" className="text-lg font-medium text-gray-900 mb-3 block">
+            Furnished Status
+          </Label>
+          <Select value={furnished} onValueChange={setFurnished}>
+            <SelectTrigger id="furnished" className="w-full p-4 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A699] focus:border-transparent">
+              <SelectValue placeholder="Select..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unfurnished">Unfurnished</SelectItem>
+              <SelectItem value="semi-furnished">Semi-Furnished</SelectItem>
+              <SelectItem value="fully-furnished">Fully Furnished</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Floor */}
+        <div>
+          <Label htmlFor="floor" className="text-lg font-medium text-gray-900 mb-3 block">
+            Floor
+          </Label>
+          <Select value={floor} onValueChange={setFloor}>
+            <SelectTrigger id="floor" className="w-full p-4 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A699] focus:border-transparent">
+              <SelectValue placeholder="Select..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ground">Ground Floor</SelectItem>
+              <SelectItem value="1-3">1st to 3rd Floor</SelectItem>
+              <SelectItem value="4-7">4th to 7th Floor</SelectItem>
+              <SelectItem value="8-15">8th to 15th Floor</SelectItem>
+              <SelectItem value="16+">16th Floor & Above</SelectItem>
+              <SelectItem value="penthouse">Penthouse</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Parking Spaces */}
+      <div>
+        <Label htmlFor="parkingSpaces" className="text-lg font-medium text-gray-900 mb-3 block">
+          Parking Spaces
+        </Label>
+        <Select value={parkingSpaces} onValueChange={setParkingSpaces}>
+          <SelectTrigger id="parkingSpaces" className="w-full p-4 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A699] focus:border-transparent">
+            <SelectValue placeholder="Select parking..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="0">No Parking</SelectItem>
+            <SelectItem value="1">1 Parking Space</SelectItem>
+            <SelectItem value="2">2 Parking Spaces</SelectItem>
+            <SelectItem value="3">3 Parking Spaces</SelectItem>
+            <SelectItem value="4">4+ Parking Spaces</SelectItem>
           </SelectContent>
         </Select>
       </div>

@@ -241,7 +241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/analyze', async (req, res) => {
     try {
       const clientIP = getClientIP(req);
-      const { location, amount, propertyType, planType } = req.body;
+      const { location, amount, propertyType, planType, propertySize, sizeUnit, propertyAge, bedrooms, furnished, floor, parkingSpaces } = req.body;
 
       // Validate input
       if (!location || !amount || !propertyType || !planType) {
