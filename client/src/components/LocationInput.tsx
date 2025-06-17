@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, Edit3 } from "lucide-react";
+import { MapPin, Edit3, Navigation } from "lucide-react";
 import { useGoogleMaps } from "@/hooks/useGeolocation";
 
 declare global {
@@ -24,6 +24,7 @@ interface LocationInputProps {
 export default function LocationInput({ onLocationSelect, selectedLocation }: LocationInputProps) {
   const [manualAddress, setManualAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { isLoaded, loadError } = useGoogleMaps();
@@ -189,7 +190,7 @@ export default function LocationInput({ onLocationSelect, selectedLocation }: Lo
       
       if (map && marker) {
         map.setCenter({ lat: selectedLocation.lat, lng: selectedLocation.lng });
-        map.setZoom(15);
+        map.setZoom(20); // Maintain high zoom level
         marker.setPosition({ lat: selectedLocation.lat, lng: selectedLocation.lng });
       }
     }

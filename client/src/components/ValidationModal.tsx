@@ -60,28 +60,7 @@ export default function ValidationModal({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Risk Level Overview */}
-          <Card className={`border-2 ${getRiskColor(validation.riskLevel)}`}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold text-lg">
-                  {validation.riskLevel === 'high' ? 'High Risk Detected' : 
-                   validation.riskLevel === 'medium' ? 'Medium Risk Analysis' : 
-                   'Low Risk - Good to Go'}
-                </h3>
-                <span className="text-sm font-medium">
-                  {validation.confidence}% Confidence
-                </span>
-              </div>
-              <p className="text-sm">
-                {validation.riskLevel === 'high' ? 
-                  'Property type and location compatibility issues detected.' :
-                  validation.riskLevel === 'medium' ?
-                  'Some property type or location concerns identified.' :
-                  'Property type and location appear compatible for analysis.'}
-              </p>
-            </CardContent>
-          </Card>
+
 
           {/* Issues Section */}
           {validation.issues.length > 0 && (
