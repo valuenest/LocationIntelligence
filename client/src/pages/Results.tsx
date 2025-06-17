@@ -876,11 +876,19 @@ export default function Results() {
                         <div className="flex items-center">
                           <div className="flex-1 bg-gray-200 rounded-full h-2 mr-3">
                             <div 
-                              className="bg-blue-500 h-2 rounded-full" 
-                              style={{ width: `${Math.min(100, (analysisResult.nearbyPlaces.length / 15) * 100)}%` }}
+                              className={`h-2 rounded-full ${
+                                analysisResult.investmentViability === 0 ? 'bg-red-500' : 
+                                analysisResult.investmentViability < 30 ? 'bg-orange-500' : 'bg-blue-500'
+                              }`}
+                              style={{ width: `${Math.min(100, analysisResult.investmentViability || 0)}%` }}
                             ></div>
                           </div>
-                          <span className="text-sm font-medium">{Math.round((analysisResult.nearbyPlaces.length / 15) * 100)}%</span>
+                          <span className={`text-sm font-medium ${
+                            analysisResult.investmentViability === 0 ? 'text-red-600' : 
+                            analysisResult.investmentViability < 30 ? 'text-orange-600' : 'text-gray-900'
+                          }`}>
+                            {Math.round(analysisResult.investmentViability || 0)}%
+                          </span>
                         </div>
                       </div>
                       
@@ -889,12 +897,22 @@ export default function Results() {
                         <div className="flex items-center">
                           <div className="flex-1 bg-gray-200 rounded-full h-2 mr-3">
                             <div 
-                              className="bg-green-500 h-2 rounded-full" 
-                              style={{ width: `${Math.min(100, 100 - (Object.values(analysisResult.distances).reduce((avg, d) => avg + d.distance.value, 0) / Object.values(analysisResult.distances).length / 5000 * 100))}%` }}
+                              className={`h-2 rounded-full ${
+                                analysisResult.investmentViability === 0 ? 'bg-red-500' : 
+                                analysisResult.investmentViability < 30 ? 'bg-orange-500' : 'bg-green-500'
+                              }`}
+                              style={{ 
+                                width: `${analysisResult.investmentViability === 0 ? 0 : 
+                                Math.min(100, Math.max(0, analysisResult.investmentViability - 10))}%` 
+                              }}
                             ></div>
                           </div>
-                          <span className="text-sm font-medium">
-                            {Math.round(Math.min(100, 100 - (Object.values(analysisResult.distances).reduce((avg, d) => avg + d.distance.value, 0) / Object.values(analysisResult.distances).length / 5000 * 100)))}%
+                          <span className={`text-sm font-medium ${
+                            analysisResult.investmentViability === 0 ? 'text-red-600' : 
+                            analysisResult.investmentViability < 30 ? 'text-orange-600' : 'text-gray-900'
+                          }`}>
+                            {analysisResult.investmentViability === 0 ? 0 : 
+                             Math.round(Math.max(0, analysisResult.investmentViability - 10))}%
                           </span>
                         </div>
                       </div>
