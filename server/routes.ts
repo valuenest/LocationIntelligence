@@ -232,6 +232,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // API Routes
+  app.get('/api/maps-config', async (req, res) => {
+    res.json({
+      apiKey: GOOGLE_MAPS_API_KEY,
+    });
+  });
+
   app.post('/api/analyze', async (req, res) => {
     try {
       const clientIP = getClientIP(req);

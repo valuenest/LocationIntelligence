@@ -54,6 +54,8 @@ export class MemStorage implements IStorage {
     const analysisRequest: AnalysisRequest = {
       ...request,
       id,
+      paymentId: request.paymentId || null,
+      analysisData: request.analysisData || null,
       createdAt: new Date(),
     };
     this.analysisRequests.set(id, analysisRequest);
@@ -88,6 +90,8 @@ export class MemStorage implements IStorage {
     const usageLimit: UsageLimit = {
       ...limit,
       id: Date.now(), // Simple ID for in-memory storage
+      freeUsageCount: limit.freeUsageCount || 0,
+      lastResetDate: limit.lastResetDate || new Date(),
     };
     this.usageLimits.set(limit.ipAddress, usageLimit);
     return usageLimit;

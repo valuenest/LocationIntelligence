@@ -15,6 +15,8 @@ interface LocationData {
 interface PropertyFormData {
   amount: number;
   propertyType: string;
+  currency: string;
+  country: string;
 }
 
 interface PaymentModalProps {

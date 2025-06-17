@@ -30,18 +30,32 @@ export const useGoogleMaps = (): GoogleMapsHook => {
       return;
     }
 
-    // If script is not loaded and not in DOM, it should be loaded via the HTML head
-    // This hook just monitors the loading state
-    const checkGoogleMapsLoaded = () => {
-      if (window.google && window.google.maps) {
-        setIsLoaded(true);
-      } else {
-        setTimeout(checkGoogleMapsLoaded, 100);
+    // Load Google Maps script with API key from server
+    const loadGoogleMaps = async () => {
+      try {
+        // Get API key from server
+        const response = await fetch('/api/maps-config');
+        const config = await response.json();
+        
+        if (!config.apiKey) {
+          throw new Error('Google Maps API key not configured');
+        }
+
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${config.apiKey}&libraries=places`;
+        script.async = true;
+        script.defer = true;
+        
+        script.onload = () => setIsLoaded(true);
+        script.onerror = () => setLoadError(new Error('Failed to load Google Maps'));
+        
+        document.head.appendChild(script);
+      } catch (error) {
+        setLoadError(error as Error);
       }
     };
 
-    // Start checking after a short delay
-    setTimeout(checkGoogleMapsLoaded, 1000);
+    loadGoogleMaps();
   }, []);
 
   return { isLoaded, loadError };

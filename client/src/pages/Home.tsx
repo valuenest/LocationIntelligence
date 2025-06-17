@@ -27,7 +27,7 @@ export default function Home() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
-  const { data: usageStatus } = useQuery({
+  const { data: usageStatus } = useQuery<{ success: boolean; usage: { canUseFree: boolean; freeUsageCount: number; maxFreeUsage: number } }>({
     queryKey: ['/api/usage-status'],
     refetchInterval: false,
   });
