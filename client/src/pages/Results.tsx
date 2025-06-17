@@ -202,7 +202,7 @@ export default function Results() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* Property Summary */}
         <Card className="mb-8">
           <CardHeader>
@@ -237,31 +237,36 @@ export default function Results() {
             </div>
           </CardHeader>
           {/* Location Image */}
-          {analysisResult.locationImageUrl && (
-            <CardContent className="pt-0">
-              <img 
-                src={analysisResult.locationImageUrl} 
-                alt="Location Overview" 
-                className="w-full h-64 object-cover rounded-lg border"
-                onError={(e) => {
-                  // Hide image if it fails to load
-                  e.currentTarget.style.display = 'none';
-                  // Show fallback map placeholder
-                  const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                  if (fallback) (fallback as any).style.display = 'flex';
-                }}
-              />
-              <div 
-                className="w-full h-64 bg-gradient-to-br from-blue-100 to-green-100 rounded-lg border flex items-center justify-center"
-                style={{ display: 'none' }}
-              >
-                <div className="text-center text-gray-600">
-                  <MapPin className="h-12 w-12 mx-auto mb-2" />
-                  <p className="text-sm">Location: {analysis.location.address}</p>
+          <CardContent className="pt-0">
+            <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+              <div className="px-4 py-2 bg-gray-100 border-b border-gray-200">
+                <h4 className="text-sm font-medium text-gray-700">Street View - Property Location</h4>
+              </div>
+              <div className="aspect-video relative">
+                <img
+                  src={`https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${analysis.location.lat},${analysis.location.lng}&heading=0&pitch=0&key=${process.env.GOOGLE_MAPS_API_KEY || ''}`}
+                  alt="Street View of Property Location"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement;
+                    target.style.display = 'none';
+                    const fallback = target.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = 'flex';
+                  }}
+                />
+                <div 
+                  className="w-full h-full bg-gradient-to-br from-blue-100 to-green-100 flex items-center justify-center absolute inset-0"
+                  style={{ display: 'none' }}
+                >
+                  <div className="text-center text-gray-600">
+                    <MapPin className="h-12 w-12 mx-auto mb-2" />
+                    <p className="text-sm font-medium">Street View Preview</p>
+                    <p className="text-xs text-gray-500 mt-1">{analysis.location.address}</p>
+                  </div>
                 </div>
               </div>
-            </CardContent>
-          )}
+            </div>
+          </CardContent>
         </Card>
 
         {/* Report Tier Summary */}
@@ -368,16 +373,7 @@ export default function Results() {
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Location Score</h3>
                     <p className="text-sm text-gray-600 mb-3">Infrastructure & accessibility rating</p>
                     
-                    {/* Google Maps Button */}
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex items-center"
-                      onClick={() => window.open(`https://www.google.com/maps?q=${encodeURIComponent(analysis.location.address)}`, '_blank')}
-                    >
-                      <MapPin className="h-4 w-4 mr-1" />
-                      View on Maps
-                    </Button>
+
                   </div>
 
                   {/* Investment Viability */}
