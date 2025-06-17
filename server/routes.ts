@@ -557,11 +557,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!distance) return;
 
         const distanceKm = distance.distance.value / 1000;
-        const within10km = distanceKm <= 10; // 10km radius as requested
-        const within5km = distanceKm <= 5;   // Close proximity bonus
-        const within2km = distanceKm <= 2;   // Very close proximity bonus
+        const within5km = distanceKm <= 5;   // 5km radius for infrastructure analysis
+        const within3km = distanceKm <= 3;   // Close proximity bonus
+        const within1km = distanceKm <= 1;   // Very close proximity bonus
 
-        if (!within10km) return; // Only consider places within 10km
+        if (!within5km) return; // Only consider places within 5km
 
         // Calculate rating bonus based on place rating
         const ratingMultiplier = place.rating ? Math.min(place.rating / 5, 1) : 0.6; // Default 0.6 for unrated
@@ -569,35 +569,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Healthcare infrastructure with rating consideration
         if (place.types.some(type => ['hospital', 'pharmacy', 'doctor', 'health', 'medical_center'].includes(type))) {
           infrastructureScores.healthcare.total += ratingMultiplier;
-          if (within5km) infrastructureScores.healthcare.close += ratingMultiplier;
+          if (within3km) infrastructureScores.healthcare.close += ratingMultiplier;
         }
 
         // Educational infrastructure with rating consideration
         if (place.types.some(type => ['school', 'university', 'college', 'library', 'education'].includes(type))) {
           infrastructureScores.education.total += ratingMultiplier;
-          if (within5km) infrastructureScores.education.close += ratingMultiplier;
+          if (within3km) infrastructureScores.education.close += ratingMultiplier;
         }
 
         // Transport infrastructure with rating consideration
         if (place.types.some(type => ['transit_station', 'bus_station', 'subway_station', 'train_station', 'gas_station'].includes(type))) {
           infrastructureScores.transport.total += ratingMultiplier;
-          if (within5km) infrastructureScores.transport.close += ratingMultiplier;
+          if (within3km) infrastructureScores.transport.close += ratingMultiplier;
         }
 
         // Commercial infrastructure with rating consideration
         if (place.types.some(type => ['store', 'supermarket', 'grocery_or_supermarket', 'shopping_mall', 'bank', 'atm'].includes(type))) {
           infrastructureScores.commercial.total += ratingMultiplier;
-          if (within5km) infrastructureScores.commercial.close += ratingMultiplier;
+          if (within3km) infrastructureScores.commercial.close += ratingMultiplier;
         }
 
         // Essential services with proximity and rating weighting
         if (isEssentialService(place)) {
           let essentialScore = ratingMultiplier;
-          if (within2km) essentialScore *= 1.5; // 50% bonus for very close
-          else if (within5km) essentialScore *= 1.2; // 20% bonus for close
+          if (within1km) essentialScore *= 1.8; // 80% bonus for very close
+          else if (within3km) essentialScore *= 1.4; // 40% bonus for close
+          else essentialScore *= 1.1; // 10% bonus for within 5km
           
           infrastructureScores.essential.total += essentialScore;
-          if (within5km) infrastructureScores.essential.close += essentialScore;
+          if (within3km) infrastructureScores.essential.close += essentialScore;
         }
       });
 
@@ -675,8 +676,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const commercialScore = Math.min(infrastructureScores.commercial.total / 6, 1.0); // Max at 6+ commercial facilities
       const finalConnectivityScore = infrastructureScores.connectivity / 100; // Convert to 0-1 scale
       
-      // Proximity bonus for services within 3km
-      const proximityBonus = (infrastructureScores.essential.close / Math.max(infrastructureScores.essential.total, 1)) * 0.5;
+      // Proximity bonus for services within 3km (adjusted for 5km radius)
+      const proximityBonus = (infrastructureScores.essential.close / Math.max(infrastructureScores.essential.total, 1)) * 0.7;
       
       // Comprehensive infrastructure scoring with proper weightings
       result.locationScore = (
