@@ -504,9 +504,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const priorityTypes = [
         'restaurant', 'hospital', 'school', 'bank', 'store', 'gas_station', 
         'park', 'transit_station', 'shopping_mall', 'pharmacy', 'atm',
-        'establishment', 'finance', 'real_estate_agency'
+        'establishment', 'finance', 'real_estate_agency', 'lodging',
+        'gym', 'spa', 'cafe', 'bar'
       ];
-      const searchTypes = priorityTypes.slice(0, 12); // Expanded to 12 most important types
+      const searchTypes = priorityTypes.slice(0, 16); // Expanded to capture lifestyle amenities
       
       for (const type of searchTypes) {
         try {
@@ -601,6 +602,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           infrastructureScores.commercial.total += commercialScore;
           if (within3km) infrastructureScores.commercial.close += commercialScore;
+        }
+
+        // Premium lifestyle amenities scoring (indicates upscale areas)
+        if (place.types.some(type => ['lodging', 'spa', 'gym', 'cafe', 'bar', 'restaurant'].includes(type))) {
+          let lifestyleScore = ratingMultiplier;
+          
+          // Premium establishments get significant bonuses
+          if (place.rating && place.rating >= 4.5) {
+            lifestyleScore *= 2.0; // Double score for highly rated places
+          } else if (place.rating && place.rating >= 4.0) {
+            lifestyleScore *= 1.5; // 50% bonus for good rated places
+          }
+          
+          // Luxury hotels and spas indicate premium areas
+          if (place.types.includes('lodging') && (place.name.toLowerCase().includes('palace') || 
+              place.name.toLowerCase().includes('luxury') || place.name.toLowerCase().includes('resort'))) {
+            lifestyleScore *= 2.5; // Major bonus for luxury establishments
+          }
+          
+          infrastructureScores.commercial.total += lifestyleScore;
+          if (within3km) infrastructureScores.commercial.close += lifestyleScore;
         }
 
         // Essential services with proximity and rating weighting
@@ -735,12 +757,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Proximity bonus for services within 3km (adjusted for 5km radius)
       const proximityBonus = (infrastructureScores.essential.close / Math.max(infrastructureScores.essential.total, 1)) * 0.7;
       
-      // Comprehensive infrastructure scoring with proper weightings
+      // Enhanced infrastructure scoring for premium urban recognition
       result.locationScore = (
-        healthcareScore * 0.25 +      // 25% - Healthcare infrastructure
-        educationScore * 0.20 +       // 20% - Educational infrastructure  
-        transportScore * 0.25 +       // 25% - Transport/Connectivity
-        commercialScore * 0.15 +      // 15% - Commercial infrastructure
+        healthcareScore * 0.20 +      // 20% - Healthcare infrastructure
+        educationScore * 0.15 +       // 15% - Educational infrastructure  
+        transportScore * 0.20 +       // 20% - Transport/Connectivity
+        commercialScore * 0.30 +      // 30% - Commercial & lifestyle infrastructure (increased)
         finalConnectivityScore * 0.15      // 15% - Highway/Road connectivity
       ) * 5 + proximityBonus; // Scale to 5-star + proximity bonus
 
