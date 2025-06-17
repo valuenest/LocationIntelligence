@@ -29,6 +29,71 @@ export default function LocationInput({ onLocationSelect, selectedLocation }: Lo
   const inputRef = useRef<HTMLInputElement>(null);
   const { isLoaded, loadError } = useGoogleMaps();
 
+  const handleLiveLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by this browser.');
+      return;
+    }
+
+    setIsGettingLocation(true);
+    
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        try {
+          // Get address from coordinates using reverse geocoding
+          const geocoder = new window.google.maps.Geocoder();
+          const result = await new Promise<any[]>((resolve, reject) => {
+            geocoder.geocode(
+              { location: { lat: latitude, lng: longitude } },
+              (results: any, status: any) => {
+                if (status === 'OK' && results) {
+                  resolve(results);
+                } else {
+                  reject(new Error('Failed to get address'));
+                }
+              }
+            );
+          });
+
+          if (result && result[0]) {
+            const locationData: LocationData = {
+              lat: latitude,
+              lng: longitude,
+              address: result[0].formatted_address
+            };
+            
+            onLocationSelect(locationData);
+            setManualAddress(result[0].formatted_address);
+          }
+        } catch (error) {
+          console.error('Error getting address:', error);
+          // Still set location even if address lookup fails
+          const locationData: LocationData = {
+            lat: latitude,
+            lng: longitude,
+            address: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+          };
+          onLocationSelect(locationData);
+          setManualAddress(locationData.address);
+        } finally {
+          setIsGettingLocation(false);
+        }
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        alert('Unable to get your location. Please check your browser permissions.');
+        setIsGettingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000
+      }
+    );
+  };
+
   const handleManualAddressSubmit = async () => {
     if (!manualAddress.trim()) return;
 
@@ -224,6 +289,30 @@ export default function LocationInput({ onLocationSelect, selectedLocation }: Lo
             </div>
           </div>
         )}
+      </div>
+
+      {/* Live Location Button */}
+      <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Navigation className="text-[#00A699] mr-2" />
+            <span className="font-medium text-gray-900">Use current location</span>
+          </div>
+          <Button 
+            onClick={handleLiveLocation}
+            disabled={isGettingLocation || !isLoaded}
+            className="px-6 bg-[#00A699] hover:bg-[#008a7f] text-white"
+          >
+            {isGettingLocation ? (
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Getting Location...
+              </div>
+            ) : (
+              'Get Location'
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Search Bar Below Map */}
