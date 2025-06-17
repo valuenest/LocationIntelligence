@@ -318,10 +318,8 @@ export default function Results() {
           </Card>
         )}
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Analysis */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* FREE CONTENT SECTION */}
+        <div className="w-full space-y-6">
+            {/* MAIN CONTENT SECTION */}
             
             {/* Investment Overview - Enhanced with Recommendations */}
             <Card className="border-l-4 border-l-blue-500">
@@ -1013,7 +1011,7 @@ export default function Results() {
                             >
                               <div className="text-center text-gray-600">
                                 <MapPin className="h-12 w-12 mx-auto mb-2" />
-                                <p className="text-sm font-medium">Alternative Investment Location</p>
+                                <p className="text-sm font-medium">Investment Location #{index + 1}</p>
                                 <p className="text-xs">{location.address}</p>
                               </div>
                             </div>
@@ -1081,68 +1079,6 @@ export default function Results() {
                 </CardContent>
               </Card>
             )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Plan Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="capitalize">{analysis.planType} Plan</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Analysis Date:</span>
-                    <span>{new Date(analysis.createdAt).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Property Type:</span>
-                    <span className="capitalize">{analysis.propertyType.replace('_', ' ')}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Investment Amount:</span>
-                    <span>₹{analysis.amount.toLocaleString()}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Street View - Paid Plans Only */}
-            {isPaidPlan && analysisResult.streetViewUrl && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Street View</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <img 
-                    src={analysisResult.streetViewUrl} 
-                    alt="Street View" 
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Upgrade CTA for Free Plan */}
-            {analysis.planType === 'free' && (
-              <Card className="border-[#FF5A5F] border-2">
-                <CardHeader>
-                  <CardTitle className="text-[#FF5A5F]">Upgrade for More Insights</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Get detailed growth predictions, street view, and AI-powered investment recommendations.
-                  </p>
-                  <Link href="/">
-                    <Button className="w-full bg-[#FF5A5F] hover:bg-[#e54852]">
-                      Upgrade Now
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            )}
-          </div>
 
           {/* Tourist Attractions & Visiting Places - Bottom Section */}
           <div className="mt-12 bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl p-8 border border-emerald-200">
