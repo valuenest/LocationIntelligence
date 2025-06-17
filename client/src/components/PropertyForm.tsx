@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { IndianRupee, Home, Globe } from "lucide-react";
+import { IndianRupee, Home, Globe, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react";
+import { predictPropertyPrice, validateUserAmount, generateInvestmentAdvice } from "@/lib/pricePredictor";
 
 interface PropertyFormData {
   amount: number;
@@ -19,8 +20,15 @@ interface PropertyFormData {
   parkingSpaces: number;
 }
 
+interface LocationData {
+  lat: number;
+  lng: number;
+  address: string;
+}
+
 interface PropertyFormProps {
   onSubmit: (data: PropertyFormData) => void;
+  selectedLocation?: LocationData | null;
 }
 
 interface Country {
@@ -43,7 +51,7 @@ const countries: Country[] = [
   { code: 'AE', name: 'UAE', currency: 'AED', symbol: 'د.إ' },
 ];
 
-export default function PropertyForm({ onSubmit }: PropertyFormProps) {
+export default function PropertyForm({ onSubmit, selectedLocation }: PropertyFormProps) {
   const [amount, setAmount] = useState<string>('');
   const [propertyType, setPropertyType] = useState<string>('');
   const [propertySize, setPropertySize] = useState<string>('');
@@ -53,7 +61,9 @@ export default function PropertyForm({ onSubmit }: PropertyFormProps) {
   const [furnished, setFurnished] = useState<string>('');
   const [floor, setFloor] = useState<string>('');
   const [parkingSpaces, setParkingSpaces] = useState<string>('');
-  const [selectedCountry, setSelectedCountry] = useState<Country>(countries[0]); // Default to India
+  const [selectedCountry, setSelectedCountry] = useState<Country>(countries[0]);
+  const [priceValidation, setPriceValidation] = useState<any>(null);
+  const [predictedRange, setPredictedRange] = useState<any>(null);
 
   // Auto-detect country based on user's location
   useEffect(() => {
