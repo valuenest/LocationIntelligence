@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { 
   MapPin, 
   TrendingUp, 
+  TrendingDown,
   Star, 
   Download, 
   Share2, 
@@ -18,10 +19,10 @@ import {
   Brain,
   Eye,
   ArrowLeft,
+  Target,
   Lock,
   Zap,
   Crown,
-  Target,
   Car
 } from "lucide-react";
 import { Link } from "wouter";
@@ -261,7 +262,59 @@ export default function Results() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Property Summary */}
+        {/* Map Location First */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="text-xl text-gray-900 flex items-center">
+              <MapPin className="h-5 w-5 mr-2 text-[#FF5A5F]" />
+              Property Location
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+              <div className="px-4 py-2 bg-gray-100 border-b border-gray-200">
+                <h4 className="text-sm font-medium text-gray-700">Street View - Selected Location</h4>
+              </div>
+              <div className="aspect-video relative">
+                <img
+                  src={`https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${analysis.location.lat},${analysis.location.lng}&heading=0&pitch=0&key=${mapsConfig?.apiKey || ''}`}
+                  alt="Street View of Property Location"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement;
+                    target.style.display = 'none';
+                    const fallback = target.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = 'flex';
+                  }}
+                />
+                <div 
+                  className="w-full h-full bg-gradient-to-br from-blue-100 to-green-100 flex items-center justify-center absolute inset-0"
+                  style={{ display: 'none' }}
+                >
+                  <div className="text-center text-gray-600">
+                    <MapPin className="h-12 w-12 mx-auto mb-2" />
+                    <p className="text-sm font-medium">Street View Preview</p>
+                    <p className="text-xs">{analysis.location.address}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Selected Location Details */}
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h5 className="font-medium text-gray-900 mb-2 flex items-center">
+                <Target className="h-4 w-4 mr-2 text-blue-600" />
+                Selected Location
+              </h5>
+              <p className="text-sm text-gray-700 mb-1 font-medium">{analysis.location.address}</p>
+              <p className="text-xs text-gray-600">
+                Coordinates: {analysis.location.lat.toFixed(6)}, {analysis.location.lng.toFixed(6)}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Property Analysis Summary */}
         <Card className="mb-8">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -385,36 +438,6 @@ export default function Results() {
                   This recommendation does not include the amount you entered for the property purchase. Our calculations are based on location factors, 
                   infrastructure, and market trends only.
                 </p>
-              </div>
-            </div>
-          </CardContent>
-          <CardContent className="pt-0">
-            <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
-              <div className="px-4 py-2 bg-gray-100 border-b border-gray-200">
-                <h4 className="text-sm font-medium text-gray-700">Street View - Property Location</h4>
-              </div>
-              <div className="aspect-video relative">
-                <img
-                  src={`https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${analysis.location.lat},${analysis.location.lng}&heading=0&pitch=0&key=${mapsConfig?.apiKey || ''}`}
-                  alt="Street View of Property Location"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.currentTarget as HTMLImageElement;
-                    target.style.display = 'none';
-                    const fallback = target.nextElementSibling as HTMLElement;
-                    if (fallback) fallback.style.display = 'flex';
-                  }}
-                />
-                <div 
-                  className="w-full h-full bg-gradient-to-br from-blue-100 to-green-100 flex items-center justify-center absolute inset-0"
-                  style={{ display: 'none' }}
-                >
-                  <div className="text-center text-gray-600">
-                    <MapPin className="h-12 w-12 mx-auto mb-2" />
-                    <p className="text-sm font-medium">Street View Preview</p>
-                    <p className="text-xs text-gray-500 mt-1">{analysis.location.address}</p>
-                  </div>
-                </div>
               </div>
             </div>
           </CardContent>
