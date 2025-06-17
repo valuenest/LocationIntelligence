@@ -62,42 +62,7 @@ export default function PropertyForm({ onSubmit, selectedLocation }: PropertyFor
   const [floor, setFloor] = useState<string>('');
   const [parkingSpaces, setParkingSpaces] = useState<string>('');
   const [selectedCountry, setSelectedCountry] = useState<Country>(countries[0]);
-  const [priceValidation, setPriceValidation] = useState<any>(null);
-  const [predictedRange, setPredictedRange] = useState<any>(null);
-
-  // Price prediction logic
-  useEffect(() => {
-    if (selectedLocation && propertyType && propertySize && amount && propertyAge && bedrooms && furnished && floor) {
-      const propertyData = {
-        amount: parseFloat(amount),
-        propertyType,
-        propertySize: parseFloat(propertySize),
-        sizeUnit,
-        propertyAge,
-        bedrooms: parseInt(bedrooms),
-        furnished,
-        floor,
-        parkingSpaces: parseInt(parkingSpaces) || 0,
-        currency: selectedCountry.currency,
-        country: selectedCountry.code
-      };
-
-      try {
-        const predicted = predictPropertyPrice(selectedLocation, propertyData);
-        setPredictedRange(predicted);
-        
-        if (amount) {
-          const validation = validateUserAmount(parseFloat(amount), predicted);
-          setPriceValidation(validation);
-        }
-      } catch (error) {
-        console.error('Price prediction error:', error);
-      }
-    } else {
-      setPredictedRange(null);
-      setPriceValidation(null);
-    }
-  }, [selectedLocation, amount, propertyType, propertySize, sizeUnit, propertyAge, bedrooms, furnished, floor, parkingSpaces, selectedCountry]);
+  // Removed price validation as per requirements
 
   // Auto-detect country based on user's location
   useEffect(() => {

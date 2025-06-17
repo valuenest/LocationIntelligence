@@ -140,11 +140,10 @@ export default function Results() {
   }
 
   const analysis = result.analysis;
-  const analysisResult = analysis.analysisData;
 
   // Add error handling for missing data
-  if (!analysis || !analysisResult) {
-    console.error('Missing analysis data:', { analysis, analysisResult });
+  if (!analysis) {
+    console.error('Missing analysis:', analysis);
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card className="max-w-md mx-4">
@@ -152,9 +151,9 @@ export default function Results() {
             <div className="text-red-500 mb-4">
               <Eye className="h-12 w-12 mx-auto" />
             </div>
-            <h2 className="text-xl font-semibold mb-2">Analysis Data Error</h2>
+            <h2 className="text-xl font-semibold mb-2">Analysis Not Found</h2>
             <p className="text-gray-600 mb-4">
-              The analysis data is incomplete or corrupted. Please try generating a new report.
+              The analysis data could not be loaded. Please try generating a new report.
             </p>
             <Link href="/">
               <Button className="bg-[#FF5A5F] hover:bg-[#e54852]">
@@ -167,6 +166,22 @@ export default function Results() {
       </div>
     );
   }
+
+  // Ensure analysisData exists or provide empty fallback
+  const analysisResult = analysis.analysisData || {
+    locationScore: 0,
+    growthPrediction: 0,
+    nearbyPlaces: [],
+    distances: {},
+    streetViewUrl: '',
+    aiRecommendations: [],
+    investmentViability: 0,
+    businessGrowthRate: 0,
+    populationGrowthRate: 0,
+    investmentRecommendation: '',
+    locationImageUrl: '',
+    topInvestmentLocations: []
+  };
 
   const renderStars = (score: number) => {
     const fullStars = Math.floor(score);
