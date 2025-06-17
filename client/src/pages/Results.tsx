@@ -416,10 +416,10 @@ export default function Results() {
                        'High risk - consider alternatives'}
                     </p>
                     
-                    {/* Area Details */}
-                    <div className="text-xs text-gray-500">
-                      <div className="truncate">{analysis.location.address}</div>
-                      <div>Lat: {analysis.location.lat.toFixed(4)}, Lng: {analysis.location.lng.toFixed(4)}</div>
+                    {/* Area Name Display */}
+                    <div className="text-center bg-gray-50 rounded-lg p-2 mt-2">
+                      <div className="text-sm font-medium text-gray-800 truncate">{analysis.location.address.split(',')[0]}</div>
+                      <div className="text-xs text-gray-600">{analysis.location.address.split(',').slice(1, 2).join(',')}</div>
                     </div>
                   </div>
                 </div>
@@ -468,49 +468,57 @@ export default function Results() {
                 <p className="text-sm text-gray-600 mt-1">Key facilities and their accessibility from your location</p>
               </CardHeader>
               <CardContent>
-                {/* Category-wise breakdown */}
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* Essential Services */}
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-                      <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                      Essential Services
-                    </h4>
-                    <div className="space-y-3">
+                {/* Clean Infrastructure Layout */}
+                <div className="space-y-8">
+                  {/* Essential Services - Clean Design */}
+                  <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-6 border border-red-100">
+                    <div className="flex items-center mb-6">
+                      <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center mr-4">
+                        <Hospital className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">Essential Services</h3>
+                        <p className="text-sm text-gray-600">Healthcare, pharmacy, and daily necessities</p>
+                      </div>
+                    </div>
+                    <div className="grid gap-4">
                       {analysisResult.nearbyPlaces
                         .filter(p => p.types.some(t => ['hospital', 'pharmacy', 'grocery_or_supermarket', 'gas_station'].includes(t)))
-                        .slice(0, 3)
+                        .slice(0, 4)
                         .map((place, index) => {
                           const distance = analysisResult.distances[place.name]?.distance?.text || 'Calculating...';
                           const duration = analysisResult.distances[place.name]?.duration?.text || '';
+                          const areaName = place.vicinity ? place.vicinity.split(',')[0] : 'Nearby';
                           return (
-                            <div key={index} className="border border-gray-200 rounded-lg p-3 bg-white hover:shadow-sm transition-shadow">
-                              <div className="flex justify-between items-start mb-2">
-                                <div className="flex items-start flex-1">
-                                  {getPlaceIcon(place.types)}
-                                  <div className="ml-3 flex-1">
-                                    <div className="font-medium text-gray-900 text-sm">{place.name}</div>
-                                    <div className="text-xs text-gray-500 mt-1">{place.vicinity || 'Near your location'}</div>
+                            <div key={index} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center flex-1">
+                                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                                    {getPlaceIcon(place.types)}
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="font-semibold text-gray-900">{place.name}</div>
+                                    <div className="text-sm text-gray-600">{areaName}</div>
                                     {place.rating && (
                                       <div className="flex items-center mt-1">
-                                        <Star className="h-3 w-3 text-yellow-500 mr-1" />
-                                        <span className="text-xs text-gray-600">{place.rating}</span>
+                                        <Star className="h-4 w-4 text-yellow-500 mr-1" />
+                                        <span className="text-sm font-medium text-gray-700">{place.rating}</span>
                                       </div>
                                     )}
                                   </div>
                                 </div>
-                                <div className="text-right ml-4">
-                                  <div className="text-sm font-medium text-red-600">{distance}</div>
+                                <div className="text-right">
+                                  <div className="text-lg font-bold text-red-600">{distance}</div>
                                   {duration && <div className="text-xs text-gray-500">{duration}</div>}
                                 </div>
                               </div>
                               <Button 
                                 variant="outline" 
                                 size="sm" 
-                                className="w-full text-xs h-7"
+                                className="w-full"
                                 onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(place.name + ' ' + (place.vicinity || ''))}`, '_blank')}
                               >
-                                <MapPin className="h-3 w-3 mr-1" />
+                                <MapPin className="h-4 w-4 mr-2" />
                                 Get Directions
                               </Button>
                             </div>
@@ -519,47 +527,55 @@ export default function Results() {
                     </div>
                   </div>
 
-                  {/* Education & Transport */}
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                      Education & Transport
-                    </h4>
-                    <div className="space-y-3">
+                  {/* Education & Transport - Clean Design */}
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+                    <div className="flex items-center mb-6">
+                      <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mr-4">
+                        <School className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">Education & Transport</h3>
+                        <p className="text-sm text-gray-600">Schools, transit stations, and financial services</p>
+                      </div>
+                    </div>
+                    <div className="grid gap-4">
                       {analysisResult.nearbyPlaces
-                        .filter(p => p.types.some(t => ['school', 'subway_station', 'bus_station', 'bank'].includes(t)))
-                        .slice(0, 3)
+                        .filter(p => p.types.some(t => ['school', 'subway_station', 'bus_station', 'bank', 'transit_station'].includes(t)))
+                        .slice(0, 4)
                         .map((place, index) => {
                           const distance = analysisResult.distances[place.name]?.distance?.text || 'Calculating...';
                           const duration = analysisResult.distances[place.name]?.duration?.text || '';
+                          const areaName = place.vicinity ? place.vicinity.split(',')[0] : 'Nearby';
                           return (
-                            <div key={index} className="border border-gray-200 rounded-lg p-3 bg-white hover:shadow-sm transition-shadow">
-                              <div className="flex justify-between items-start mb-2">
-                                <div className="flex items-start flex-1">
-                                  {getPlaceIcon(place.types)}
-                                  <div className="ml-3 flex-1">
-                                    <div className="font-medium text-gray-900 text-sm">{place.name}</div>
-                                    <div className="text-xs text-gray-500 mt-1">{place.vicinity || 'Near your location'}</div>
+                            <div key={index} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center flex-1">
+                                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                    {getPlaceIcon(place.types)}
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="font-semibold text-gray-900">{place.name}</div>
+                                    <div className="text-sm text-gray-600">{areaName}</div>
                                     {place.rating && (
                                       <div className="flex items-center mt-1">
-                                        <Star className="h-3 w-3 text-yellow-500 mr-1" />
-                                        <span className="text-xs text-gray-600">{place.rating}</span>
+                                        <Star className="h-4 w-4 text-yellow-500 mr-1" />
+                                        <span className="text-sm font-medium text-gray-700">{place.rating}</span>
                                       </div>
                                     )}
                                   </div>
                                 </div>
-                                <div className="text-right ml-4">
-                                  <div className="text-sm font-medium text-blue-600">{distance}</div>
+                                <div className="text-right">
+                                  <div className="text-lg font-bold text-blue-600">{distance}</div>
                                   {duration && <div className="text-xs text-gray-500">{duration}</div>}
                                 </div>
                               </div>
                               <Button 
                                 variant="outline" 
                                 size="sm" 
-                                className="w-full text-xs h-7"
+                                className="w-full"
                                 onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(place.name + ' ' + (place.vicinity || ''))}`, '_blank')}
                               >
-                                <MapPin className="h-3 w-3 mr-1" />
+                                <MapPin className="h-4 w-4 mr-2" />
                                 Get Directions
                               </Button>
                             </div>
@@ -928,87 +944,7 @@ export default function Results() {
               </CardContent>
             </Card>
 
-            {/* Pro Feature: Best Visiting Places */}
-            {isProPlan && (
-              <Card className="border-l-4 border-l-emerald-500">
-                <CardHeader>
-                  <CardTitle className="text-xl text-gray-900 flex items-center">
-                    <MapPin className="h-5 w-5 mr-2 text-emerald-600" />
-                    Best Visiting Places Nearby
-                    <Badge variant="secondary" className="ml-2 bg-emerald-100 text-emerald-600">
-                      Pro Exclusive
-                    </Badge>
-                  </CardTitle>
-                  <p className="text-sm text-gray-600 mt-1">Top 3 attractions and amenities within your area</p>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {analysisResult.nearbyPlaces.slice(0, 3).map((place, index) => (
-                      <div key={index} className="border border-emerald-200 rounded-lg p-4 bg-gradient-to-r from-emerald-50 to-green-50">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center mr-3">
-                              <span className="text-sm font-bold text-emerald-600">#{index + 1}</span>
-                            </div>
-                            <div>
-                              <h4 className="font-semibold text-gray-900">{place.name}</h4>
-                              <p className="text-sm text-gray-600">{place.vicinity}</p>
-                            </div>
-                          </div>
-                          {place.rating && (
-                            <div className="flex items-center bg-white rounded-full px-2 py-1">
-                              <Star className="h-4 w-4 text-yellow-500 mr-1" />
-                              <span className="text-sm font-medium">{place.rating}</span>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4 mb-3">
-                          <div>
-                            <span className="text-xs text-gray-500">Distance:</span>
-                            <div className="text-sm font-medium text-emerald-600">
-                              {analysisResult.distances[place.name]?.distance?.text || 'Calculating...'}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-xs text-gray-500">Travel Time:</span>
-                            <div className="text-sm font-medium text-blue-600">
-                              {analysisResult.distances[place.name]?.duration?.text || 'Calculating...'}
-                            </div>
-                          </div>
-                        </div>
 
-                        {/* Category badges */}
-                        <div className="flex flex-wrap gap-1 mb-3">
-                          {place.types.slice(0, 3).map((type, idx) => (
-                            <Badge key={idx} variant="outline" className="text-xs">
-                              {type.replace(/_/g, ' ')}
-                            </Badge>
-                          ))}
-                        </div>
-
-                        {/* Google Maps redirect button */}
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="w-full"
-                          onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(place.name + ' ' + place.vicinity)}`, '_blank')}
-                        >
-                          <MapPin className="h-4 w-4 mr-1" />
-                          View on Google Maps
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <div className="mt-6 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-                    <p className="text-xs text-emerald-700 text-center">
-                      These locations are selected based on popularity, ratings, and proximity to enhance your living experience in this area.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
             {/* Pro Feature: Alternative Investment Opportunities */}
             {isProPlan && analysisResult.topInvestmentLocations && (
@@ -1210,6 +1146,104 @@ export default function Results() {
                 </CardContent>
               </Card>
             )}
+          </div>
+
+          {/* Tourist Attractions & Visiting Places - Bottom Section */}
+          <div className="mt-12 bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl p-8 border border-emerald-200">
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Eye className="h-8 w-8 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Popular Visiting Places</h2>
+              <p className="text-gray-600">Tourist attractions and recreational spots within 10km</p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {analysisResult.nearbyPlaces
+                .filter(p => p.types.some(t => ['park', 'tourist_attraction', 'amusement_park', 'zoo', 'museum', 'temple', 'church', 'shopping_mall', 'movie_theater', 'stadium'].includes(t)))
+                .slice(0, 3)
+                .map((place, index) => {
+                  const distance = analysisResult.distances[place.name]?.distance?.text || 'Calculating...';
+                  const duration = analysisResult.distances[place.name]?.duration?.text || '';
+                  const areaName = place.vicinity ? place.vicinity.split(',')[0] : 'Nearby';
+                  
+                  return (
+                    <div key={index} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
+                      {/* Placeholder for place image */}
+                      <div className="h-48 bg-gradient-to-br from-emerald-100 via-green-100 to-blue-100 relative overflow-hidden">
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-center text-gray-600">
+                            <Eye className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm font-medium">{place.name}</p>
+                          </div>
+                        </div>
+                        <div className="absolute top-4 left-4">
+                          <div className="bg-white rounded-full px-3 py-1 shadow-md">
+                            <span className="text-sm font-bold text-emerald-600">#{index + 1}</span>
+                          </div>
+                        </div>
+                        {place.rating && (
+                          <div className="absolute top-4 right-4">
+                            <div className="bg-white rounded-full px-3 py-1 shadow-md flex items-center">
+                              <Star className="h-4 w-4 text-yellow-500 mr-1" />
+                              <span className="text-sm font-bold text-gray-700">{place.rating}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="p-6">
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">{place.name}</h3>
+                        <p className="text-sm text-gray-600 mb-4">{areaName}</p>
+                        
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div className="text-center bg-emerald-50 rounded-lg p-3">
+                            <div className="text-lg font-bold text-emerald-600">{distance}</div>
+                            <div className="text-xs text-gray-600">Distance</div>
+                          </div>
+                          <div className="text-center bg-blue-50 rounded-lg p-3">
+                            <div className="text-lg font-bold text-blue-600">{duration || '~15 min'}</div>
+                            <div className="text-xs text-gray-600">Travel Time</div>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1 mb-4">
+                          {place.types
+                            .filter(type => ['park', 'tourist_attraction', 'amusement_park', 'zoo', 'museum', 'temple', 'church', 'shopping_mall', 'movie_theater', 'stadium'].includes(type))
+                            .slice(0, 2)
+                            .map((type, idx) => (
+                              <span key={idx} className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">
+                                {type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                              </span>
+                            ))}
+                        </div>
+
+                        <Button 
+                          className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
+                          onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(place.name + ' ' + (place.vicinity || ''))}`, '_blank')}
+                        >
+                          <MapPin className="h-4 w-4 mr-2" />
+                          Visit on Maps
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+
+            {analysisResult.nearbyPlaces.filter(p => p.types.some(t => ['park', 'tourist_attraction', 'amusement_park', 'zoo', 'museum', 'temple', 'church', 'shopping_mall', 'movie_theater', 'stadium'].includes(t))).length === 0 && (
+              <div className="text-center py-8">
+                <Eye className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">Limited Tourist Attractions</h3>
+                <p className="text-gray-600">This area appears to be more residential/commercial. Major attractions may be in nearby city centers.</p>
+              </div>
+            )}
+
+            <div className="mt-8 text-center">
+              <p className="text-sm text-emerald-700 bg-emerald-100 rounded-lg p-3">
+                These are popular recreational and tourist destinations within a reasonable distance from your location. Perfect for weekend visits and entertainment.
+              </p>
+            </div>
           </div>
         </div>
       </div>
