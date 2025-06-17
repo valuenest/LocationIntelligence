@@ -80,6 +80,10 @@ export default function Results() {
     enabled: !!sessionId,
   });
 
+  const { data: mapsConfig } = useQuery<{ apiKey: string }>({
+    queryKey: ['/api/maps-config'],
+  });
+
   const handleDownloadPDF = () => {
     if (result?.analysis) {
       generatePDF(result.analysis);
@@ -285,7 +289,7 @@ export default function Results() {
               </div>
               <div className="aspect-video relative">
                 <img
-                  src={`https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${analysis.location.lat},${analysis.location.lng}&heading=0&pitch=0&key=${process.env.GOOGLE_MAPS_API_KEY || ''}`}
+                  src={`https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${analysis.location.lat},${analysis.location.lng}&heading=0&pitch=0&key=${mapsConfig?.apiKey || ''}`}
                   alt="Street View of Property Location"
                   className="w-full h-full object-cover"
                   onError={(e) => {
