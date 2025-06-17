@@ -260,7 +260,7 @@ export default function Results() {
         </div>
       </div>
 
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12 py-8">
         {/* Property Summary */}
         <Card className="mb-8">
           <CardHeader>
@@ -565,15 +565,6 @@ export default function Results() {
                                   {duration && <div className="text-xs text-gray-500">{duration}</div>}
                                 </div>
                               </div>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="w-full"
-                                onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(place.name + ' ' + (place.vicinity || ''))}`, '_blank')}
-                              >
-                                <MapPin className="h-4 w-4 mr-2" />
-                                Get Directions
-                              </Button>
                             </div>
                           );
                         })}
