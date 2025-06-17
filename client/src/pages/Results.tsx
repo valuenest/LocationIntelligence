@@ -228,7 +228,7 @@ export default function Results() {
     return <MapPin className="h-4 w-4" />;
   };
 
-  const isPaidPlan = analysis.planType === 'paid' || analysis.planType === 'pro';
+  const isPaidPlan = analysis.planType === 'basic' || analysis.planType === 'pro';
   const isProPlan = analysis.planType === 'pro';
 
   return (
@@ -822,7 +822,7 @@ export default function Results() {
                           (analysisResult.growthPrediction || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                         }`}>
                           {analysisResult.investmentViability === 0 ? '-15.0' : 
-                           (analysisResult.growthPrediction || 0) >= 0 ? '+' : ''}{analysisResult.growthPrediction?.toFixed(1) || '0.0'}%
+                           (analysisResult.growthPrediction || 0) >= 0 ? '+' : ''}{(analysisResult.growthPrediction || 0).toFixed(1)}%
                         </div>
                         <div className="text-sm text-gray-700 font-medium">Property Appreciation</div>
                         <div className="text-xs text-gray-600">3-Year Projection</div>
@@ -838,7 +838,7 @@ export default function Results() {
                           (analysisResult.businessGrowthRate || 0) >= 0 ? 'text-blue-600' : 'text-red-600'
                         }`}>
                           {analysisResult.investmentViability === 0 ? '0.0' : 
-                           (analysisResult.businessGrowthRate || 0) >= 0 ? '+' : ''}{analysisResult.businessGrowthRate?.toFixed(1) || '0.0'}%
+                           (analysisResult.businessGrowthRate || 0) >= 0 ? '+' : ''}{(analysisResult.businessGrowthRate || 0).toFixed(1)}%
                         </div>
                         <div className="text-sm text-gray-700 font-medium">Business Growth</div>
                         <div className="text-xs text-gray-600">Annual Rate</div>
@@ -854,7 +854,7 @@ export default function Results() {
                           (analysisResult.populationGrowthRate || 0) >= 0 ? 'text-purple-600' : 'text-red-600'
                         }`}>
                           {analysisResult.investmentViability === 0 ? '0.0' : 
-                           (analysisResult.populationGrowthRate || 0) >= 0 ? '+' : ''}{analysisResult.populationGrowthRate?.toFixed(1) || '0.0'}%
+                           (analysisResult.populationGrowthRate || 0) >= 0 ? '+' : ''}{(analysisResult.populationGrowthRate || 0).toFixed(1)}%
                         </div>
                         <div className="text-sm text-gray-700 font-medium">Population Growth</div>
                         <div className="text-xs text-gray-600">Annual Rate</div>
