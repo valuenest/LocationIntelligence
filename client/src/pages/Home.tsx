@@ -42,6 +42,7 @@ export default function Home() {
   const [validationResult, setValidationResult] = useState<any>(null);
   const [pendingFormData, setPendingFormData] = useState<PropertyFormData | null>(null);
   const [isValidating, setIsValidating] = useState(false);
+  const [pricingModalOpen, setPricingModalOpen] = useState(false);
 
   const { data: usageStatus } = useQuery<{ success: boolean; usage: { canUseFree: boolean; freeUsageCount: number; maxFreeUsage: number } }>({
     queryKey: ['/api/usage-status'],
