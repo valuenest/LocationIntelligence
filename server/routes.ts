@@ -156,6 +156,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (data.status === 'OK' && data.results.length > 0) {
+        // Log all place types to understand what we're filtering against
+        console.log('All place types found:', data.results.slice(0, 5).map((p: any) => ({ name: p.name, types: p.types })));
+        
         // Filter and categorize results by type
         const filteredPlaces = data.results
           .filter((place: any) => place.types.some((type: string) => types.includes(type)))
@@ -169,7 +172,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }));
         
         places.push(...filteredPlaces);
-        console.log(`Found ${places.length} relevant places for analysis`);
+        console.log(`Found ${places.length} relevant places for analysis out of ${data.results.length} total places`);
+        console.log('Required types:', types);
       } else if (data.status === 'ZERO_RESULTS') {
         console.log('Zero results - likely remote/desert location');
       } else {
