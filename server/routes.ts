@@ -205,6 +205,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Frontend validation endpoint
+  app.post("/api/validate-inputs", async (req: Request, res: Response) => {
+    try {
+      const { location, propertyData } = req.body;
+      
+      if (!location || !propertyData) {
+        return res.status(400).json({ error: "Missing location or property data" });
+      }
+
+      const validation = await performSmartValidation({ location, propertyData });
+      res.json({ success: true, validation });
+    } catch (error) {
+      console.error("Validation error:", error);
+      res.json({ success: false, validation: null });
+    }
+  });
+
+  // Frontend analysis endpoint
+  app.post("/api/analyze", async (req: Request, res: Response) => {
+    try {
+      const { location, amount, propertyType, planType = "free", ...propertyDetails } = req.body;
+      
+      if (!location || !amount || !propertyType) {
+        return res.status(400).json({ success: false, error: "Missing required fields" });
+      }
+
+      // Get client IP for usage tracking
+      const ipAddress = req.ip || req.connection.remoteAddress || "127.0.0.1";
+      
+      // Check usage limits for free tier
+      if (planType === "free") {
+        let usageLimit = await storage.getUsageLimit(ipAddress);
+        
+        if (!usageLimit) {
+          usageLimit = await storage.createUsageLimit({
+            ipAddress,
+            freeUsageCount: 0,
+            lastUsageDate: new Date().toISOString().split('T')[0]
+          });
+        }
+
+        // Reset daily usage if it's a new day
+        const today = new Date().toISOString().split('T')[0];
+        if (usageLimit.lastUsageDate !== today) {
+          usageLimit = await storage.resetDailyUsage(ipAddress);
+        }
+
+        if (usageLimit.freeUsageCount >= 3) {
+          return res.status(429).json({ success: false, error: "Daily free usage limit reached" });
+        }
+
+        // Increment usage count
+        await storage.incrementFreeUsage(ipAddress);
+      }
+
+      const analysisRequest = await storage.createAnalysisRequest({
+        sessionId: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        location: JSON.stringify(location),
+        amount: parseFloat(amount),
+        propertyType,
+        planType,
+        propertyDetails: JSON.stringify(propertyDetails),
+        paymentStatus: planType === "free" ? "completed" : "pending",
+        status: "pending"
+      });
+
+      res.json({ success: true, sessionId: analysisRequest.sessionId, analysisId: analysisRequest.id });
+    } catch (error) {
+      console.error("Error creating analysis:", error);
+      res.status(500).json({ success: false, error: "Internal server error" });
+    }
+  });
+
   // Usage limit management
   app.get("/api/usage/:ipAddress", async (req: Request, res: Response) => {
     try {
