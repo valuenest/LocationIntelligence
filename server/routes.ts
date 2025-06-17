@@ -189,8 +189,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
-  // Investment recommendation engine based on comprehensive property analysis
-  const generateInvestmentRecommendations = (
+  // Local investment recommendation engine based on comprehensive property analysis
+  const generateLocalInvestmentRecommendations = (
     location: LocationData,
     amount: number,
     propertyType: string,
@@ -210,7 +210,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Property size factor (15% weight)
     let sizeFactor = 0;
-    const { propertySize, sizeUnit } = propertyDetails;
+    const propertySize = propertyDetails?.propertySize || 1000;
+    const sizeUnit = propertyDetails?.sizeUnit || 'sqft';
     if (sizeUnit === 'sqft') {
       if (propertySize >= 2000) sizeFactor = 15;
       else if (propertySize >= 1200) sizeFactor = 12;
@@ -225,7 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Property age factor (10% weight)
     let ageFactor = 0;
-    switch (propertyDetails.propertyAge) {
+    switch (propertyDetails?.propertyAge) {
       case 'new':
       case '0-1':
         ageFactor = 10;
@@ -275,10 +276,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Additional factors (10% weight)
     let additionalFactor = 0;
-    if (propertyDetails.parkingSpaces >= 2) additionalFactor += 3;
-    if (propertyDetails.furnished === 'fully-furnished') additionalFactor += 2;
-    if (propertyDetails.floor === 'penthouse' || propertyDetails.floor === '4-7') additionalFactor += 2;
-    if (propertyDetails.bedrooms >= 3) additionalFactor += 3;
+    if (propertyDetails?.parkingSpaces >= 2) additionalFactor += 3;
+    if (propertyDetails?.furnished === 'fully-furnished') additionalFactor += 2;
+    if (propertyDetails?.floor === 'penthouse' || propertyDetails?.floor === '4-7') additionalFactor += 2;
+    if (propertyDetails?.bedrooms >= 3) additionalFactor += 3;
     investmentScore += additionalFactor;
     
     const finalScore = Math.min(95, Math.round(investmentScore));
@@ -287,11 +288,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (finalScore >= 80) {
       recommendations.push(`🎯 STRONG BUY: ${finalScore}% investment viability - This property shows excellent potential with superior location score (${locationScore.toFixed(1)}/5) and ${amenityCount} nearby amenities.`);
       
-      if (propertyType === 'apartment' && propertyDetails.propertyAge === 'new') {
-        recommendations.push(`📈 Growth Potential: New apartments in this location typically appreciate 18-25% annually. Your ${propertyDetails.propertySize} ${propertyDetails.sizeUnit} unit is optimally sized for rental income.`);
+      if (propertyType === 'apartment' && propertyDetails?.propertyAge === 'new') {
+        recommendations.push(`📈 Growth Potential: New apartments in this location typically appreciate 18-25% annually. Your ${propertySize} ${sizeUnit} unit is optimally sized for rental income.`);
       }
       
-      if (propertyDetails.parkingSpaces >= 2) {
+      if (propertyDetails?.parkingSpaces >= 2) {
         recommendations.push(`🚗 Premium Feature: Multiple parking spaces add 8-12% to property value and ensure higher rental demand in this area.`);
       }
       
@@ -302,7 +303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         recommendations.push(`📍 Location Concern: Limited nearby amenities may affect resale value. Consider properties closer to metro/commercial hubs for better appreciation.`);
       }
       
-      if (propertyDetails.propertyAge === '10-20' || propertyDetails.propertyAge === '20+') {
+      if (propertyDetails?.propertyAge === '10-20' || propertyDetails?.propertyAge === '20+') {
         recommendations.push(`🏗️ Renovation Factor: Older properties may need 15-20% additional investment for modernization, but can offer 25-30% higher returns post-renovation.`);
       }
       
@@ -354,7 +355,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hospitalPlace = allBasicPlaces.find(p => p.types.includes('hospital'));
       const metroPlace = allBasicPlaces.find(p => p.types.includes('subway_station'));
       
-      result.nearbyPlaces = [schoolPlace, hospitalPlace, metroPlace].filter(Boolean) as PlaceDetails[];
+      result.nearbyPlaces = [schoolPlace, hospitalPlace, metroPlace].filter((place): place is PlaceDetails => place !== undefined);
       result.distances = await calculateDistances(location, result.nearbyPlaces);
       
       // Basic location score calculation
