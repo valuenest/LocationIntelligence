@@ -257,14 +257,72 @@ export default function LocationInput({ onLocationSelect, selectedLocation }: Lo
         </div>
       </div>
 
-      {/* Selected Location Display */}
+      {/* Selected Location Display with Street View */}
       {selectedLocation && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-          <div className="flex items-center">
-            <MapPin className="text-green-600 mr-2" />
-            <span className="font-medium text-green-800">Selected Location:</span>
+        <div className="space-y-4">
+          {/* Location Details */}
+          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center">
+              <MapPin className="text-green-600 mr-2" />
+              <span className="font-medium text-green-800">Selected Location:</span>
+            </div>
+            <p className="text-green-700 mt-1">{selectedLocation.address}</p>
+            <div className="flex justify-between items-center mt-2">
+              <span className="text-xs text-green-600">
+                Lat: {selectedLocation.lat.toFixed(6)}, Lng: {selectedLocation.lng.toFixed(6)}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setManualAddress(selectedLocation.address)}
+                className="text-green-700 border-green-300 hover:bg-green-100"
+              >
+                <Edit3 className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
+            </div>
           </div>
-          <p className="text-green-700 mt-1">{selectedLocation.address}</p>
+
+          {/* Street View Preview */}
+          <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+            <div className="px-4 py-2 bg-gray-100 border-b border-gray-200">
+              <h4 className="text-sm font-medium text-gray-700">Street View Preview</h4>
+            </div>
+            <div className="aspect-video relative">
+              <img
+                src={`https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${selectedLocation.lat},${selectedLocation.lng}&heading=0&pitch=0&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}`}
+                alt="Street View"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  const target = e.currentTarget as HTMLImageElement;
+                  target.style.display = 'none';
+                  const fallback = target.nextElementSibling as HTMLElement;
+                  if (fallback) fallback.style.display = 'flex';
+                }}
+              />
+              <div 
+                className="w-full h-full bg-gradient-to-br from-blue-100 to-green-100 flex items-center justify-center absolute inset-0"
+                style={{ display: 'none' }}
+              >
+                <div className="text-center text-gray-600">
+                  <MapPin className="h-12 w-12 mx-auto mb-2" />
+                  <p className="text-sm font-medium">Street View Preview</p>
+                  <p className="text-xs text-gray-500 mt-1">Location: {selectedLocation.address}</p>
+                </div>
+              </div>
+            </div>
+            <div className="px-4 py-2 bg-white">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => window.open(`https://www.google.com/maps/@${selectedLocation.lat},${selectedLocation.lng},3a,75y,90t/data=!3m6!1e1!3m4!1s0x0:0x0!2e0!7i13312!8i6656`, '_blank')}
+              >
+                <MapPin className="h-4 w-4 mr-2" />
+                Open Full Street View
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -65,6 +65,40 @@ export default function PropertyForm({ onSubmit, selectedLocation }: PropertyFor
   const [priceValidation, setPriceValidation] = useState<any>(null);
   const [predictedRange, setPredictedRange] = useState<any>(null);
 
+  // Price prediction logic
+  useEffect(() => {
+    if (selectedLocation && propertyType && propertySize && amount && propertyAge && bedrooms && furnished && floor) {
+      const propertyData = {
+        amount: parseFloat(amount),
+        propertyType,
+        propertySize: parseFloat(propertySize),
+        sizeUnit,
+        propertyAge,
+        bedrooms: parseInt(bedrooms),
+        furnished,
+        floor,
+        parkingSpaces: parseInt(parkingSpaces) || 0,
+        currency: selectedCountry.currency,
+        country: selectedCountry.code
+      };
+
+      try {
+        const predicted = predictPropertyPrice(selectedLocation, propertyData);
+        setPredictedRange(predicted);
+        
+        if (amount) {
+          const validation = validateUserAmount(parseFloat(amount), predicted);
+          setPriceValidation(validation);
+        }
+      } catch (error) {
+        console.error('Price prediction error:', error);
+      }
+    } else {
+      setPredictedRange(null);
+      setPriceValidation(null);
+    }
+  }, [selectedLocation, amount, propertyType, propertySize, sizeUnit, propertyAge, bedrooms, furnished, floor, parkingSpaces, selectedCountry]);
+
   // Auto-detect country based on user's location
   useEffect(() => {
     const detectCountry = async () => {
@@ -238,6 +272,96 @@ export default function PropertyForm({ onSubmit, selectedLocation }: PropertyFor
           </Select>
         </div>
       </div>
+
+      {/* Price Range Prediction Display */}
+      {predictedRange && selectedLocation && propertySize && propertyType && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+          <div className="flex items-center mb-4">
+            <TrendingUp className="h-6 w-6 text-blue-600 mr-2" />
+            <h3 className="text-lg font-semibold text-gray-900">Market Price Analysis</h3>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-4 mb-4">
+            <div className="bg-white rounded-lg p-4 text-center">
+              <div className="text-sm text-gray-600 mb-1">Minimum Range</div>
+              <div className="text-lg font-bold text-green-600">
+                {selectedCountry.symbol}{(predictedRange.min / 100000).toFixed(1)}L
+              </div>
+            </div>
+            <div className="bg-white rounded-lg p-4 text-center">
+              <div className="text-sm text-gray-600 mb-1">Expected Price</div>
+              <div className="text-xl font-bold text-blue-600">
+                {selectedCountry.symbol}{(predictedRange.average / 100000).toFixed(1)}L
+              </div>
+            </div>
+            <div className="bg-white rounded-lg p-4 text-center">
+              <div className="text-sm text-gray-600 mb-1">Maximum Range</div>
+              <div className="text-lg font-bold text-orange-600">
+                {selectedCountry.symbol}{(predictedRange.max / 100000).toFixed(1)}L
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-600">Per Sq Ft Rate</span>
+              <span className="font-semibold text-gray-900">
+                {selectedCountry.symbol}{predictedRange.perSqFt.toLocaleString()}
+              </span>
+            </div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-600">Market Trend</span>
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                predictedRange.marketTrend === 'hot' ? 'bg-red-100 text-red-700' :
+                predictedRange.marketTrend === 'stable' ? 'bg-green-100 text-green-700' :
+                'bg-blue-100 text-blue-700'
+              }`}>
+                {predictedRange.marketTrend.toUpperCase()}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Confidence</span>
+              <span className="font-semibold text-gray-900">{predictedRange.confidence}%</span>
+            </div>
+          </div>
+
+          {/* Price Validation */}
+          {priceValidation && amount && (
+            <div className={`mt-4 p-4 rounded-lg border ${
+              priceValidation.isRealistic 
+                ? 'bg-green-50 border-green-200' 
+                : 'bg-yellow-50 border-yellow-200'
+            }`}>
+              <div className="flex items-center mb-2">
+                {priceValidation.isRealistic ? (
+                  <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
+                ) : (
+                  <AlertTriangle className="h-5 w-5 text-yellow-600 mr-2" />
+                )}
+                <span className={`font-semibold ${
+                  priceValidation.isRealistic ? 'text-green-800' : 'text-yellow-800'
+                }`}>
+                  {priceValidation.category === 'realistic' ? 'Realistic Budget' :
+                   priceValidation.category === 'underpriced' ? 'Budget Below Market' :
+                   'Budget Above Market'}
+                </span>
+              </div>
+              <p className={`text-sm ${
+                priceValidation.isRealistic ? 'text-green-700' : 'text-yellow-700'
+              }`}>
+                Your budget is {Math.abs(priceValidation.deviation).toFixed(1)}% 
+                {priceValidation.deviation > 0 ? ' above' : ' below'} market average.
+                {priceValidation.category === 'underpriced' && 
+                  ' Consider increasing budget or looking for smaller properties.'}
+                {priceValidation.category === 'overpriced' && 
+                  ' You might be overpaying - consider negotiating or premium properties.'}
+                {priceValidation.category === 'realistic' && 
+                  ' This aligns well with current market rates.'}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Conditional Property Details Based on Type */}
       {(propertyType === 'apartment' || propertyType === 'house') && (

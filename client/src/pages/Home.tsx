@@ -171,7 +171,7 @@ export default function Home() {
             <LocationInput onLocationSelect={handleLocationSelect} selectedLocation={selectedLocation} />
             
             <div className="mt-8">
-              <PropertyForm onSubmit={handlePropertySubmit} />
+              <PropertyForm onSubmit={handlePropertySubmit} selectedLocation={selectedLocation} />
             </div>
           </div>
         </div>
