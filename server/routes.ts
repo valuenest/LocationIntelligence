@@ -399,9 +399,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { sessionId } = req.params;
 
-      // Find analysis request by session ID
-      const analysisRequests = Array.from((storage as any).analysisRequests.values());
-      const analysisRequest = analysisRequests.find((req: any) => req.sessionId === sessionId);
+      // Query database for analysis request by session ID
+      const analysisRequest = await storage.getAnalysisRequestBySessionId(sessionId);
 
       if (!analysisRequest) {
         return res.status(404).json({ error: 'Analysis not found' });

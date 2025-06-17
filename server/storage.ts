@@ -10,6 +10,7 @@ export interface IStorage {
   createAnalysisRequest(request: InsertAnalysisRequest): Promise<AnalysisRequest>;
   getAnalysisRequest(id: number): Promise<AnalysisRequest | undefined>;
   getAnalysisRequestByPaymentId(paymentId: string): Promise<AnalysisRequest | undefined>;
+  getAnalysisRequestBySessionId(sessionId: string): Promise<AnalysisRequest | undefined>;
   updateAnalysisRequest(id: number, data: Partial<AnalysisRequest>): Promise<AnalysisRequest>;
   
   getUsageLimit(ipAddress: string): Promise<UsageLimit | undefined>;
@@ -53,6 +54,11 @@ export class DatabaseStorage implements IStorage {
 
   async getAnalysisRequestByPaymentId(paymentId: string): Promise<AnalysisRequest | undefined> {
     const [request] = await db.select().from(analysisRequests).where(eq(analysisRequests.paymentId, paymentId));
+    return request || undefined;
+  }
+
+  async getAnalysisRequestBySessionId(sessionId: string): Promise<AnalysisRequest | undefined> {
+    const [request] = await db.select().from(analysisRequests).where(eq(analysisRequests.sessionId, sessionId));
     return request || undefined;
   }
 
