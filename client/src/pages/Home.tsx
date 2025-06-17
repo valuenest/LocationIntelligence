@@ -39,8 +39,15 @@ export default function Home() {
     setSelectedLocation(location);
   };
 
-  const handlePropertySubmit = (data: PropertyFormData) => {
+  const handlePropertySubmit = async (data: PropertyFormData) => {
     setPropertyData(data);
+    
+    // Automatically trigger free analysis when property form is submitted
+    if (selectedLocation) {
+      await handleFreeAnalysis(data);
+    } else {
+      alert('Please select a location first');
+    }
   };
 
   const handlePlanSelect = (plan: string) => {
@@ -53,8 +60,10 @@ export default function Home() {
     }
   };
 
-  const handleFreeAnalysis = async () => {
-    if (!selectedLocation || !propertyData) {
+  const handleFreeAnalysis = async (formData?: PropertyFormData) => {
+    const dataToUse = formData || propertyData;
+    
+    if (!selectedLocation || !dataToUse) {
       alert('Please select a location and enter property details first');
       return;
     }
@@ -70,8 +79,8 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           location: selectedLocation,
-          amount: propertyData.amount,
-          propertyType: propertyData.propertyType,
+          amount: dataToUse.amount,
+          propertyType: dataToUse.propertyType,
           planType: 'free',
         }),
       });

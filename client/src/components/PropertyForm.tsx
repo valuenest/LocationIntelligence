@@ -165,7 +165,7 @@ export default function PropertyForm({ onSubmit }: PropertyFormProps) {
         type="submit"
         className="w-full bg-[#FF5A5F] hover:bg-[#e54852] text-white py-4 rounded-xl font-semibold text-lg transition-colors duration-200"
       >
-        Save Property Details
+        Analyse My Property
       </Button>
     </form>
   );

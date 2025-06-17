@@ -16,7 +16,10 @@ import {
   Train,
   Brain,
   Eye,
-  ArrowLeft
+  ArrowLeft,
+  Lock,
+  Zap,
+  Crown
 } from "lucide-react";
 import { Link } from "wouter";
 import { generatePDF } from "@/lib/pdfGenerator";
@@ -235,47 +238,94 @@ export default function Results() {
               </CardContent>
             </Card>
 
-            {/* Growth Potential - Paid Plans Only */}
-            {isPaidPlan && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
+            {/* Growth Potential */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center">
                     <TrendingUp className="h-5 w-5 mr-2 text-green-500" />
                     Growth Potential
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center mb-4">
-                    <span className="text-4xl font-bold text-green-600">+{analysisResult.growthPrediction}%</span>
-                    <p className="text-gray-600">Expected appreciation in 3 years</p>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-gray-600">Current Value</span>
-                      <span className="font-semibold">₹{analysis.amount.toLocaleString()}</span>
+                  {!isPaidPlan && (
+                    <Badge variant="secondary" className="bg-orange-100 text-orange-600">
+                      <Zap className="h-3 w-3 mr-1" />
+                      Paid Feature
+                    </Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isPaidPlan ? (
+                  <>
+                    <div className="text-center mb-4">
+                      <span className="text-4xl font-bold text-green-600">+{analysisResult.growthPrediction}%</span>
+                      <p className="text-gray-600">Expected appreciation in 3 years</p>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Projected Value</span>
-                      <span className="font-semibold text-green-600">
-                        ₹{Math.round(analysis.amount * (1 + analysisResult.growthPrediction / 100)).toLocaleString()}
-                      </span>
+                    <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-gray-600">Current Value</span>
+                        <span className="font-semibold">₹{analysis.amount.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Projected Value</span>
+                        <span className="font-semibold text-green-600">
+                          ₹{Math.round(analysis.amount * (1 + analysisResult.growthPrediction / 100)).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600">Based on nearby developments and market trends</p>
+                  </>
+                ) : (
+                  <div className="relative">
+                    <div className="blur-sm pointer-events-none">
+                      <div className="text-center mb-4">
+                        <span className="text-4xl font-bold text-green-600">+██%</span>
+                        <p className="text-gray-600">Expected appreciation in 3 years</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-gray-600">Current Value</span>
+                          <span className="font-semibold">₹████████</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">Projected Value</span>
+                          <span className="font-semibold text-green-600">₹████████</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/90 rounded-lg">
+                      <div className="text-center">
+                        <Lock className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                        <p className="font-semibold text-gray-900 mb-2">Unlock Growth Analysis</p>
+                        <p className="text-sm text-gray-600 mb-4">Get detailed market predictions and investment returns</p>
+                        <Button className="bg-orange-500 hover:bg-orange-600">
+                          Upgrade to Paid - ₹99
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600">Based on nearby developments and market trends</p>
-                </CardContent>
-              </Card>
-            )}
+                )}
+              </CardContent>
+            </Card>
 
-            {/* AI Recommendations - Pro Plan Only */}
-            {isProPlan && analysisResult.aiRecommendations && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
+            {/* AI Recommendations */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center">
                     <Brain className="h-5 w-5 mr-2 text-purple-500" />
                     AI Recommendations
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+                  </div>
+                  {!isProPlan && (
+                    <Badge variant="secondary" className="bg-purple-100 text-purple-600">
+                      <Crown className="h-3 w-3 mr-1" />
+                      Pro Feature
+                    </Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isProPlan && analysisResult.aiRecommendations ? (
                   <div className="space-y-4">
                     {analysisResult.aiRecommendations.map((recommendation, index) => (
                       <div key={index} className="bg-purple-50 rounded-lg p-4">
@@ -283,9 +333,35 @@ export default function Results() {
                       </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                ) : (
+                  <div className="relative">
+                    <div className="blur-sm pointer-events-none">
+                      <div className="space-y-4">
+                        <div className="bg-purple-50 rounded-lg p-4">
+                          <p className="text-sm text-gray-700">████████ ██████ ████ ███████ ████████ ███ ██████ ██████ ████ ███ ████████.</p>
+                        </div>
+                        <div className="bg-purple-50 rounded-lg p-4">
+                          <p className="text-sm text-gray-700">██████ ████████ ███ ████ ██████ ███████ ████ ██████ ████████ ███████.</p>
+                        </div>
+                        <div className="bg-purple-50 rounded-lg p-4">
+                          <p className="text-sm text-gray-700">████████ ██████ ███ ████████ ██████ ████ ███████ ████ ██████.</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/90 rounded-lg">
+                      <div className="text-center">
+                        <Crown className="h-12 w-12 text-purple-400 mx-auto mb-3" />
+                        <p className="font-semibold text-gray-900 mb-2">Unlock AI Insights</p>
+                        <p className="text-sm text-gray-600 mb-4">Get personalized investment recommendations powered by AI</p>
+                        <Button className="bg-purple-500 hover:bg-purple-600">
+                          Upgrade to Pro - ₹199
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Nearby Places */}
             <Card>
