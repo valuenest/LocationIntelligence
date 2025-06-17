@@ -555,20 +555,29 @@ export default function Results() {
                   <p className="text-gray-600 mb-4">Top 3 investment opportunities within 25km based on AI analysis</p>
                   <div className="space-y-4">
                     {analysisResult.topInvestmentLocations.map((location, index) => (
-                      <div key={index} className="border rounded-lg p-4 bg-gradient-to-r from-purple-50 to-indigo-50">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold text-gray-900">{location.address}</h4>
-                          <div className="flex items-center">
-                            <span className="text-sm font-medium text-purple-600 mr-2">{location.score.toFixed(0)}% Score</span>
-                            <Badge variant="outline" className="text-xs">{location.distance}</Badge>
+                      <div key={index} className="border rounded-lg overflow-hidden bg-gradient-to-r from-purple-50 to-indigo-50">
+                        {location.imageUrl && (
+                          <img 
+                            src={location.imageUrl} 
+                            alt={`${location.address} location`} 
+                            className="w-full h-32 object-cover"
+                          />
+                        )}
+                        <div className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-semibold text-gray-900">{location.address}</h4>
+                            <div className="flex items-center">
+                              <span className="text-sm font-medium text-purple-600 mr-2">{location.score.toFixed(0)}% Score</span>
+                              <Badge variant="outline" className="text-xs">{location.distance}</Badge>
+                            </div>
                           </div>
-                        </div>
-                        <p className="text-sm text-gray-700 mb-2">{location.reasoning}</p>
-                        <div className="w-full bg-purple-200 rounded-full h-2">
-                          <div 
-                            className="bg-purple-600 h-2 rounded-full" 
-                            style={{ width: `${location.score}%` }}
-                          ></div>
+                          <p className="text-sm text-gray-700 mb-2">{location.reasoning}</p>
+                          <div className="w-full bg-purple-200 rounded-full h-2">
+                            <div 
+                              className="bg-purple-600 h-2 rounded-full" 
+                              style={{ width: `${location.score}%` }}
+                            ></div>
+                          </div>
                         </div>
                       </div>
                     ))}

@@ -9,6 +9,7 @@ interface InvestmentLocation {
   score: number;
   reasoning: string;
   distance: string;
+  imageUrl?: string;
 }
 
 interface AIAnalysisRequest {
