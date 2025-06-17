@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { generatePDF } from "@/lib/pdfGenerator";
+import PricingPlans from "@/components/PricingPlans";
+import PaymentModal from "@/components/PaymentModal";
 import { saveAnalysisToHistory } from "@/lib/historyStorage";
 
 interface AnalysisResult {
@@ -78,6 +80,9 @@ interface AnalysisData {
 
 export default function Results() {
   const { sessionId } = useParams<{ sessionId: string }>();
+  const [showPricingModal, setShowPricingModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
   const { data: result, isLoading, error } = useQuery<{ success: boolean; analysis: AnalysisData }>({
     queryKey: [`/api/result/${sessionId}`],
@@ -121,6 +126,21 @@ export default function Results() {
       navigator.clipboard.writeText(window.location.href);
       alert('Link copied to clipboard!');
     }
+  };
+
+  const handleUpgradeClick = () => {
+    setShowPricingModal(true);
+  };
+
+  const handlePlanSelect = (plan: string) => {
+    setSelectedPlan(plan);
+    setShowPricingModal(false);
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentClose = () => {
+    setShowPaymentModal(false);
+    setSelectedPlan(null);
   };
 
   if (isLoading) {
