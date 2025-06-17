@@ -4,6 +4,12 @@ import { Input } from "@/components/ui/input";
 import { MapPin, Edit3 } from "lucide-react";
 import { useGoogleMaps } from "@/hooks/useGeolocation";
 
+declare global {
+  interface Window {
+    google: any;
+  }
+}
+
 interface LocationData {
   lat: number;
   lng: number;
@@ -16,19 +22,10 @@ interface LocationInputProps {
 }
 
 export default function LocationInput({ onLocationSelect, selectedLocation }: LocationInputProps) {
-  const [inputMethod, setInputMethod] = useState<'map' | 'manual' | null>(null);
   const [manualAddress, setManualAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const { isLoaded, loadError } = useGoogleMaps();
-
-  const handleMapMethodSelect = () => {
-    setInputMethod(inputMethod === 'map' ? null : 'map');
-  };
-
-  const handleManualMethodSelect = () => {
-    setInputMethod(inputMethod === 'manual' ? null : 'manual');
-  };
 
   const handleManualAddressSubmit = async () => {
     if (!manualAddress.trim()) return;
@@ -60,7 +57,7 @@ export default function LocationInput({ onLocationSelect, selectedLocation }: Lo
 
   // Initialize Google Map
   useEffect(() => {
-    if (isLoaded && inputMethod === 'map' && mapRef.current) {
+    if (isLoaded && mapRef.current) {
       const map = new google.maps.Map(mapRef.current, {
         center: { lat: 28.6139, lng: 77.2090 }, // Delhi coordinates
         zoom: 10,
@@ -73,6 +70,7 @@ export default function LocationInput({ onLocationSelect, selectedLocation }: Lo
         map: map,
         draggable: true,
         title: 'Property Location',
+        position: { lat: 28.6139, lng: 77.2090 },
       });
 
       // Handle map click
@@ -117,7 +115,7 @@ export default function LocationInput({ onLocationSelect, selectedLocation }: Lo
         }
       });
     }
-  }, [isLoaded, inputMethod, onLocationSelect]);
+  }, [isLoaded, onLocationSelect]);
 
   if (loadError) {
     return (
@@ -129,90 +127,62 @@ export default function LocationInput({ onLocationSelect, selectedLocation }: Lo
 
   return (
     <div className="space-y-6">
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Pin on Map */}
-        <div 
-          className={`bg-gray-50 rounded-xl p-6 border-2 transition-colors duration-200 cursor-pointer ${
-            inputMethod === 'map' ? 'border-[#FF5A5F]' : 'border-transparent hover:border-[#FF5A5F]'
-          }`}
-          onClick={handleMapMethodSelect}
-        >
-          <div className="flex items-center mb-4">
-            <div className="w-12 h-12 bg-[#FF5A5F] rounded-full flex items-center justify-center mr-4">
-              <MapPin className="text-white text-xl" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900">Pin on Map</h3>
-          </div>
-          <p className="text-gray-600">Click on the map to select your property location</p>
-        </div>
+      {/* Instruction Text */}
+      <div className="text-center mb-6">
+        <h3 className="text-2xl font-semibold text-gray-900 mb-2">Select Property Location</h3>
+        <p className="text-gray-600">Click on the map to pin your location or search for an address below</p>
+      </div>
 
-        {/* Manual Entry */}
-        <div 
-          className={`bg-gray-50 rounded-xl p-6 border-2 transition-colors duration-200 cursor-pointer ${
-            inputMethod === 'manual' ? 'border-[#00A699]' : 'border-transparent hover:border-[#00A699]'
-          }`}
-          onClick={handleManualMethodSelect}
-        >
-          <div className="flex items-center mb-4">
-            <div className="w-12 h-12 bg-[#00A699] rounded-full flex items-center justify-center mr-4">
-              <Edit3 className="text-white text-xl" />
+      {/* Map Container - Always Visible */}
+      <div className="mb-6">
+        {isLoaded ? (
+          <div ref={mapRef} className="h-80 w-full rounded-lg border border-gray-300 shadow-sm" />
+        ) : (
+          <div className="h-80 w-full rounded-lg border border-gray-300 flex items-center justify-center bg-gray-100">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF5A5F] mx-auto mb-2"></div>
+              <p className="text-gray-500">Loading map...</p>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900">Enter Manually</h3>
           </div>
-          <p className="text-gray-600">Type your property address or location</p>
+        )}
+      </div>
+
+      {/* Search Bar Below Map */}
+      <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+        <div className="flex items-center mb-3">
+          <Edit3 className="text-[#00A699] mr-2" />
+          <span className="font-medium text-gray-900">Or search for an address</span>
+        </div>
+        <div className="flex gap-2">
+          <Input
+            type="text"
+            placeholder="Enter your property address..."
+            value={manualAddress}
+            onChange={(e) => setManualAddress(e.target.value)}
+            className="flex-1"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleManualAddressSubmit();
+              }
+            }}
+          />
+          <Button 
+            onClick={handleManualAddressSubmit}
+            disabled={!manualAddress.trim() || isLoading}
+            className="bg-[#00A699] hover:bg-[#008a7f]"
+          >
+            {isLoading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            ) : (
+              'Search'
+            )}
+          </Button>
         </div>
       </div>
 
-      {/* Map Container */}
-      {inputMethod === 'map' && (
-        <div className="mt-6">
-          {isLoaded ? (
-            <div ref={mapRef} className="h-64 w-full rounded-lg border border-gray-300" />
-          ) : (
-            <div className="h-64 w-full rounded-lg border border-gray-300 flex items-center justify-center bg-gray-100">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF5A5F] mx-auto mb-2"></div>
-                <p className="text-gray-500">Loading map...</p>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Manual Input */}
-      {inputMethod === 'manual' && (
-        <div className="mt-6">
-          <div className="flex gap-2">
-            <Input
-              type="text"
-              placeholder="Enter your property address..."
-              value={manualAddress}
-              onChange={(e) => setManualAddress(e.target.value)}
-              className="flex-1"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleManualAddressSubmit();
-                }
-              }}
-            />
-            <Button 
-              onClick={handleManualAddressSubmit}
-              disabled={!manualAddress.trim() || isLoading}
-              className="bg-[#00A699] hover:bg-[#008a7f]"
-            >
-              {isLoading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              ) : (
-                'Search'
-              )}
-            </Button>
-          </div>
-        </div>
-      )}
-
       {/* Selected Location Display */}
       {selectedLocation && (
-        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
           <div className="flex items-center">
             <MapPin className="text-green-600 mr-2" />
             <span className="font-medium text-green-800">Selected Location:</span>

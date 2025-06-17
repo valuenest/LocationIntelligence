@@ -17,6 +17,8 @@ interface LocationData {
 interface PropertyFormData {
   amount: number;
   propertyType: string;
+  currency: string;
+  country: string;
 }
 
 export default function Home() {
