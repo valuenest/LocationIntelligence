@@ -377,24 +377,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       result.nearbyPlaces = [schoolPlace, hospitalPlace, metroPlace].filter((place): place is PlaceDetails => place !== undefined);
       result.distances = await calculateDistances(location, result.nearbyPlaces);
       
-      // Realistic Free tier location scoring starting from zero
+      // STRICT Geographic validation - reject desert/remote locations
       let score = 0.0;
       let essentialServices = 0;
+      let closeEssentialServices = 0; // Within 3km
       
-      // Check for essential services
+      // Check for essential services and their proximity
       const hasSchool = result.nearbyPlaces.some(p => p.types.includes('school'));
       const hasHospital = result.nearbyPlaces.some(p => p.types.includes('hospital'));
       const hasTransport = result.nearbyPlaces.some(p => p.types.includes('subway_station') || p.types.includes('bus_station'));
       const hasShopping = result.nearbyPlaces.some(p => p.types.includes('shopping_mall') || p.types.includes('grocery_or_supermarket'));
       
+      // Count services within 3km radius (critical for habitability)
+      Object.entries(result.distances).forEach(([placeName, dist]) => {
+        const place = result.nearbyPlaces.find(p => p.name === placeName);
+        if (place && dist.distance.value <= 3000) { // 3km radius
+          if (place.types.includes('school') || place.types.includes('hospital') || 
+              place.types.includes('subway_station') || place.types.includes('bus_station') ||
+              place.types.includes('shopping_mall') || place.types.includes('grocery_or_supermarket')) {
+            closeEssentialServices++;
+          }
+        }
+      });
+      
+      // DESERT/REMOTE LOCATION DETECTION: Zero infrastructure = 0% recommendation
+      if (result.nearbyPlaces.length === 0 || closeEssentialServices === 0) {
+        result.locationScore = 0.0;
+        result.investmentViability = 0;
+        result.growthPrediction = -10; // Negative growth for uninhabitable areas
+        result.businessGrowthRate = -5.0;
+        result.populationGrowthRate = -3.0;
+        result.investmentRecommendation = "Uninhabitable Location - 0% Investment Potential";
+        return result;
+      }
+      
+      // If minimal infrastructure exists, still be very strict
       if (hasSchool) { score += 0.8; essentialServices++; }
       if (hasHospital) { score += 0.8; essentialServices++; }
       if (hasTransport) { score += 0.8; essentialServices++; }
       if (hasShopping) { score += 0.6; essentialServices++; }
       
-      // Severe penalty for missing essential services
-      if (essentialServices <= 1) {
-        score = Math.max(0.5, score * 0.4);
+      // Extreme penalty for inadequate infrastructure
+      if (essentialServices === 0) {
+        score = 0.0; // Complete rejection
+      } else if (essentialServices === 1) {
+        score = Math.max(0.1, score * 0.2); // 80% penalty
+      } else if (closeEssentialServices < 2) {
+        score *= 0.3; // Services too far away
       }
       
       let amenityCount = 0;
@@ -408,12 +437,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
       
-      // Penalty for isolated areas
-      if (amenityCount < 3) {
-        score *= 0.5;
+      // Harsh penalty for isolated areas
+      if (amenityCount < 2) {
+        score = 0.0; // No investment potential
       }
       
-      result.locationScore = Math.min(5.0, Math.max(0.5, score));
+      result.locationScore = Math.min(5.0, Math.max(0.0, score));
       
       // Realistic investment viability for free tier
       let viability = 5; // Start from very low base
@@ -468,25 +497,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       result.nearbyPlaces = await findNearbyPlaces(location.lat, location.lng, comprehensivePlaceTypes);
       result.distances = await calculateDistances(location, result.nearbyPlaces);
       
-      // Realistic location scoring starting from zero
+      // STRICT Geographic validation for Paid tier - reject desert/remote locations
       let score = 0.0;
       let amenityCount = 0;
       let essentialServices = 0;
+      let closeEssentialServices = 0; // Within 3km
       
-      // Check for essential services first
+      // Check for essential services and their proximity
       const hasSchool = result.nearbyPlaces.some(p => p.types.includes('school'));
       const hasHospital = result.nearbyPlaces.some(p => p.types.includes('hospital'));
       const hasTransport = result.nearbyPlaces.some(p => p.types.includes('subway_station') || p.types.includes('bus_station'));
       const hasShopping = result.nearbyPlaces.some(p => p.types.includes('shopping_mall') || p.types.includes('grocery_or_supermarket'));
+      
+      // Count services within 3km radius (critical for habitability)
+      Object.entries(result.distances).forEach(([placeName, dist]) => {
+        const place = result.nearbyPlaces.find(p => p.name === placeName);
+        if (place && dist.distance.value <= 3000) { // 3km radius
+          if (place.types.includes('school') || place.types.includes('hospital') || 
+              place.types.includes('subway_station') || place.types.includes('bus_station') ||
+              place.types.includes('shopping_mall') || place.types.includes('grocery_or_supermarket')) {
+            closeEssentialServices++;
+          }
+        }
+      });
+      
+      // DESERT/REMOTE LOCATION DETECTION: Zero infrastructure = 0% recommendation
+      if (result.nearbyPlaces.length === 0 || closeEssentialServices === 0) {
+        result.locationScore = 0.0;
+        result.investmentViability = 0;
+        result.growthPrediction = -10; // Negative growth for uninhabitable areas
+        result.businessGrowthRate = -5.0;
+        result.populationGrowthRate = -3.0;
+        result.investmentRecommendation = "Uninhabitable Location - 0% Investment Potential";
+        return result;
+      }
       
       if (hasSchool) { score += 0.8; essentialServices++; }
       if (hasHospital) { score += 0.8; essentialServices++; }
       if (hasTransport) { score += 0.8; essentialServices++; }
       if (hasShopping) { score += 0.6; essentialServices++; }
       
-      // If missing 3+ essential services, severe penalty
-      if (essentialServices <= 1) {
-        score = Math.max(0.5, score * 0.3); // Severe penalty for remote areas
+      // Extreme penalty for inadequate infrastructure
+      if (essentialServices === 0) {
+        score = 0.0;
+      } else if (essentialServices === 1) {
+        score = Math.max(0.1, score * 0.2);
+      } else if (closeEssentialServices < 2) {
+        score *= 0.3;
       }
       
       // Distance-based scoring with stricter criteria
@@ -504,14 +561,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // No points for amenities >3km away
       });
       
-      // Penalty for very few amenities
-      if (amenityCount < 3) {
-        score *= 0.4; // Heavy penalty for isolated areas
+      // Harsh penalty for isolated areas
+      if (amenityCount < 2) {
+        score = 0.0; // No investment potential for truly isolated areas
+      } else if (amenityCount < 4) {
+        score *= 0.3; // Heavy penalty for poorly connected areas
       } else if (amenityCount >= 8) {
         score += 0.4; // Bonus only for well-connected areas
       }
       
-      result.locationScore = Math.min(5.0, Math.max(0.5, score));
+      result.locationScore = Math.min(5.0, Math.max(0.0, score));
       
       // Realistic growth prediction aligned with investment viability
       let growthPrediction = 0;
@@ -592,26 +651,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       result.nearbyPlaces = await findNearbyPlaces(location.lat, location.lng, comprehensivePlaceTypes);
       result.distances = await calculateDistances(location, result.nearbyPlaces);
       
-      // Realistic Pro location scoring starting from zero
+      // STRICT Geographic validation for Pro tier - reject desert/remote locations
       let score = 0.0;
       let amenityCount = 0;
       let qualityScore = 0;
       let essentialServices = 0;
+      let closeEssentialServices = 0; // Within 3km
       
-      // Check for essential services first
+      // Check for essential services and their proximity
       const hasSchool = result.nearbyPlaces.some(p => p.types.includes('school'));
       const hasHospital = result.nearbyPlaces.some(p => p.types.includes('hospital'));
       const hasTransport = result.nearbyPlaces.some(p => p.types.includes('subway_station') || p.types.includes('bus_station'));
       const hasShopping = result.nearbyPlaces.some(p => p.types.includes('shopping_mall') || p.types.includes('grocery_or_supermarket'));
+      
+      // Count services within 3km radius (critical for habitability)
+      Object.entries(result.distances).forEach(([placeName, dist]) => {
+        const place = result.nearbyPlaces.find(p => p.name === placeName);
+        if (place && dist.distance.value <= 3000) { // 3km radius
+          if (place.types.includes('school') || place.types.includes('hospital') || 
+              place.types.includes('subway_station') || place.types.includes('bus_station') ||
+              place.types.includes('shopping_mall') || place.types.includes('grocery_or_supermarket')) {
+            closeEssentialServices++;
+          }
+        }
+      });
+      
+      // DESERT/REMOTE LOCATION DETECTION: Zero infrastructure = 0% recommendation
+      if (result.nearbyPlaces.length === 0 || closeEssentialServices === 0) {
+        result.locationScore = 0.0;
+        result.investmentViability = 0;
+        result.growthPrediction = -10; // Negative growth for uninhabitable areas
+        result.businessGrowthRate = -5.0;
+        result.populationGrowthRate = -3.0;
+        result.investmentRecommendation = "Uninhabitable Location - 0% Investment Potential";
+        return result;
+      }
       
       if (hasSchool) { score += 0.8; essentialServices++; }
       if (hasHospital) { score += 0.8; essentialServices++; }
       if (hasTransport) { score += 0.8; essentialServices++; }
       if (hasShopping) { score += 0.6; essentialServices++; }
       
-      // Severe penalty for missing essential services
-      if (essentialServices <= 1) {
-        score = Math.max(0.5, score * 0.2); // Even stricter for Pro tier
+      // Extreme penalty for inadequate infrastructure in Pro tier
+      if (essentialServices === 0) {
+        score = 0.0;
+      } else if (essentialServices === 1) {
+        score = Math.max(0.1, score * 0.15); // Even stricter for Pro tier
+      } else if (closeEssentialServices < 2) {
+        score *= 0.25; // Services too far away
       }
       
       Object.entries(result.distances).forEach(([name, dist]) => {
@@ -634,15 +721,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // No points for amenities >3km away
       });
       
-      // Heavy penalty for isolated areas
-      if (amenityCount < 4) {
-        score *= 0.3; // Stricter penalty for Pro tier
+      // Extreme penalty for isolated areas in Pro tier
+      if (amenityCount < 2) {
+        score = 0.0; // Complete rejection for truly isolated areas
+      } else if (amenityCount < 5) {
+        score *= 0.2; // Severe penalty for poorly connected areas
       } else if (amenityCount >= 10) {
         score += 0.5; // Bonus for well-connected areas
         if (qualityScore / amenityCount > 4.0) score += 0.3; // Quality bonus
       }
       
-      result.locationScore = Math.min(5.0, Math.max(0.5, score));
+      result.locationScore = Math.min(5.0, Math.max(0.0, score));
       
       // Realistic Pro growth prediction aligned with investment viability
       let growthPrediction = 0;

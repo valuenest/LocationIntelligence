@@ -413,6 +413,27 @@ export default function Results() {
                       </p>
                     )}
                   </div>
+                ) : analysisResult.investmentRecommendation?.includes('Uninhabitable') || analysisResult.investmentViability === 0 ? (
+                  <div>
+                    <p className="mb-2 text-red-700 font-medium">
+                      <AlertTriangle className="h-4 w-4 inline mr-1" />
+                      This location appears to be in a remote or desert area with no essential infrastructure within a reasonable distance. 
+                      There are no schools, hospitals, transportation, or shopping facilities within 3km radius, making it unsuitable for property investment.
+                    </p>
+                    <p className="text-sm text-gray-600 mb-2">
+                      We strongly recommend selecting a location with basic amenities like education, healthcare, and connectivity for any real estate investment.
+                    </p>
+                    {!isPaidPlan && (
+                      <p className="text-blue-700 font-medium">
+                        Our Paid plan (₹99) can help you discover viable investment locations with proper infrastructure and growth potential.
+                      </p>
+                    )}
+                    {isPaidPlan && !isProPlan && (
+                      <p className="text-indigo-700 font-medium">
+                        Use our Pro plan (₹199) to find AI-selected investment opportunities in developed areas within 50km of major cities.
+                      </p>
+                    )}
+                  </div>
                 ) : (
                   <div>
                     <p className="mb-2">
