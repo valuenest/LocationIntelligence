@@ -7,6 +7,7 @@ import SampleAnalysis from "@/components/SampleAnalysis";
 import PaymentModal from "@/components/PaymentModal";
 import AnalysisLoadingModal from "@/components/AnalysisLoadingModal";
 import UsageLimitModal from "@/components/UsageLimitModal";
+import ValidationModal from "@/components/ValidationModal";
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, TrendingUp, Brain } from "lucide-react";
 
@@ -37,6 +38,10 @@ export default function Home() {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [usageLimitModalOpen, setUsageLimitModalOpen] = useState(false);
+  const [validationModalOpen, setValidationModalOpen] = useState(false);
+  const [validationResult, setValidationResult] = useState<any>(null);
+  const [pendingFormData, setPendingFormData] = useState<PropertyFormData | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
 
   const { data: usageStatus } = useQuery<{ success: boolean; usage: { canUseFree: boolean; freeUsageCount: number; maxFreeUsage: number } }>({
     queryKey: ['/api/usage-status'],
@@ -50,7 +55,42 @@ export default function Home() {
     setSelectedLocation(location);
   };
 
-  const handlePropertySubmit = async (data: PropertyFormData) => {
+  const performValidation = async (data: PropertyFormData) => {
+    if (!selectedLocation) return;
+
+    setIsValidating(true);
+    try {
+      const response = await fetch('/api/validate-inputs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          location: selectedLocation,
+          propertyData: data
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setValidationResult(result.validation);
+        setPendingFormData(data);
+        setValidationModalOpen(true);
+      } else {
+        // If validation fails, proceed with the original flow
+        proceedWithAnalysis(data);
+      }
+    } catch (error) {
+      console.error('Validation error:', error);
+      // If validation fails, proceed with the original flow
+      proceedWithAnalysis(data);
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const proceedWithAnalysis = (data: PropertyFormData) => {
     setPropertyData(data);
     
     // Check if user can use free analysis or needs to pay
@@ -61,9 +101,28 @@ export default function Home() {
     
     // Proceed with free analysis
     if (selectedLocation) {
-      await handleFreeAnalysis(data);
+      handleFreeAnalysis(data);
     } else {
       alert('Please select a location first');
+    }
+  };
+
+  const handlePropertySubmit = async (data: PropertyFormData) => {
+    if (!selectedLocation) {
+      alert('Please select a location first');
+      return;
+    }
+    
+    // Perform smart validation before proceeding
+    await performValidation(data);
+  };
+
+  const handleValidationProceed = () => {
+    if (pendingFormData) {
+      proceedWithAnalysis(pendingFormData);
+      setValidationModalOpen(false);
+      setValidationResult(null);
+      setPendingFormData(null);
     }
   };
 
@@ -258,6 +317,15 @@ export default function Home() {
         selectedPlan={selectedPlan}
         location={selectedLocation}
         propertyData={propertyData}
+      />
+
+      {/* Validation Modal */}
+      <ValidationModal
+        isOpen={validationModalOpen}
+        onClose={() => setValidationModalOpen(false)}
+        onProceed={handleValidationProceed}
+        validation={validationResult}
+        isLoading={isValidating}
       />
 
       {/* Floating Action Button for Mobile */}
