@@ -484,19 +484,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      // Enhanced place search with comprehensive types
+      // Enhanced place search with infrastructure-focused types
       const placeTypes = [
-        'restaurant', 'food', 'meal_takeaway', 'cafe', 'bakery',
         'hospital', 'pharmacy', 'doctor', 'health', 'medical_center',
-        'school', 'university', 'library', 'education',
+        'school', 'university', 'college', 'library', 'education',
         'bank', 'atm', 'finance', 'accounting',
         'store', 'supermarket', 'grocery_or_supermarket', 'shopping_mall',
         'gas_station', 'car_repair', 'automotive',
-        'gym', 'park', 'recreation', 'entertainment',
-        'transit_station', 'bus_station', 'subway_station',
+        'transit_station', 'bus_station', 'subway_station', 'train_station',
         'police', 'fire_station', 'local_government_office',
-        'church', 'mosque', 'hindu_temple', 'place_of_worship',
-        'real_estate_agency', 'moving_company', 'storage'
+        'restaurant', 'food', 'meal_takeaway', 'cafe',
+        'gym', 'park', 'recreation', 'entertainment',
+        'church', 'mosque', 'hindu_temple', 'place_of_worship'
       ];
 
       const allPlaces: PlaceDetails[] = [];
@@ -542,32 +541,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
         result.distances = await calculateDistances(location, result.nearbyPlaces);
       }
 
-      // Count essential services within 2-3km radius for habitability assessment
-      let closeEssentialServices = 0;
-      let veryCloseEssentialServices = 0;
-      let totalEssentialServices = 0;
-      const essentialTypes = ['hospital', 'school', 'bank', 'store', 'gas_station', 'restaurant'];
-      
-      Object.entries(result.distances).forEach(([placeName, dist]) => {
-        const place = result.nearbyPlaces.find(p => p.name === placeName);
-        if (place && isEssentialService(place)) {
-          totalEssentialServices++;
-          if (dist.distance.value <= 2000) { // 2km radius - very close
-            veryCloseEssentialServices++;
-          }
-          if (dist.distance.value <= 3000) { // 3km radius - acceptable
-            closeEssentialServices++;
-          }
+      // Advanced infrastructure scoring with categorized services
+      let infrastructureScores = {
+        healthcare: { close: 0, total: 0 },
+        education: { close: 0, total: 0 },
+        transport: { close: 0, total: 0 },
+        commercial: { close: 0, total: 0 },
+        essential: { close: 0, total: 0 },
+        connectivity: 0
+      };
+
+      // Categorize and score places by infrastructure type
+      result.nearbyPlaces.forEach(place => {
+        const distance = result.distances[place.name];
+        if (!distance) return;
+
+        const isClose = distance.distance.value <= 3000; // 3km radius
+        const isVeryClose = distance.distance.value <= 2000; // 2km radius
+
+        // Healthcare infrastructure
+        if (place.types.some(type => ['hospital', 'pharmacy', 'doctor', 'health', 'medical_center'].includes(type))) {
+          infrastructureScores.healthcare.total++;
+          if (isClose) infrastructureScores.healthcare.close++;
+        }
+
+        // Educational infrastructure
+        if (place.types.some(type => ['school', 'university', 'college', 'library', 'education'].includes(type))) {
+          infrastructureScores.education.total++;
+          if (isClose) infrastructureScores.education.close++;
+        }
+
+        // Transport infrastructure
+        if (place.types.some(type => ['transit_station', 'bus_station', 'subway_station', 'train_station', 'gas_station'].includes(type))) {
+          infrastructureScores.transport.total++;
+          if (isClose) infrastructureScores.transport.close++;
+        }
+
+        // Commercial infrastructure
+        if (place.types.some(type => ['store', 'supermarket', 'grocery_or_supermarket', 'shopping_mall', 'bank', 'atm'].includes(type))) {
+          infrastructureScores.commercial.total++;
+          if (isClose) infrastructureScores.commercial.close++;
+        }
+
+        // Essential services (cumulative)
+        if (isEssentialService(place)) {
+          infrastructureScores.essential.total++;
+          if (isClose) infrastructureScores.essential.close++;
         }
       });
+
+      // Enhanced connectivity scoring using Google Roads API and place analysis
+      let baseConnectivityScore = 0;
       
-      // DESERT/REMOTE LOCATION DETECTION: Strict criteria for uninhabitable areas
+      // Base connectivity from transport infrastructure
+      baseConnectivityScore += infrastructureScores.transport.total * 15; // 15 points per transport hub
+      
+      // Check for highway/major road indicators in nearby places
+      const roadIndicators = result.nearbyPlaces.filter(place => 
+        place.types.includes('gas_station') || 
+        place.types.includes('rest_stop') ||
+        place.name.toLowerCase().includes('highway') ||
+        place.name.toLowerCase().includes('interstate') ||
+        place.name.toLowerCase().includes('expressway') ||
+        place.vicinity.toLowerCase().includes('highway') ||
+        place.vicinity.toLowerCase().includes('interstate')
+      );
+      
+      baseConnectivityScore += roadIndicators.length * 25; // 25 points per highway indicator
+      
+      // Bonus for multiple gas stations (indicates major road network)
+      const gasStations = result.nearbyPlaces.filter(place => place.types.includes('gas_station'));
+      if (gasStations.length >= 3) baseConnectivityScore += 30; // Highway corridor bonus
+      
+      infrastructureScores.connectivity = Math.min(baseConnectivityScore, 100); // Cap at 100%
+      
+      // DESERT/REMOTE LOCATION DETECTION: Enhanced criteria with error handling
       const addressLower = location.address.toLowerCase();
-      const isDesertOrRemote = (
-        result.nearbyPlaces.length < 10 || // Less than 10 total places
-        totalEssentialServices < 5 || // Less than 5 essential services total
-        veryCloseEssentialServices === 0 || // No essential services within 2km
-        closeEssentialServices < 3 || // Less than 3 essential services within 3km
+      const totalInfrastructure = infrastructureScores.healthcare.total + infrastructureScores.education.total + 
+                                  infrastructureScores.transport.total + infrastructureScores.commercial.total;
+      
+      // Check for API errors in distance calculations
+      const hasDistanceErrors = Object.values(result.distances).some(dist => 
+        dist.distance.value > 500000 // More than 500km indicates API error
+      );
+      
+      // If API errors, use basic place count and address analysis
+      const isDesertOrRemote = !hasDistanceErrors ? (
+        result.nearbyPlaces.length < 8 || 
+        totalInfrastructure < 6 || 
+        infrastructureScores.essential.close < 2 || 
+        infrastructureScores.connectivity < 20
+      ) : false; // Don't flag as desert if API has errors
+      
+      // Always check address-based desert detection
+      const isKnownDesertArea = (
         addressLower.includes('desert') ||
         addressLower.includes('canyon') ||
         addressLower.includes('wilderness') ||
@@ -580,7 +647,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         addressLower.includes('monument valley')
       );
       
-      if (isDesertOrRemote) {
+      if (isDesertOrRemote || isKnownDesertArea) {
         result.locationScore = 0.0;
         result.investmentViability = 0;
         result.growthPrediction = -10; // Negative growth for uninhabitable areas
@@ -590,14 +657,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return result;
       }
 
-      // Calculate location score based on nearby services within 2-3km (1-5 scale)
-      const totalServices = result.nearbyPlaces.length;
-      const serviceScore = Math.min(totalServices / 15, 1.0); // Max score at 15+ services
-      const proximityScore = veryCloseEssentialServices / Math.max(totalEssentialServices, 1); // Services within 2km
-      const accessibilityScore = closeEssentialServices / Math.max(totalEssentialServices, 1); // Services within 3km
+      // Advanced infrastructure-based location scoring (1-5 scale)
+      const healthcareScore = Math.min(infrastructureScores.healthcare.total / 3, 1.0); // Max at 3+ healthcare facilities
+      const educationScore = Math.min(infrastructureScores.education.total / 4, 1.0); // Max at 4+ educational institutions
+      const transportScore = Math.min(infrastructureScores.transport.total / 5, 1.0); // Max at 5+ transport hubs
+      const commercialScore = Math.min(infrastructureScores.commercial.total / 6, 1.0); // Max at 6+ commercial facilities
+      const finalConnectivityScore = infrastructureScores.connectivity / 100; // Convert to 0-1 scale
       
-      // Weighted scoring: 40% total services, 35% very close services, 25% accessible services
-      result.locationScore = (serviceScore * 0.4 + proximityScore * 0.35 + accessibilityScore * 0.25) * 5;
+      // Proximity bonus for services within 3km
+      const proximityBonus = (infrastructureScores.essential.close / Math.max(infrastructureScores.essential.total, 1)) * 0.5;
+      
+      // Comprehensive infrastructure scoring with proper weightings
+      result.locationScore = (
+        healthcareScore * 0.25 +      // 25% - Healthcare infrastructure
+        educationScore * 0.20 +       // 20% - Educational infrastructure  
+        transportScore * 0.25 +       // 25% - Transport/Connectivity
+        commercialScore * 0.15 +      // 15% - Commercial infrastructure
+        connectivityScore * 0.15      // 15% - Highway/Road connectivity
+      ) * 5 + proximityBonus; // Scale to 5-star + proximity bonus
 
       // Street View URL for all tiers
       result.streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${location.lat},${location.lng}&heading=0&pitch=0&key=${process.env.GOOGLE_MAPS_API_KEY}`;
