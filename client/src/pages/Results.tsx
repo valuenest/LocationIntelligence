@@ -1001,107 +1001,78 @@ export default function Results() {
                       <div key={index} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
                         {/* Location Image */}
                         <div className="h-48 bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100 relative overflow-hidden">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center">
-                              <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
-                                <span className="text-sm font-bold text-indigo-600">#{index + 1}</span>
-                              </div>
-                              <h4 className="font-semibold text-gray-900">{location.address}</h4>
+                          {location.imageUrl ? (
+                            <img 
+                              src={location.imageUrl} 
+                              alt={`${location.address} location`} 
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const fallback = e.currentTarget.parentElement?.querySelector('.fallback-image') as HTMLElement;
+                                if (fallback) fallback.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <div 
+                            className={`fallback-image absolute inset-0 ${location.imageUrl ? 'hidden' : 'flex'} items-center justify-center`}
+                          >
+                            <div className="text-center text-gray-600">
+                              <Target className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                              <p className="text-sm font-medium">Investment Location #{index + 1}</p>
                             </div>
-                            <Badge variant="outline" className="text-xs border-indigo-300 text-indigo-700">
-                              {location.distance}
-                            </Badge>
                           </div>
+                          <div className="absolute top-4 left-4">
+                            <div className="bg-white rounded-full px-3 py-1 shadow-md">
+                              <span className="text-sm font-bold text-indigo-600">#{index + 1}</span>
+                            </div>
+                          </div>
+                          <div className="absolute top-4 right-4">
+                            <div className="bg-white rounded-full px-3 py-1 shadow-md flex items-center">
+                              <Target className="h-4 w-4 text-indigo-500 mr-1" />
+                              <span className="text-sm font-bold text-gray-700">{location.score.toFixed(0)}%</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        
+                        <div className="p-6">
+                          <h3 className="text-lg font-bold text-gray-900 mb-2">{location.address}</h3>
+                          <p className="text-sm text-gray-600 mb-4">{location.distance.replace(/\*\*/g, '').replace(/\(Hypothetical\).*$/, '').replace(/\*Note:.*$/, '').trim()}</p>
                           
-                          {/* Score and Metrics */}
-                          <div className="grid grid-cols-3 gap-4 mt-4">
-                            <div className="text-center">
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div className="text-center bg-indigo-50 rounded-lg p-3">
                               <div className="text-lg font-bold text-indigo-600">{location.score.toFixed(0)}%</div>
                               <div className="text-xs text-gray-600">Investment Score</div>
                             </div>
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-green-600">
-                                {location.score >= 90 ? 'Excellent' : location.score >= 80 ? 'Very Good' : 'Good'}
-                              </div>
-                              <div className="text-xs text-gray-600">Rating</div>
-                            </div>
-                            <div className="text-center">
+                            <div className="text-center bg-purple-50 rounded-lg p-3">
                               <div className="text-lg font-bold text-purple-600">
                                 {location.score >= 85 ? 'High' : location.score >= 70 ? 'Medium' : 'Moderate'}
                               </div>
                               <div className="text-xs text-gray-600">Growth Potential</div>
                             </div>
                           </div>
+
+                          <div className="flex flex-wrap gap-1 mb-4">
+                            <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                              Strategic Location
+                            </span>
+                            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                              Growth Infrastructure
+                            </span>
+                          </div>
+
+                          <p className="text-sm text-gray-700 mb-4 leading-relaxed line-clamp-3">{location.reasoning}</p>
+
+                          <Button 
+                            className="w-full bg-indigo-500 hover:bg-indigo-600 text-white"
+                            onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(location.address)}`, '_blank')}
+                          >
+                            <MapPin className="h-4 w-4 mr-2" />
+                            View Location
+                          </Button>
                         </div>
 
-                        {/* Location Image */}
-                        {location.imageUrl && (
-                          <div className="relative">
-                            <img 
-                              src={location.imageUrl} 
-                              alt={`${location.address} location`} 
-                              className="w-full h-40 object-cover"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                                if (fallback) (fallback as any).style.display = 'flex';
-                              }}
-                            />
-                            <div 
-                              className="w-full h-40 bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100 flex items-center justify-center"
-                              style={{ display: 'none' }}
-                            >
-                              <div className="text-center text-gray-600">
-                                <MapPin className="h-12 w-12 mx-auto mb-2" />
-                                <p className="text-sm font-medium">Investment Location #{index + 1}</p>
-                                <p className="text-xs">{location.address}</p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
 
-                        {/* Analysis Details */}
-                        <div className="p-4">
-                          <h5 className="font-medium text-gray-900 mb-2">Investment Analysis</h5>
-                          <p className="text-sm text-gray-700 mb-4 leading-relaxed">{location.reasoning}</p>
-                          
-                          {/* Investment Highlights */}
-                          <div className="bg-white bg-opacity-60 rounded-lg p-3 mb-4">
-                            <h6 className="font-medium text-gray-800 mb-2">Key Investment Highlights</h6>
-                            <div className="grid grid-cols-2 gap-2 text-xs">
-                              <div className="flex items-center">
-                                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                                <span>Strategic Location</span>
-                              </div>
-                              <div className="flex items-center">
-                                <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                                <span>Growth Infrastructure</span>
-                              </div>
-                              <div className="flex items-center">
-                                <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
-                                <span>Market Demand</span>
-                              </div>
-                              <div className="flex items-center">
-                                <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
-                                <span>Future Potential</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Score Visualization */}
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">Investment Potential</span>
-                            <div className="flex items-center">
-                              <div className="w-32 bg-gray-200 rounded-full h-2 mr-3">
-                                <div 
-                                  className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full transition-all duration-300" 
-                                  style={{ width: `${location.score}%` }}
-                                ></div>
-                              </div>
-                              <span className="text-sm font-semibold text-indigo-600">{location.score.toFixed(0)}%</span>
-                            </div>
-                          </div>
-                        </div>
                       </div>
                     ))}
                   </div>
