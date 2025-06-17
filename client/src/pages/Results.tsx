@@ -283,6 +283,28 @@ export default function Results() {
                 <div className="mb-4">
                   {renderStars(analysisResult.locationScore)}
                 </div>
+                
+                {/* Investment Viability - Available in all tiers */}
+                {analysisResult.investmentViability && (
+                  <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-blue-900">Investment Viability</span>
+                      <span className="text-lg font-bold text-blue-600">{analysisResult.investmentViability}%</span>
+                    </div>
+                    <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full" 
+                        style={{ width: `${analysisResult.investmentViability}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-blue-700 mt-1">
+                      {analysisResult.investmentViability >= 75 ? 'Strong Buy' : 
+                       analysisResult.investmentViability >= 60 ? 'Good Investment' : 
+                       analysisResult.investmentViability >= 40 ? 'Moderate Risk' : 'High Risk'}
+                    </p>
+                  </div>
+                )}
+                
                 <p className="text-gray-600 mb-4">
                   Excellent connectivity with key amenities within reasonable distance.
                 </p>
@@ -468,6 +490,50 @@ export default function Results() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Pro Feature: Top Investment Locations */}
+            {isProPlan && analysisResult.topInvestmentLocations && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <MapPin className="h-5 w-5 mr-2 text-purple-500" />
+                    AI-Picked Investment Locations
+                    <Badge variant="secondary" className="ml-2 bg-purple-100 text-purple-600">
+                      <Crown className="h-3 w-3 mr-1" />
+                      Pro Exclusive
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 mb-4">Top 3 investment opportunities within 25km based on AI analysis</p>
+                  <div className="space-y-4">
+                    {analysisResult.topInvestmentLocations.map((location, index) => (
+                      <div key={index} className="border rounded-lg p-4 bg-gradient-to-r from-purple-50 to-indigo-50">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold text-gray-900">{location.address}</h4>
+                          <div className="flex items-center">
+                            <span className="text-sm font-medium text-purple-600 mr-2">{location.score.toFixed(0)}% Score</span>
+                            <Badge variant="outline" className="text-xs">{location.distance}</Badge>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-700 mb-2">{location.reasoning}</p>
+                        <div className="w-full bg-purple-200 rounded-full h-2">
+                          <div 
+                            className="bg-purple-600 h-2 rounded-full" 
+                            style={{ width: `${location.score}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 p-3 bg-purple-100 rounded-lg">
+                    <p className="text-xs text-purple-700 text-center">
+                      💡 These locations are selected using advanced AI algorithms considering market trends, infrastructure development, and growth potential
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar */}
