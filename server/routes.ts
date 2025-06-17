@@ -551,42 +551,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         connectivity: 0
       };
 
-      // Categorize and score places by infrastructure type
+      // Infrastructure analysis within 10km radius with weighted scoring
       result.nearbyPlaces.forEach(place => {
         const distance = result.distances[place.name];
         if (!distance) return;
 
-        const isClose = distance.distance.value <= 3000; // 3km radius
-        const isVeryClose = distance.distance.value <= 2000; // 2km radius
+        const distanceKm = distance.distance.value / 1000;
+        const within10km = distanceKm <= 10; // 10km radius as requested
+        const within5km = distanceKm <= 5;   // Close proximity bonus
+        const within2km = distanceKm <= 2;   // Very close proximity bonus
 
-        // Healthcare infrastructure
+        if (!within10km) return; // Only consider places within 10km
+
+        // Calculate rating bonus based on place rating
+        const ratingMultiplier = place.rating ? Math.min(place.rating / 5, 1) : 0.6; // Default 0.6 for unrated
+
+        // Healthcare infrastructure with rating consideration
         if (place.types.some(type => ['hospital', 'pharmacy', 'doctor', 'health', 'medical_center'].includes(type))) {
-          infrastructureScores.healthcare.total++;
-          if (isClose) infrastructureScores.healthcare.close++;
+          infrastructureScores.healthcare.total += ratingMultiplier;
+          if (within5km) infrastructureScores.healthcare.close += ratingMultiplier;
         }
 
-        // Educational infrastructure
+        // Educational infrastructure with rating consideration
         if (place.types.some(type => ['school', 'university', 'college', 'library', 'education'].includes(type))) {
-          infrastructureScores.education.total++;
-          if (isClose) infrastructureScores.education.close++;
+          infrastructureScores.education.total += ratingMultiplier;
+          if (within5km) infrastructureScores.education.close += ratingMultiplier;
         }
 
-        // Transport infrastructure
+        // Transport infrastructure with rating consideration
         if (place.types.some(type => ['transit_station', 'bus_station', 'subway_station', 'train_station', 'gas_station'].includes(type))) {
-          infrastructureScores.transport.total++;
-          if (isClose) infrastructureScores.transport.close++;
+          infrastructureScores.transport.total += ratingMultiplier;
+          if (within5km) infrastructureScores.transport.close += ratingMultiplier;
         }
 
-        // Commercial infrastructure
+        // Commercial infrastructure with rating consideration
         if (place.types.some(type => ['store', 'supermarket', 'grocery_or_supermarket', 'shopping_mall', 'bank', 'atm'].includes(type))) {
-          infrastructureScores.commercial.total++;
-          if (isClose) infrastructureScores.commercial.close++;
+          infrastructureScores.commercial.total += ratingMultiplier;
+          if (within5km) infrastructureScores.commercial.close += ratingMultiplier;
         }
 
-        // Essential services (cumulative)
+        // Essential services with proximity and rating weighting
         if (isEssentialService(place)) {
-          infrastructureScores.essential.total++;
-          if (isClose) infrastructureScores.essential.close++;
+          let essentialScore = ratingMultiplier;
+          if (within2km) essentialScore *= 1.5; // 50% bonus for very close
+          else if (within5km) essentialScore *= 1.2; // 20% bonus for close
+          
+          infrastructureScores.essential.total += essentialScore;
+          if (within5km) infrastructureScores.essential.close += essentialScore;
         }
       });
 
@@ -673,7 +684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         educationScore * 0.20 +       // 20% - Educational infrastructure  
         transportScore * 0.25 +       // 25% - Transport/Connectivity
         commercialScore * 0.15 +      // 15% - Commercial infrastructure
-        connectivityScore * 0.15      // 15% - Highway/Road connectivity
+        finalConnectivityScore * 0.15      // 15% - Highway/Road connectivity
       ) * 5 + proximityBonus; // Scale to 5-star + proximity bonus
 
       // Street View URL for all tiers
