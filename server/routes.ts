@@ -189,13 +189,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Helper function to check if a place is an essential service using comprehensive place types
   const isEssentialService = (place: PlaceDetails): boolean => {
-    return place.types.includes('school') || 
+    const result = place.types.includes('school') || 
            place.types.some(t => ['hospital', 'health', 'doctor', 'clinic', 'pharmacy'].includes(t)) || 
            place.types.some(t => ['subway_station', 'bus_station', 'train_station', 'transit_station', 'light_rail_station'].includes(t)) ||
            place.types.some(t => ['shopping_mall', 'supermarket', 'grocery_or_supermarket', 'store', 'convenience_store'].includes(t)) ||
            place.types.some(t => ['restaurant', 'food', 'meal_takeaway', 'cafe', 'bakery'].includes(t)) ||
            place.types.some(t => ['bank', 'atm', 'finance', 'post_office'].includes(t)) ||
            place.types.some(t => ['gas_station', 'petrol_station', 'fuel'].includes(t));
+    console.log(`isEssentialService: ${place.name} with types [${place.types.join(', ')}] = ${result}`);
+    return result;
   };
 
   const calculateDistances = async (origin: LocationData, destinations: PlaceDetails[]): Promise<Record<string, DistanceData>> => {
