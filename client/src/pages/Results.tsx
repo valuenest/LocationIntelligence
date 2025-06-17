@@ -40,6 +40,10 @@ interface AnalysisResult {
   streetViewUrl?: string;
   aiRecommendations?: string[];
   investmentViability?: number;
+  businessGrowthRate?: number;
+  populationGrowthRate?: number;
+  investmentRecommendation?: string;
+  locationImageUrl?: string;
   topInvestmentLocations?: Array<{
     address: string;
     lat: number;
@@ -47,6 +51,7 @@ interface AnalysisResult {
     score: number;
     reasoning: string;
     distance: string;
+    imageUrl?: string;
   }>;
 }
 
@@ -203,6 +208,23 @@ export default function Results() {
               <div>
                 <CardTitle className="text-2xl text-gray-900">Property Analysis Report</CardTitle>
                 <p className="text-gray-600 mt-1">{analysis.location.address}</p>
+                {/* Investment Recommendation */}
+                {analysisResult.investmentRecommendation && (
+                  <div className="mt-3">
+                    <Badge 
+                      variant="outline" 
+                      className={`text-sm px-3 py-1 ${
+                        analysisResult.investmentRecommendation.includes('Outstanding') || analysisResult.investmentRecommendation.includes('Exceptional') 
+                          ? 'bg-green-100 text-green-800 border-green-300' 
+                          : analysisResult.investmentRecommendation.includes('Excellent') || analysisResult.investmentRecommendation.includes('Good')
+                          ? 'bg-blue-100 text-blue-800 border-blue-300'
+                          : 'bg-orange-100 text-orange-800 border-orange-300'
+                      }`}
+                    >
+                      {analysisResult.investmentRecommendation}
+                    </Badge>
+                  </div>
+                )}
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold text-[#FF5A5F]">₹{analysis.amount.toLocaleString()}</div>
@@ -212,6 +234,16 @@ export default function Results() {
               </div>
             </div>
           </CardHeader>
+          {/* Location Image */}
+          {analysisResult.locationImageUrl && (
+            <CardContent className="pt-0">
+              <img 
+                src={analysisResult.locationImageUrl} 
+                alt="Location Overview" 
+                className="w-full h-64 object-cover rounded-lg border"
+              />
+            </CardContent>
+          )}
         </Card>
 
         {/* Report Tier Summary */}
@@ -386,7 +418,7 @@ export default function Results() {
                 {isPaidPlan ? (
                   <>
                     <div className="text-center mb-4">
-                      <span className="text-4xl font-bold text-green-600">+{analysisResult.growthPrediction}%</span>
+                      <span className="text-4xl font-bold text-green-600">+{analysisResult.growthPrediction.toFixed(2)}%</span>
                       <p className="text-gray-600">Expected appreciation in 3 years</p>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-4 mb-4">
@@ -401,6 +433,21 @@ export default function Results() {
                         </span>
                       </div>
                     </div>
+                    
+                    {/* Growth Statistics */}
+                    {analysisResult.businessGrowthRate && analysisResult.populationGrowthRate && (
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="bg-blue-50 rounded-lg p-3 text-center">
+                          <div className="text-lg font-bold text-blue-600">{analysisResult.businessGrowthRate.toFixed(2)}%</div>
+                          <div className="text-xs text-blue-700">Annual Business Growth</div>
+                        </div>
+                        <div className="bg-purple-50 rounded-lg p-3 text-center">
+                          <div className="text-lg font-bold text-purple-600">{analysisResult.populationGrowthRate.toFixed(2)}%</div>
+                          <div className="text-xs text-purple-700">Annual Population Growth</div>
+                        </div>
+                      </div>
+                    )}
+                    
                     <p className="text-sm text-gray-600">Based on nearby developments and market trends</p>
                   </>
                 ) : (
