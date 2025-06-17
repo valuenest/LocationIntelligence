@@ -32,7 +32,7 @@ export async function generateInvestmentRecommendations(
   analysisData: AIAnalysisRequest
 ): Promise<string[]> {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const prompt = `As a real estate investment expert, analyze this property investment opportunity:
 
@@ -82,7 +82,7 @@ export async function findTopInvestmentLocations(
   budget: number
 ): Promise<InvestmentLocation[]> {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const prompt = `As a real estate investment expert, suggest 3 specific investment locations within 25km of ${centerLocation.address}.
 

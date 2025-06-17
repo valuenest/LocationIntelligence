@@ -33,6 +33,7 @@ interface AnalysisResult {
   distances: Record<string, DistanceData>;
   streetViewUrl?: string;
   aiRecommendations?: string[];
+  investmentViability?: number; // Percentage for all tiers
   topInvestmentLocations?: Array<{
     address: string;
     lat: number;
@@ -366,6 +367,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       result.locationScore = Math.min(5.0, score);
       
+      // Basic investment viability calculation for free tier
+      let viability = 40; // Base score
+      viability += (result.locationScore - 2.5) * 20; // Location factor
+      viability += Math.min(15, result.nearbyPlaces.length * 5); // Amenity factor
+      result.investmentViability = Math.max(20, Math.min(85, Math.round(viability)));
+      
     } else if (planType === 'paid') {
       // PAID TIER: Full analysis report + growth prediction + nearby developments + visual scoring + street view
       const comprehensivePlaceTypes = [
@@ -406,6 +413,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         p.types.includes('shopping_mall') || p.types.includes('restaurant')).length * 3;
       
       result.growthPrediction = Math.min(35, 8 + infraScore/5 + connectivityBonus + commercialBonus);
+      
+      // Enhanced investment viability for paid tier
+      let viability = 50; // Higher base for paid
+      viability += (result.locationScore - 3.0) * 15; // Location factor
+      viability += Math.min(20, amenityCount * 2); // Amenity density
+      viability += result.growthPrediction * 0.8; // Growth factor
+      result.investmentViability = Math.max(30, Math.min(95, Math.round(viability)));
       
       // Street View URL for paid tier
       result.streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${location.lat},${location.lng}&heading=0&pitch=0&key=${GOOGLE_MAPS_API_KEY}`;
@@ -459,6 +473,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         p.types.includes('bank')).length * 2;
       
       result.growthPrediction = Math.min(45, 10 + infraScore/4 + qualityBonus + connectivityBonus + commercialDensity);
+      
+      // Premium investment viability for pro tier
+      let viability = 60; // Highest base for pro
+      viability += (result.locationScore - 3.2) * 12; // Location factor
+      viability += Math.min(25, amenityCount * 1.8); // Amenity quality
+      viability += result.growthPrediction * 0.9; // Growth factor
+      viability += qualityScore / amenityCount > 4.0 ? 5 : 0; // Quality bonus
+      result.investmentViability = Math.max(40, Math.min(98, Math.round(viability)));
       
       // Street View URL
       result.streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x600&location=${location.lat},${location.lng}&heading=0&pitch=0&key=${GOOGLE_MAPS_API_KEY}`;
