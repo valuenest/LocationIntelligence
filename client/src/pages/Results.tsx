@@ -996,11 +996,11 @@ export default function Results() {
                   <p className="text-sm text-gray-600 mt-1">AI-analyzed locations within 25km with superior investment potential</p>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-6">
+                  <div className="grid md:grid-cols-3 gap-6">
                     {analysisResult.topInvestmentLocations.map((location, index) => (
-                      <div key={index} className="border border-indigo-200 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 overflow-hidden">
-                        {/* Location Header */}
-                        <div className="p-4 bg-white bg-opacity-70 border-b border-indigo-100">
+                      <div key={index} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
+                        {/* Location Image */}
+                        <div className="h-48 bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100 relative overflow-hidden">
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center">
                               <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
