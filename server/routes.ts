@@ -501,8 +501,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allPlaces: PlaceDetails[] = [];
       
       // Search for places in optimized batches to avoid API timeouts
-      const priorityTypes = ['restaurant', 'hospital', 'school', 'bank', 'store', 'gas_station', 'park', 'transit_station'];
-      const searchTypes = priorityTypes.slice(0, 8); // Limit to 8 most important types
+      const priorityTypes = [
+        'restaurant', 'hospital', 'school', 'bank', 'store', 'gas_station', 
+        'park', 'transit_station', 'shopping_mall', 'pharmacy', 'atm',
+        'establishment', 'finance', 'real_estate_agency'
+      ];
+      const searchTypes = priorityTypes.slice(0, 12); // Expanded to 12 most important types
       
       for (const type of searchTypes) {
         try {
@@ -584,10 +588,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (within3km) infrastructureScores.transport.close += ratingMultiplier;
         }
 
-        // Commercial infrastructure with rating consideration
-        if (place.types.some(type => ['store', 'supermarket', 'grocery_or_supermarket', 'shopping_mall', 'bank', 'atm'].includes(type))) {
-          infrastructureScores.commercial.total += ratingMultiplier;
-          if (within3km) infrastructureScores.commercial.close += ratingMultiplier;
+        // Commercial infrastructure with rating consideration (expanded for business districts)
+        if (place.types.some(type => [
+          'store', 'supermarket', 'grocery_or_supermarket', 'shopping_mall', 'bank', 'atm',
+          'establishment', 'finance', 'insurance_agency', 'real_estate_agency', 'accounting',
+          'lawyer', 'point_of_interest', 'business_center', 'office_building'
+        ].includes(type))) {
+          let commercialScore = ratingMultiplier;
+          // Business/financial establishments get higher weighting
+          if (place.types.some(type => ['finance', 'bank', 'insurance_agency', 'real_estate_agency'].includes(type))) {
+            commercialScore *= 1.5; // 50% bonus for financial services
+          }
+          infrastructureScores.commercial.total += commercialScore;
+          if (within3km) infrastructureScores.commercial.close += commercialScore;
         }
 
         // Essential services with proximity and rating weighting
@@ -741,32 +754,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Enhanced business growth rate based on infrastructure, amenities & population indicators
       const businessGrowthFactors = {
-        infrastructure: infrastructureScores.essential.total * 0.8, // Essential services drive business
-        commercial: infrastructureScores.commercial.total * 1.2, // Commercial density indicates business activity
-        connectivity: infrastructureScores.connectivity * 0.06, // Transport connectivity enables business (scaled down)
-        education: infrastructureScores.education.total * 0.9, // Education creates skilled workforce
-        population: Math.min(infrastructureScores.healthcare.total * 0.7, 10) // Healthcare indicates population density
+        infrastructure: infrastructureScores.essential.total * 1.5, // Essential services drive business
+        commercial: infrastructureScores.commercial.total * 2.0, // Commercial density indicates business activity
+        connectivity: infrastructureScores.connectivity * 0.15, // Transport connectivity enables business
+        education: infrastructureScores.education.total * 1.2, // Education creates skilled workforce
+        population: Math.min(infrastructureScores.healthcare.total * 1.0, 15) // Healthcare indicates population density
       };
       
       const totalBusinessScore = Object.values(businessGrowthFactors).reduce((sum, score) => sum + score, 0);
       result.businessGrowthRate = Math.max(-8, Math.min(18, 
-        (totalBusinessScore / 8) + // Base growth from infrastructure
-        (result.locationScore / 12) - 2 // Location score adjustment
+        (totalBusinessScore / 15) + // Base growth from infrastructure
+        (result.locationScore / 8) - 1 // Location score adjustment
       ));
       
       // Population growth rate based on infrastructure capacity and amenities
       const populationGrowthFactors = {
-        housing: Math.min(infrastructureScores.essential.total * 0.5, 8), // Essential services support population
-        healthcare: infrastructureScores.healthcare.total * 0.8, // Healthcare capacity indicates population support
-        education: infrastructureScores.education.total * 0.7, // Schools indicate family-friendly areas
-        transport: infrastructureScores.transport.total * 0.6, // Transport enables population movement
-        connectivity: infrastructureScores.connectivity * 0.04 // External connectivity attracts migration (scaled down)
+        housing: Math.min(infrastructureScores.essential.total * 0.8, 12), // Essential services support population
+        healthcare: infrastructureScores.healthcare.total * 1.2, // Healthcare capacity indicates population support
+        education: infrastructureScores.education.total * 1.0, // Schools indicate family-friendly areas
+        transport: infrastructureScores.transport.total * 0.9, // Transport enables population movement
+        connectivity: infrastructureScores.connectivity * 0.08 // External connectivity attracts migration
       };
       
       const totalPopulationScore = Object.values(populationGrowthFactors).reduce((sum, score) => sum + score, 0);
       result.populationGrowthRate = Math.max(-5, Math.min(12, 
-        (totalPopulationScore / 10) + // Base growth from infrastructure capacity
-        (result.locationScore / 20) - 1.5 // Location score adjustment
+        (totalPopulationScore / 12) + // Base growth from infrastructure capacity
+        (result.locationScore / 15) - 0.5 // Location score adjustment
       ));
       
       result.growthPrediction = Math.min(scoreAsPercentage * 0.2, 15); // Cap at 15%
