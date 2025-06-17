@@ -11,13 +11,16 @@ export const users = pgTable("users", {
 export const analysisRequests = pgTable("analysis_requests", {
   id: serial("id").primaryKey(),
   sessionId: text("session_id").notNull(),
-  ipAddress: text("ip_address").notNull(),
-  location: jsonb("location").notNull(), // {lat, lng, address}
+  ipAddress: text("ip_address"),
+  location: text("location").notNull(), // JSON string {lat, lng, address}
   amount: integer("amount").notNull(),
   propertyType: text("property_type").notNull(),
-  planType: text("plan_type").notNull(), // 'free', 'paid', 'pro'
+  planType: text("plan_type").notNull(), // 'free', 'basic', 'pro'
+  propertyDetails: text("property_details"), // JSON string
   paymentId: text("payment_id"), // Razorpay payment ID
-  analysisData: jsonb("analysis_data"), // Analysis results
+  paymentStatus: text("payment_status").default("pending").notNull(),
+  status: text("status").default("pending").notNull(),
+  results: text("results"), // JSON string of analysis results
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -25,7 +28,7 @@ export const usageLimits = pgTable("usage_limits", {
   id: serial("id").primaryKey(),
   ipAddress: text("ip_address").notNull().unique(),
   freeUsageCount: integer("free_usage_count").default(0).notNull(),
-  lastResetDate: timestamp("last_reset_date").defaultNow().notNull(),
+  lastUsageDate: text("last_usage_date").notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
