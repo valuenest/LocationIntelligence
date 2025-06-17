@@ -188,23 +188,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-[#FF5A5F]">PlotterAI</h1>
-            </div>
-            <div className="hidden md:block">
-              <Button className="bg-[#FF5A5F] hover:bg-[#e54852] text-white px-6 py-2 rounded-full">
-                Get Started
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
+    <div>
       {/* Hero Section */}
       <section className="gradient-bg py-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

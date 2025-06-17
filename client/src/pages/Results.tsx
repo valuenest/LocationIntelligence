@@ -86,6 +86,17 @@ export default function Results() {
     queryKey: ['/api/maps-config'],
   });
 
+  const { data: ipData } = useQuery<{ ip: string }>({
+    queryKey: ['/api/get-ip'],
+  });
+
+  // Save analysis to localStorage when data is loaded
+  useEffect(() => {
+    if (result?.analysis && ipData?.ip) {
+      saveAnalysisToHistory(ipData.ip, result.analysis);
+    }
+  }, [result, ipData]);
+
   const handleDownloadPDF = () => {
     if (result?.analysis) {
       generatePDF(result.analysis);

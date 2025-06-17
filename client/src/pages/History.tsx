@@ -17,6 +17,7 @@ import {
   Download
 } from "lucide-react";
 import { generatePDF } from "@/lib/pdfGenerator";
+import { getAnalysisHistory, removeAnalysisFromHistory, clearAnalysisHistory } from "@/lib/historyStorage";
 
 interface AnalysisHistory {
   sessionId: string;
@@ -43,34 +44,23 @@ export default function History() {
 
   useEffect(() => {
     if (ipData?.ip) {
-      // Load history from localStorage for this IP
-      const storageKey = `analysis_history_${ipData.ip}`;
-      const savedHistory = localStorage.getItem(storageKey);
-      if (savedHistory) {
-        try {
-          const parsedHistory = JSON.parse(savedHistory);
-          setHistory(parsedHistory);
-        } catch (error) {
-          console.error('Error parsing history:', error);
-        }
-      }
+      const historyData = getAnalysisHistory(ipData.ip);
+      setHistory(historyData);
     }
   }, [ipData]);
 
   const clearHistory = () => {
     if (ipData?.ip) {
-      const storageKey = `analysis_history_${ipData.ip}`;
-      localStorage.removeItem(storageKey);
+      clearAnalysisHistory(ipData.ip);
       setHistory([]);
     }
   };
 
   const removeHistoryItem = (sessionId: string) => {
     if (ipData?.ip) {
-      const updatedHistory = history.filter(item => item.sessionId !== sessionId);
+      removeAnalysisFromHistory(ipData.ip, sessionId);
+      const updatedHistory = getAnalysisHistory(ipData.ip);
       setHistory(updatedHistory);
-      const storageKey = `analysis_history_${ipData.ip}`;
-      localStorage.setItem(storageKey, JSON.stringify(updatedHistory));
     }
   };
 
@@ -109,7 +99,7 @@ export default function History() {
 
   if (!ipData) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex items-center justify-center py-16">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF5A5F] mx-auto mb-4"></div>
           <p className="text-gray-600">Loading history...</p>
@@ -119,37 +109,22 @@ export default function History() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/">
-                <Button variant="ghost" size="sm" className="mr-4">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Home
-                </Button>
-              </Link>
-              <h1 className="text-xl font-semibold text-gray-900">Analysis History</h1>
-            </div>
-            {history.length > 0 && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={clearHistory}
-                className="text-red-600 hover:text-red-700"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Clear All
-              </Button>
-            )}
-          </div>
-        </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Page Header */}
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Analysis History</h1>
+        {history.length > 0 && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={clearHistory}
+            className="text-red-600 hover:text-red-700"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Clear All
+          </Button>
+        )}
       </div>
-
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {history.length === 0 ? (
           <div className="text-center py-16">
             <HomeIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -272,7 +247,6 @@ export default function History() {
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }
