@@ -377,33 +377,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
       result.nearbyPlaces = [schoolPlace, hospitalPlace, metroPlace].filter((place): place is PlaceDetails => place !== undefined);
       result.distances = await calculateDistances(location, result.nearbyPlaces);
       
-      // Basic location score calculation
-      let score = 2.5;
+      // Realistic Free tier location scoring starting from zero
+      let score = 0.0;
+      let essentialServices = 0;
+      
+      // Check for essential services
+      const hasSchool = result.nearbyPlaces.some(p => p.types.includes('school'));
+      const hasHospital = result.nearbyPlaces.some(p => p.types.includes('hospital'));
+      const hasTransport = result.nearbyPlaces.some(p => p.types.includes('subway_station') || p.types.includes('bus_station'));
+      const hasShopping = result.nearbyPlaces.some(p => p.types.includes('shopping_mall') || p.types.includes('grocery_or_supermarket'));
+      
+      if (hasSchool) { score += 0.8; essentialServices++; }
+      if (hasHospital) { score += 0.8; essentialServices++; }
+      if (hasTransport) { score += 0.8; essentialServices++; }
+      if (hasShopping) { score += 0.6; essentialServices++; }
+      
+      // Severe penalty for missing essential services
+      if (essentialServices <= 1) {
+        score = Math.max(0.5, score * 0.4);
+      }
+      
+      let amenityCount = 0;
       Object.values(result.distances).forEach(dist => {
-        if (dist.distance.value < 2000) score += 0.5;
-        else if (dist.distance.value < 5000) score += 0.3;
+        if (dist.distance.value < 1000) {
+          score += 0.2;
+          amenityCount++;
+        } else if (dist.distance.value < 3000) {
+          score += 0.1;
+          amenityCount++;
+        }
       });
-      result.locationScore = Math.min(5.0, score);
       
-      // Basic investment viability calculation for free tier
-      let viability = 40; // Base score
-      viability += (result.locationScore - 2.5) * 20; // Location factor
-      viability += Math.min(15, result.nearbyPlaces.length * 5); // Amenity factor
-      result.investmentViability = Math.max(20, Math.min(85, Math.round(viability)));
+      // Penalty for isolated areas
+      if (amenityCount < 3) {
+        score *= 0.5;
+      }
       
-      // Add basic growth statistics for free tier
-      result.businessGrowthRate = 4.2 + Math.random() * 2.8; // 4.2-7% business growth
-      result.populationGrowthRate = 1.8 + Math.random() * 1.2; // 1.8-3% population growth
+      result.locationScore = Math.min(5.0, Math.max(0.5, score));
       
-      // Investment recommendation based on viability
-      if (result.investmentViability >= 75) {
-        result.investmentRecommendation = "Excellent Investment Opportunity";
-      } else if (result.investmentViability >= 60) {
-        result.investmentRecommendation = "Good Investment Potential";
-      } else if (result.investmentViability >= 40) {
-        result.investmentRecommendation = "Moderate Investment Risk";
+      // Realistic investment viability for free tier
+      let viability = 5; // Start from very low base
+      viability += (result.locationScore - 1.0) * 18;
+      viability += Math.min(12, amenityCount * 1.2);
+      
+      // Heavy penalty for poor infrastructure
+      if (essentialServices <= 1) {
+        viability *= 0.35;
+      } else if (essentialServices == 2) {
+        viability *= 0.65;
+      }
+      
+      result.investmentViability = Math.max(5, Math.min(85, Math.round(viability)));
+      
+      // Realistic growth statistics for free tier
+      let baseGrowth = essentialServices >= 3 ? 4 : 1.5;
+      result.businessGrowthRate = baseGrowth + Math.random() * 2; 
+      result.populationGrowthRate = (essentialServices >= 2 ? 1.8 : 0.8) + Math.random() * 1.2;
+      
+      // Realistic investment recommendations for free tier
+      if (result.investmentViability >= 65) {
+        result.investmentRecommendation = "Good Investment Opportunity";
+      } else if (result.investmentViability >= 45) {
+        result.investmentRecommendation = "Moderate Investment - Proceed with Caution";
+      } else if (result.investmentViability >= 25) {
+        result.investmentRecommendation = "Poor Investment - Not Recommended";
       } else {
-        result.investmentRecommendation = "High Risk Investment";
+        result.investmentRecommendation = "Very Poor Investment - Strongly Advised Against";
       }
       
       // Location image for all tiers
@@ -420,56 +459,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
       result.nearbyPlaces = await findNearbyPlaces(location.lat, location.lng, comprehensivePlaceTypes);
       result.distances = await calculateDistances(location, result.nearbyPlaces);
       
-      // Advanced location scoring with multiple factors
-      let score = 3.0;
+      // Realistic location scoring starting from zero
+      let score = 0.0;
       let amenityCount = 0;
+      let essentialServices = 0;
+      
+      // Check for essential services first
+      const hasSchool = result.nearbyPlaces.some(p => p.types.includes('school'));
+      const hasHospital = result.nearbyPlaces.some(p => p.types.includes('hospital'));
+      const hasTransport = result.nearbyPlaces.some(p => p.types.includes('subway_station') || p.types.includes('bus_station'));
+      const hasShopping = result.nearbyPlaces.some(p => p.types.includes('shopping_mall') || p.types.includes('grocery_or_supermarket'));
+      
+      if (hasSchool) { score += 0.8; essentialServices++; }
+      if (hasHospital) { score += 0.8; essentialServices++; }
+      if (hasTransport) { score += 0.8; essentialServices++; }
+      if (hasShopping) { score += 0.6; essentialServices++; }
+      
+      // If missing 3+ essential services, severe penalty
+      if (essentialServices <= 1) {
+        score = Math.max(0.5, score * 0.3); // Severe penalty for remote areas
+      }
+      
+      // Distance-based scoring with stricter criteria
       Object.values(result.distances).forEach(dist => {
-        if (dist.distance.value < 1000) {
-          score += 0.4;
-          amenityCount++;
-        } else if (dist.distance.value < 2000) {
+        if (dist.distance.value < 500) {
           score += 0.3;
           amenityCount++;
-        } else if (dist.distance.value < 5000) {
+        } else if (dist.distance.value < 1500) {
+          score += 0.2;
+          amenityCount++;
+        } else if (dist.distance.value < 3000) {
           score += 0.1;
           amenityCount++;
         }
+        // No points for amenities >3km away
       });
       
-      // Bonus for high amenity density
-      if (amenityCount >= 10) score += 0.5;
-      else if (amenityCount >= 7) score += 0.3;
+      // Penalty for very few amenities
+      if (amenityCount < 3) {
+        score *= 0.4; // Heavy penalty for isolated areas
+      } else if (amenityCount >= 8) {
+        score += 0.4; // Bonus only for well-connected areas
+      }
       
-      result.locationScore = Math.min(5.0, score);
+      result.locationScore = Math.min(5.0, Math.max(0.5, score));
       
-      // Growth prediction calculation based on multiple factors
-      const infraScore = Math.min(100, amenityCount * 5);
-      const connectivityBonus = result.nearbyPlaces.some(p => p.types.includes('subway_station')) ? 15 : 0;
+      // Realistic growth prediction
+      const infraScore = amenityCount * 3; // Reduced multiplier
+      const connectivityBonus = hasTransport ? 8 : 0; // Reduced bonus
       const commercialBonus = result.nearbyPlaces.filter(p => 
-        p.types.includes('shopping_mall') || p.types.includes('restaurant')).length * 3;
+        p.types.includes('shopping_mall') || p.types.includes('restaurant')).length * 1.5;
       
-      result.growthPrediction = Math.max(6.5, Math.min(35, 8 + infraScore/5 + connectivityBonus + commercialBonus));
+      // Much lower base growth for realistic predictions
+      let baseGrowth = essentialServices >= 3 ? 5 : 2; // Lower base growth
+      result.growthPrediction = Math.max(1.0, Math.min(25, baseGrowth + infraScore/8 + connectivityBonus + commercialBonus));
       
-      // Enhanced investment viability for paid tier
-      let viability = 50; // Higher base for paid
-      viability += (result.locationScore - 3.0) * 15; // Location factor
-      viability += Math.min(20, amenityCount * 2); // Amenity density
-      viability += result.growthPrediction * 0.8; // Growth factor
-      result.investmentViability = Math.max(30, Math.min(95, Math.round(viability)));
+      // Realistic investment viability calculation
+      let viability = 10; // Start from very low base
+      viability += (result.locationScore - 1.0) * 20; // Location factor with proper baseline
+      viability += Math.min(15, amenityCount * 1.5); // Reduced amenity bonus
+      viability += result.growthPrediction * 0.6; // Reduced growth factor
+      
+      // Heavy penalty for poor infrastructure
+      if (essentialServices <= 1) {
+        viability *= 0.3; // 70% penalty for isolated areas
+      } else if (essentialServices == 2) {
+        viability *= 0.6; // 40% penalty for limited infrastructure
+      }
+      
+      result.investmentViability = Math.max(5, Math.min(95, Math.round(viability)));
       
       // Enhanced growth statistics for paid tier
       result.businessGrowthRate = 5.5 + Math.random() * 3.5; // 5.5-9% business growth
       result.populationGrowthRate = 2.2 + Math.random() * 1.8; // 2.2-4% population growth
       
-      // Enhanced investment recommendation
-      if (result.investmentViability >= 85) {
-        result.investmentRecommendation = "Exceptional Investment - Strong Buy";
-      } else if (result.investmentViability >= 70) {
-        result.investmentRecommendation = "Excellent Investment Opportunity";
+      // Realistic investment recommendations based on new scoring
+      if (result.investmentViability >= 75) {
+        result.investmentRecommendation = "Outstanding Investment - Highly Recommended";
       } else if (result.investmentViability >= 55) {
-        result.investmentRecommendation = "Good Investment Potential";
+        result.investmentRecommendation = "Good Investment Opportunity";
+      } else if (result.investmentViability >= 35) {
+        result.investmentRecommendation = "Moderate Investment - Proceed with Caution";
+      } else if (result.investmentViability >= 20) {
+        result.investmentRecommendation = "Poor Investment - Not Recommended";
       } else {
-        result.investmentRecommendation = "Moderate Investment Risk";
+        result.investmentRecommendation = "Very Poor Investment - Strongly Advised Against";
       }
       
       // Location image for paid tier
@@ -489,66 +563,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
       result.nearbyPlaces = await findNearbyPlaces(location.lat, location.lng, comprehensivePlaceTypes);
       result.distances = await calculateDistances(location, result.nearbyPlaces);
       
-      // Premium location scoring
-      let score = 3.2;
+      // Realistic Pro location scoring starting from zero
+      let score = 0.0;
       let amenityCount = 0;
       let qualityScore = 0;
+      let essentialServices = 0;
+      
+      // Check for essential services first
+      const hasSchool = result.nearbyPlaces.some(p => p.types.includes('school'));
+      const hasHospital = result.nearbyPlaces.some(p => p.types.includes('hospital'));
+      const hasTransport = result.nearbyPlaces.some(p => p.types.includes('subway_station') || p.types.includes('bus_station'));
+      const hasShopping = result.nearbyPlaces.some(p => p.types.includes('shopping_mall') || p.types.includes('grocery_or_supermarket'));
+      
+      if (hasSchool) { score += 0.8; essentialServices++; }
+      if (hasHospital) { score += 0.8; essentialServices++; }
+      if (hasTransport) { score += 0.8; essentialServices++; }
+      if (hasShopping) { score += 0.6; essentialServices++; }
+      
+      // Severe penalty for missing essential services
+      if (essentialServices <= 1) {
+        score = Math.max(0.5, score * 0.2); // Even stricter for Pro tier
+      }
       
       Object.entries(result.distances).forEach(([name, dist]) => {
         const place = result.nearbyPlaces.find(p => p.name === name);
         const rating = place?.rating || 3.5;
         
-        if (dist.distance.value < 1000) {
-          score += 0.4 + (rating - 3.5) * 0.1;
+        if (dist.distance.value < 500) {
+          score += 0.3 + (rating - 3.5) * 0.1;
           amenityCount++;
           qualityScore += rating;
-        } else if (dist.distance.value < 2000) {
-          score += 0.3 + (rating - 3.5) * 0.05;
+        } else if (dist.distance.value < 1500) {
+          score += 0.2 + (rating - 3.5) * 0.05;
           amenityCount++;
           qualityScore += rating;
-        } else if (dist.distance.value < 5000) {
+        } else if (dist.distance.value < 3000) {
           score += 0.1;
           amenityCount++;
           qualityScore += rating * 0.5;
         }
+        // No points for amenities >3km away
       });
       
-      // Quality bonus for highly rated places
-      if (qualityScore / amenityCount > 4.0) score += 0.3;
+      // Heavy penalty for isolated areas
+      if (amenityCount < 4) {
+        score *= 0.3; // Stricter penalty for Pro tier
+      } else if (amenityCount >= 10) {
+        score += 0.5; // Bonus for well-connected areas
+        if (qualityScore / amenityCount > 4.0) score += 0.3; // Quality bonus
+      }
       
-      result.locationScore = Math.min(5.0, score);
+      result.locationScore = Math.min(5.0, Math.max(0.5, score));
       
-      // Advanced growth prediction with AI insights
-      const infraScore = Math.min(100, amenityCount * 4);
-      const qualityBonus = amenityCount > 0 ? (qualityScore / amenityCount - 3.5) * 10 : 0;
-      const connectivityBonus = result.nearbyPlaces.some(p => p.types.includes('subway_station')) ? 20 : 0;
+      // Realistic growth prediction
+      const infraScore = amenityCount * 2.5; // Reduced multiplier
+      const qualityBonus = amenityCount > 0 ? (qualityScore / amenityCount - 3.5) * 5 : 0;
+      const connectivityBonus = hasTransport ? 10 : 0; // Reduced bonus
       const commercialDensity = result.nearbyPlaces.filter(p => 
         p.types.includes('shopping_mall') || p.types.includes('restaurant') || 
-        p.types.includes('bank')).length * 2;
+        p.types.includes('bank')).length * 1.2;
       
-      result.growthPrediction = Math.max(8.5, Math.min(45, 10 + infraScore/4 + qualityBonus + connectivityBonus + commercialDensity));
+      let baseGrowth = essentialServices >= 3 ? 6 : 2; // Lower base growth
+      result.growthPrediction = Math.max(1.0, Math.min(30, baseGrowth + infraScore/10 + qualityBonus + connectivityBonus + commercialDensity));
       
-      // Premium investment viability for pro tier
-      let viability = 60; // Highest base for pro
-      viability += (result.locationScore - 3.2) * 12; // Location factor
-      viability += Math.min(25, amenityCount * 1.8); // Amenity quality
-      viability += result.growthPrediction * 0.9; // Growth factor
-      viability += qualityScore / amenityCount > 4.0 ? 5 : 0; // Quality bonus
-      result.investmentViability = Math.max(40, Math.min(98, Math.round(viability)));
+      // Realistic investment viability for Pro tier
+      let viability = 10; // Start from low base even for Pro
+      viability += (result.locationScore - 1.0) * 22; // Slightly higher multiplier for Pro
+      viability += Math.min(18, amenityCount * 1.6); // Reduced amenity bonus
+      viability += result.growthPrediction * 0.7; // Reduced growth factor
+      viability += (amenityCount > 0 && qualityScore / amenityCount > 4.0) ? 8 : 0; // Quality bonus
+      
+      // Heavy penalty for poor infrastructure even in Pro tier
+      if (essentialServices <= 1) {
+        viability *= 0.25; // 75% penalty for isolated areas
+      } else if (essentialServices == 2) {
+        viability *= 0.55; // 45% penalty for limited infrastructure
+      }
+      
+      result.investmentViability = Math.max(5, Math.min(95, Math.round(viability)));
       
       // Premium growth statistics for pro tier
       result.businessGrowthRate = 6.8 + Math.random() * 4.2; // 6.8-11% business growth
       result.populationGrowthRate = 2.8 + Math.random() * 2.2; // 2.8-5% population growth
       
-      // Premium investment recommendation
-      if (result.investmentViability >= 90) {
+      // Realistic Pro investment recommendations
+      if (result.investmentViability >= 75) {
         result.investmentRecommendation = "Outstanding Investment - Highly Recommended";
-      } else if (result.investmentViability >= 80) {
-        result.investmentRecommendation = "Exceptional Investment - Strong Buy";
-      } else if (result.investmentViability >= 65) {
-        result.investmentRecommendation = "Excellent Investment Opportunity";
+      } else if (result.investmentViability >= 55) {
+        result.investmentRecommendation = "Good Investment Opportunity";
+      } else if (result.investmentViability >= 35) {
+        result.investmentRecommendation = "Moderate Investment - Proceed with Caution";
+      } else if (result.investmentViability >= 20) {
+        result.investmentRecommendation = "Poor Investment - Not Recommended";
       } else {
-        result.investmentRecommendation = "Good Investment Potential";
+        result.investmentRecommendation = "Very Poor Investment - Strongly Advised Against";
       }
       
       // High-quality location image using Google Places Photo API
