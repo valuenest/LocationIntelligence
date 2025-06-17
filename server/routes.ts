@@ -216,6 +216,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Frontend results endpoint (alias for analysis endpoint)
+  app.get("/api/result/:sessionId", async (req: Request, res: Response) => {
+    try {
+      const { sessionId } = req.params;
+      const analysisRequest = await storage.getAnalysisRequestBySessionId(sessionId);
+      
+      if (!analysisRequest) {
+        return res.status(404).json({ error: "Analysis not found" });
+      }
+
+      if (analysisRequest.paymentStatus !== "completed") {
+        return res.status(402).json({ error: "Payment required" });
+      }
+
+      if (analysisRequest.status === "completed" && analysisRequest.results) {
+        const analysisData = JSON.parse(analysisRequest.results);
+        return res.json({
+          success: true,
+          analysis: {
+            id: analysisRequest.id,
+            sessionId: analysisRequest.sessionId,
+            location: typeof analysisRequest.location === 'string' 
+              ? JSON.parse(analysisRequest.location) 
+              : analysisRequest.location,
+            amount: analysisRequest.amount,
+            propertyType: analysisRequest.propertyType,
+            planType: analysisRequest.planType,
+            analysisData: analysisData,
+            createdAt: analysisRequest.createdAt
+          }
+        });
+      }
+
+      // Analysis not completed yet
+      return res.status(202).json({ 
+        success: false, 
+        message: "Analysis in progress",
+        status: analysisRequest.status 
+      });
+    } catch (error) {
+      console.error("Error getting analysis result:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Smart validation endpoint
   app.post("/api/validate", async (req: Request, res: Response) => {
     try {
