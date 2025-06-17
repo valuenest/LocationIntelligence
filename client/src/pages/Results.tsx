@@ -257,12 +257,17 @@ export default function Results() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Analysis */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Location Score */}
+            {/* FREE CONTENT SECTION */}
+            
+            {/* Location Score - Free */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <MapPin className="h-5 w-5 mr-2 text-blue-500" />
                   Location Score
+                  <Badge variant="secondary" className="ml-2 bg-green-100 text-green-600">
+                    Free
+                  </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -287,6 +292,49 @@ export default function Results() {
               </CardContent>
             </Card>
 
+            {/* Nearby Places - Free */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Home className="h-5 w-5 mr-2 text-gray-500" />
+                  Nearby Places
+                  <Badge variant="secondary" className="ml-2 bg-green-100 text-green-600">
+                    Free
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {analysisResult.nearbyPlaces.slice(0, 5).map((place, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center">
+                        {getPlaceIcon(place.types)}
+                        <div className="ml-3">
+                          <div className="font-medium text-gray-900">{place.name}</div>
+                          <div className="text-sm text-gray-600">{place.vicinity}</div>
+                        </div>
+                      </div>
+                      {place.rating && (
+                        <div className="flex items-center">
+                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
+                          <span className="text-sm font-medium">{place.rating}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {!isPaidPlan && analysisResult.nearbyPlaces.length > 5 && (
+                  <div className="mt-4 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                    <p className="text-sm text-orange-700 text-center">
+                      +{analysisResult.nearbyPlaces.length - 5} more places available with Paid Plan
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* PAID CONTENT SECTION */}
+            
             {/* Growth Potential */}
             <Card>
               <CardHeader>
@@ -409,34 +457,6 @@ export default function Results() {
                     </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-
-            {/* Nearby Places */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Nearby Places</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {analysisResult.nearbyPlaces.slice(0, isPaidPlan ? 10 : 5).map((place, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center">
-                        {getPlaceIcon(place.types)}
-                        <div className="ml-3">
-                          <div className="font-medium text-gray-900">{place.name}</div>
-                          <div className="text-sm text-gray-600">{place.vicinity}</div>
-                        </div>
-                      </div>
-                      {place.rating && (
-                        <div className="flex items-center">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-                          <span className="text-sm font-medium">{place.rating}</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
               </CardContent>
             </Card>
           </div>
