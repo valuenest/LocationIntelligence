@@ -435,7 +435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const commercialBonus = result.nearbyPlaces.filter(p => 
         p.types.includes('shopping_mall') || p.types.includes('restaurant')).length * 3;
       
-      result.growthPrediction = Math.min(35, 8 + infraScore/5 + connectivityBonus + commercialBonus);
+      result.growthPrediction = Math.max(6.5, Math.min(35, 8 + infraScore/5 + connectivityBonus + commercialBonus));
       
       // Enhanced investment viability for paid tier
       let viability = 50; // Higher base for paid
