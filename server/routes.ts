@@ -1508,29 +1508,51 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // MANDATORY INFRASTRUCTURE CHECK FOR SCORES ABOVE 4.5
       // ===================================================
       if (preliminaryScore > 4.5) {
-        console.log(`MANDATORY INFRASTRUCTURE CHECK: Score ${preliminaryScore.toFixed(2)} > 4.5, validating major transport infrastructure within 5km...`);
+        // Check if location qualifies for exemption from infrastructure requirement
+        const areaType = aiIntelligence.areaClassification || '';
+        const locationType = aiIntelligence.locationType || '';
         
-        try {
-          const infrastructureValidation = await validateMajorTransportInfrastructure(location);
+        // EXEMPT AREA TYPES - Can exceed 4.5 without major transport infrastructure
+        const exemptAreaTypes = [
+          'Urban', 'Metropolitan', 'Metro city', 'Megacity', 'Urban agglomeration',
+          'Suburban', 'Sub-urban', 'Residential suburb',
+          'Industrial estate', 'SEZ', 'IT park', 'Tech hub', 'Industrial zone',
+          'Smart city', 'Planned township', 'Satellite city', 'Planned city',
+          'Coastal', 'Coastal area', 'Port city', 'Harbor town'
+        ];
+        
+        const isExemptArea = exemptAreaTypes.some(exemptType => 
+          areaType.includes(exemptType) || locationType === 'metropolitan' || locationType === 'city'
+        );
+        
+        if (isExemptArea) {
+          console.log(`INFRASTRUCTURE CHECK EXEMPTED: Area type "${areaType}" (${locationType}) qualifies for scores above 4.5 without major transport infrastructure`);
+          console.log(`Score maintained: ${preliminaryScore.toFixed(2)}`);
+        } else {
+          console.log(`MANDATORY INFRASTRUCTURE CHECK: Score ${preliminaryScore.toFixed(2)} > 4.5 for non-exempt area "${areaType}", validating major transport infrastructure within 5km...`);
           
-          if (!infrastructureValidation.hasMajorInfrastructure) {
-            console.log(`INFRASTRUCTURE CHECK FAILED: No major transport infrastructure found within 5km`);
-            console.log(`Infrastructure found: ${infrastructureValidation.infrastructureFound.join(', ') || 'None'}`);
-            console.log(`Reasoning: ${infrastructureValidation.reasoning}`);
+          try {
+            const infrastructureValidation = await validateMajorTransportInfrastructure(location);
             
-            // Cap score at 4.4 if no major infrastructure exists
+            if (!infrastructureValidation.hasMajorInfrastructure) {
+              console.log(`INFRASTRUCTURE CHECK FAILED: No major transport infrastructure found within 5km`);
+              console.log(`Infrastructure found: ${infrastructureValidation.infrastructureFound.join(', ') || 'None'}`);
+              console.log(`Reasoning: ${infrastructureValidation.reasoning}`);
+              
+              // Cap score at 4.4 if no major infrastructure exists
+              preliminaryScore = Math.min(4.4, preliminaryScore);
+              console.log(`SCORE CAPPED: Reduced from ${finalLocationScore.toFixed(2)} to ${preliminaryScore.toFixed(2)} due to lack of major transport infrastructure`);
+            } else {
+              console.log(`INFRASTRUCTURE CHECK PASSED: Major transport infrastructure found within 5km`);
+              console.log(`Infrastructure found: ${infrastructureValidation.infrastructureFound.join(', ')}`);
+              console.log(`Score maintained: ${preliminaryScore.toFixed(2)}`);
+            }
+          } catch (error) {
+            console.error('Error during infrastructure validation:', error);
+            // On error, apply conservative approach and cap the score
             preliminaryScore = Math.min(4.4, preliminaryScore);
-            console.log(`SCORE CAPPED: Reduced from ${finalLocationScore.toFixed(2)} to ${preliminaryScore.toFixed(2)} due to lack of major transport infrastructure`);
-          } else {
-            console.log(`INFRASTRUCTURE CHECK PASSED: Major transport infrastructure found within 5km`);
-            console.log(`Infrastructure found: ${infrastructureValidation.infrastructureFound.join(', ')}`);
-            console.log(`Score maintained: ${preliminaryScore.toFixed(2)}`);
+            console.log(`SCORE CAPPED (ERROR): Reduced to ${preliminaryScore.toFixed(2)} due to infrastructure validation error`);
           }
-        } catch (error) {
-          console.error('Error during infrastructure validation:', error);
-          // On error, apply conservative approach and cap the score
-          preliminaryScore = Math.min(4.4, preliminaryScore);
-          console.log(`SCORE CAPPED (ERROR): Reduced to ${preliminaryScore.toFixed(2)} due to infrastructure validation error`);
         }
       }
       
