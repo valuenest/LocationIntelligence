@@ -252,13 +252,13 @@ export default function Home() {
 
           {/* Form Content */}
           <div className="px-4 sm:px-6 lg:px-8 py-16">
-            <div className="max-w-4xl mx-auto space-y-16">
+            <div className="space-y-16">
               {/* Location Selection */}
               <div>
                 <h3 className="text-3xl font-bold text-gray-900 mb-8 text-center">
                   Select Property Location
                 </h3>
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-2xl border border-blue-100">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-12 rounded-2xl border border-blue-100">
                   <LocationInput onLocationSelect={handleLocationSelect} selectedLocation={selectedLocation} />
                 </div>
               </div>
@@ -268,7 +268,7 @@ export default function Home() {
                 <h3 className="text-3xl font-bold text-gray-900 mb-8 text-center">
                   Property Details
                 </h3>
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-8 rounded-2xl border border-green-100">
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-12 rounded-2xl border border-green-100">
                   <PropertyFormCompact onSubmit={handlePropertySubmit} selectedLocation={selectedLocation} />
                 </div>
               </div>
