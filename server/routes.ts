@@ -18,6 +18,8 @@ interface PlaceDetails {
   name: string;
   vicinity: string;
   rating?: number;
+  types: string[];
+}
 
 // Input validation schemas
 const LocationSchema = z.object({
@@ -658,47 +660,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Showing ${result.nearbyPlaces.length} places within 5km radius`);
       }
 
-      // Advanced infrastructure scoring with categorized services
+      // Enhanced infrastructure scoring with weighted categories and quality metrics
       let infrastructureScores = {
-        healthcare: { close: 0, total: 0 },
-        education: { close: 0, total: 0 },
-        transport: { close: 0, total: 0 },
-        commercial: { close: 0, total: 0 },
-        essential: { close: 0, total: 0 },
-        connectivity: 0
+        healthcare: { close: 0, total: 0, premium: 0 },
+        education: { close: 0, total: 0, premium: 0 },
+        transport: { close: 0, total: 0, premium: 0 },
+        commercial: { close: 0, total: 0, premium: 0 },
+        essential: { close: 0, total: 0, premium: 0 },
+        connectivity: 0,
+        lifestyle: { close: 0, total: 0, premium: 0 },
+        safety: { close: 0, total: 0 },
+        environment: { close: 0, total: 0 }
       };
 
-      // Infrastructure analysis within 10km radius with weighted scoring
+      // Enhanced infrastructure analysis with quality-based scoring
       result.nearbyPlaces.forEach(place => {
         const distance = result.distances[place.name];
         if (!distance) return;
 
         const distanceKm = distance.distance.value / 1000;
-        const within5km = distanceKm <= 5;   // 5km radius for infrastructure analysis
-        const within3km = distanceKm <= 3;   // Close proximity bonus
-        const within1km = distanceKm <= 1;   // Very close proximity bonus
+        const within5km = distanceKm <= 5;
+        const within3km = distanceKm <= 3;
+        const within1km = distanceKm <= 1;
+        const within500m = distanceKm <= 0.5;
 
-        if (!within5km) return; // Only consider places within 5km
+        if (!within5km) return;
 
-        // Calculate rating bonus based on place rating
-        const ratingMultiplier = place.rating ? Math.min(place.rating / 5, 1) : 0.6; // Default 0.6 for unrated
+        // Enhanced rating system with quality detection
+        const rating = place.rating || 0;
+        const ratingMultiplier = rating > 0 ? Math.min(rating / 5, 1.2) : 0.5;
+        
+        // Quality tier detection
+        const isPremium = rating >= 4.5 || 
+          place.name.toLowerCase().includes('apollo') ||
+          place.name.toLowerCase().includes('premium') ||
+          place.name.toLowerCase().includes('luxury') ||
+          place.name.toLowerCase().includes('five star');
+        
+        const isGood = rating >= 4.0 || 
+          place.name.toLowerCase().includes('central') ||
+          place.name.toLowerCase().includes('super') ||
+          place.name.toLowerCase().includes('grand');
 
-        // Healthcare infrastructure with rating consideration
+        // Distance-based multiplier with exponential decay
+        let distanceMultiplier = 1.0;
+        if (within500m) distanceMultiplier = 2.0;
+        else if (within1km) distanceMultiplier = 1.7;
+        else if (within3km) distanceMultiplier = 1.3;
+        else distanceMultiplier = 1.0 - (distanceKm - 3) / 10; // Decay after 3km
+
+        const baseScore = ratingMultiplier * distanceMultiplier;
+
+        // Healthcare infrastructure with quality tiers
         if (place.types.some(type => ['hospital', 'pharmacy', 'doctor', 'health', 'medical_center'].includes(type))) {
-          infrastructureScores.healthcare.total += ratingMultiplier;
-          if (within3km) infrastructureScores.healthcare.close += ratingMultiplier;
+          let healthScore = baseScore;
+          if (isPremium) healthScore *= 2.5; // Premium hospitals (Apollo, etc.)
+          else if (isGood) healthScore *= 1.8;
+          
+          infrastructureScores.healthcare.total += healthScore;
+          if (within3km) infrastructureScores.healthcare.close += healthScore;
+          if (isPremium) infrastructureScores.healthcare.premium += 1;
         }
 
-        // Educational infrastructure with rating consideration
+        // Educational infrastructure with institution hierarchy
         if (place.types.some(type => ['school', 'university', 'college', 'library', 'education'].includes(type))) {
-          infrastructureScores.education.total += ratingMultiplier;
-          if (within3km) infrastructureScores.education.close += ratingMultiplier;
+          let eduScore = baseScore;
+          const isUniversity = place.types.includes('university') || place.name.toLowerCase().includes('university');
+          const isCollege = place.types.includes('college') || place.name.toLowerCase().includes('college');
+          
+          if (isUniversity) eduScore *= 2.2; // Universities have higher impact
+          else if (isCollege) eduScore *= 1.8;
+          else if (isPremium) eduScore *= 2.0; // Premium schools
+          else if (isGood) eduScore *= 1.5;
+          
+          infrastructureScores.education.total += eduScore;
+          if (within3km) infrastructureScores.education.close += eduScore;
+          if (isPremium || isUniversity) infrastructureScores.education.premium += 1;
         }
 
-        // Transport infrastructure with rating consideration
+        // Transport infrastructure with transit hierarchy
         if (place.types.some(type => ['transit_station', 'bus_station', 'subway_station', 'train_station', 'gas_station'].includes(type))) {
-          infrastructureScores.transport.total += ratingMultiplier;
-          if (within3km) infrastructureScores.transport.close += ratingMultiplier;
+          let transportScore = baseScore;
+          const isMetro = place.types.includes('subway_station') || place.name.toLowerCase().includes('metro');
+          const isRailway = place.types.includes('train_station') || place.name.toLowerCase().includes('railway');
+          
+          if (isMetro) transportScore *= 2.5; // Metro has highest connectivity value
+          else if (isRailway) transportScore *= 2.0;
+          else if (place.types.includes('bus_station')) transportScore *= 1.5;
+          
+          infrastructureScores.transport.total += transportScore;
+          if (within3km) infrastructureScores.transport.close += transportScore;
+          if (isMetro || isRailway) infrastructureScores.transport.premium += 1;
         }
 
         // Commercial infrastructure with rating consideration (expanded for business districts)
@@ -716,25 +768,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (within3km) infrastructureScores.commercial.close += commercialScore;
         }
 
-        // Premium lifestyle amenities scoring (indicates upscale areas)
-        if (place.types.some(type => ['lodging', 'spa', 'gym', 'cafe', 'bar', 'restaurant'].includes(type))) {
-          let lifestyleScore = ratingMultiplier;
+        // Lifestyle and recreational amenities (indicates quality of life)
+        if (place.types.some(type => ['lodging', 'spa', 'gym', 'cafe', 'bar', 'restaurant', 'park', 'movie_theater', 'shopping_mall'].includes(type))) {
+          let lifestyleScore = baseScore;
           
-          // Premium establishments get significant bonuses
-          if (place.rating && place.rating >= 4.5) {
-            lifestyleScore *= 2.0; // Double score for highly rated places
-          } else if (place.rating && place.rating >= 4.0) {
-            lifestyleScore *= 1.5; // 50% bonus for good rated places
+          // Luxury establishments indicate upscale areas
+          if (place.types.includes('lodging') && isPremium) {
+            lifestyleScore *= 3.0; // Luxury hotels indicate premium areas
+          } else if (place.types.includes('spa') && isPremium) {
+            lifestyleScore *= 2.5; // Premium spas indicate affluent neighborhoods
+          } else if (place.types.includes('shopping_mall') && rating >= 4.0) {
+            lifestyleScore *= 2.2; // Good malls indicate commercial development
+          } else if (isPremium) {
+            lifestyleScore *= 2.0;
+          } else if (isGood) {
+            lifestyleScore *= 1.5;
           }
           
-          // Luxury hotels and spas indicate premium areas
-          if (place.types.includes('lodging') && (place.name.toLowerCase().includes('palace') || 
-              place.name.toLowerCase().includes('luxury') || place.name.toLowerCase().includes('resort'))) {
-            lifestyleScore *= 2.5; // Major bonus for luxury establishments
-          }
-          
-          infrastructureScores.commercial.total += lifestyleScore;
-          if (within3km) infrastructureScores.commercial.close += lifestyleScore;
+          infrastructureScores.lifestyle.total += lifestyleScore;
+          if (within3km) infrastructureScores.lifestyle.close += lifestyleScore;
+          if (isPremium) infrastructureScores.lifestyle.premium += 1;
+        }
+
+        // Safety indicators (police, fire stations, well-lit areas)
+        if (place.types.some(type => ['police', 'fire_station', 'local_government_office'].includes(type))) {
+          const safetyScore = baseScore * 1.5; // Safety has high importance
+          infrastructureScores.safety.total += safetyScore;
+          if (within3km) infrastructureScores.safety.close += safetyScore;
+        }
+
+        // Environmental quality (parks, clean areas)
+        if (place.types.some(type => ['park', 'cemetery', 'place_of_worship'].includes(type))) {
+          const envScore = baseScore * 1.3; // Environmental quality affects livability
+          infrastructureScores.environment.total += envScore;
+          if (within3km) infrastructureScores.environment.close += envScore;
         }
 
         // Essential services with proximity and rating weighting
@@ -749,70 +816,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      // Comprehensive connectivity scoring for National Highways, airports, ports, helipads
+      // Advanced connectivity analysis with infrastructure tiers
       let connectivityAnalysis = {
-        nationalHighways: 0,
-        localRoads: 0,
-        airports: 0,
-        ports: 0,
-        helipads: 0,
-        railwayStations: 0
+        airports: 0,          // International/domestic airports
+        majorHighways: 0,     // National highways, expressways
+        railwayStations: 0,   // Railway connectivity
+        metroStations: 0,     // Metro/subway systems
+        ports: 0,             // Ports and harbors
+        helipads: 0,          // Helicopter landing
+        busTerminals: 0,      // Major bus terminals
+        localRoads: 0,        // Local road network
+        techCorridors: 0      // IT/Tech infrastructure
       };
       
-      // Analyze connectivity infrastructure within 5km
+      // Enhanced connectivity analysis within 10km radius
       result.nearbyPlaces.forEach(place => {
         const distance = result.distances[place.name];
-        if (!distance || distance.distance.value > 5000) return; // Only within 5km
+        if (!distance || distance.distance.value > 10000) return; // Extend to 10km for connectivity
         
         const placeName = place.name.toLowerCase();
         const placeVicinity = place.vicinity?.toLowerCase() || '';
         const placeTypes = place.types || [];
+        const distanceKm = distance.distance.value / 1000;
         
-        // National Highways and Major Roads
-        if (placeName.includes('national highway') || placeName.includes('nh-') || 
-            placeName.includes('highway') || placeName.includes('expressway') ||
-            placeVicinity.includes('highway') || placeVicinity.includes('expressway')) {
-          connectivityAnalysis.nationalHighways += 40; // High score for NH
-        }
+        // Distance-based connectivity scoring (closer = higher impact)
+        const connectivityMultiplier = Math.max(0.3, 1.0 - (distanceKm / 10));
         
-        // Gas stations indicate major road networks
-        if (placeTypes.includes('gas_station')) {
-          connectivityAnalysis.localRoads += 15;
-        }
-        
-        // Airports and Aerodromes
+        // Airports (highest priority - 50km impact range)
         if (placeTypes.includes('airport') || placeName.includes('airport') || 
-            placeName.includes('aerodrome') || placeName.includes('airfield')) {
-          connectivityAnalysis.airports += 50; // Highest connectivity score
+            placeName.includes('international airport') || placeName.includes('aerodrome')) {
+          const airportScore = placeName.includes('international') ? 100 : 70;
+          connectivityAnalysis.airports += airportScore * connectivityMultiplier;
         }
         
-        // Helipads
-        if (placeName.includes('helipad') || placeName.includes('helicopter') ||
-            placeTypes.includes('heliport')) {
-          connectivityAnalysis.helipads += 30;
+        // Major highways and expressways
+        if (placeName.includes('national highway') || placeName.includes('nh-') || 
+            placeName.includes('expressway') || placeName.includes('outer ring road') ||
+            placeVicinity.includes('highway') || placeVicinity.includes('expressway')) {
+          connectivityAnalysis.majorHighways += 60 * connectivityMultiplier;
         }
         
-        // Ports and Harbors
+        // Metro and railway stations
+        if (placeName.includes('metro') || placeName.includes('subway') || 
+            placeTypes.includes('subway_station')) {
+          connectivityAnalysis.metroStations += 50 * connectivityMultiplier;
+        }
+        
+        if (placeTypes.includes('train_station') || placeName.includes('railway') || 
+            placeName.includes('junction') || placeName.includes('central station')) {
+          connectivityAnalysis.railwayStations += 45 * connectivityMultiplier;
+        }
+        
+        // Ports and harbors
         if (placeName.includes('port') || placeName.includes('harbor') || 
             placeName.includes('harbour') || placeTypes.includes('marina')) {
-          connectivityAnalysis.ports += 45;
+          connectivityAnalysis.ports += 55 * connectivityMultiplier;
         }
         
-        // Railway Stations
-        if (placeTypes.includes('transit_station') || placeTypes.includes('train_station') ||
-            placeName.includes('railway') || placeName.includes('station')) {
-          connectivityAnalysis.railwayStations += 35;
+        // Tech corridors and IT infrastructure
+        if (placeName.includes('tech park') || placeName.includes('it park') || 
+            placeName.includes('software') || placeName.includes('cyber') ||
+            placeName.includes('electronic city') || placeName.includes('tech corridor')) {
+          connectivityAnalysis.techCorridors += 40 * connectivityMultiplier;
+        }
+        
+        // Bus terminals and major transport hubs
+        if (placeName.includes('bus terminal') || placeName.includes('bus stand') || 
+            placeName.includes('transport hub') || placeTypes.includes('bus_station')) {
+          connectivityAnalysis.busTerminals += 25 * connectivityMultiplier;
+        }
+        
+        // Gas stations and service roads (local connectivity)
+        if (placeTypes.includes('gas_station')) {
+          connectivityAnalysis.localRoads += 10 * connectivityMultiplier;
+        }
+        
+        // Helipads (premium connectivity)
+        if (placeName.includes('helipad') || placeName.includes('helicopter') ||
+            placeTypes.includes('heliport')) {
+          connectivityAnalysis.helipads += 35 * connectivityMultiplier;
         }
       });
       
-      // Calculate final connectivity score
+      // Advanced connectivity scoring with weighted importance
+      const connectivityWeights = {
+        airports: 0.25,      // 25% - International connectivity
+        majorHighways: 0.20, // 20% - National road network
+        metroStations: 0.15, // 15% - Urban mass transit
+        railwayStations: 0.15, // 15% - Railway network
+        techCorridors: 0.10, // 10% - Economic zones
+        ports: 0.08,         // 8% - Waterway connectivity
+        busTerminals: 0.05,  // 5% - Local transport
+        helipads: 0.02       // 2% - Premium connectivity
+      };
+      
       const totalConnectivityScore = Math.min(
-        connectivityAnalysis.nationalHighways + 
-        connectivityAnalysis.localRoads + 
-        connectivityAnalysis.airports + 
-        connectivityAnalysis.ports + 
-        connectivityAnalysis.helipads + 
-        connectivityAnalysis.railwayStations, 
+        connectivityAnalysis.airports * connectivityWeights.airports +
+        connectivityAnalysis.majorHighways * connectivityWeights.majorHighways +
+        connectivityAnalysis.metroStations * connectivityWeights.metroStations +
+        connectivityAnalysis.railwayStations * connectivityWeights.railwayStations +
+        connectivityAnalysis.techCorridors * connectivityWeights.techCorridors +
+        connectivityAnalysis.ports * connectivityWeights.ports +
+        connectivityAnalysis.busTerminals * connectivityWeights.busTerminals +
+        connectivityAnalysis.helipads * connectivityWeights.helipads +
+        connectivityAnalysis.localRoads * 0.01, // Local roads minimal weight
         100
       );
       
@@ -861,15 +968,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return result;
       }
 
-      // Enhanced infrastructure scoring for premium urban areas
-      const healthcareScore = Math.min(infrastructureScores.healthcare.total / 2.5, 1.2); // Allow scores above 1.0
-      const educationScore = Math.min(infrastructureScores.education.total / 3, 1.2); // Allow scores above 1.0
-      const transportScore = Math.min(infrastructureScores.transport.total / 3, 1.2); // Allow scores above 1.0
-      const commercialScore = Math.min(infrastructureScores.commercial.total / 4, 1.5); // Higher weighting for commercial
-      const finalConnectivityScore = Math.min(infrastructureScores.connectivity / 80, 1.2); // Allow connectivity bonus
+      // Advanced scoring with quality and density metrics
+      const healthcareScore = Math.min(
+        (infrastructureScores.healthcare.total / 3.0) + 
+        (infrastructureScores.healthcare.premium * 0.3), 1.5
+      );
       
-      // Proximity bonus for services within 3km (adjusted for 5km radius)
-      const proximityBonus = (infrastructureScores.essential.close / Math.max(infrastructureScores.essential.total, 1)) * 0.7;
+      const educationScore = Math.min(
+        (infrastructureScores.education.total / 4.0) + 
+        (infrastructureScores.education.premium * 0.25), 1.4
+      );
+      
+      const transportScore = Math.min(
+        (infrastructureScores.transport.total / 3.5) + 
+        (infrastructureScores.transport.premium * 0.35), 1.6
+      );
+      
+      const commercialScore = Math.min(
+        (infrastructureScores.commercial.total / 5.0) + 
+        (infrastructureScores.commercial.premium * 0.2), 1.5
+      );
+      
+      const lifestyleScore = Math.min(
+        (infrastructureScores.lifestyle.total / 4.0) + 
+        (infrastructureScores.lifestyle.premium * 0.3), 1.3
+      );
+      
+      const safetyScore = Math.min(infrastructureScores.safety.total / 2.0, 1.2);
+      const environmentScore = Math.min(infrastructureScores.environment.total / 3.0, 1.1);
+      const finalConnectivityScore = Math.min(infrastructureScores.connectivity / 70, 1.8);
+      
+      // Enhanced proximity scoring with quality consideration
+      const proximityBonus = (
+        (infrastructureScores.healthcare.close / Math.max(infrastructureScores.healthcare.total, 1)) * 0.3 +
+        (infrastructureScores.education.close / Math.max(infrastructureScores.education.total, 1)) * 0.2 +
+        (infrastructureScores.transport.close / Math.max(infrastructureScores.transport.total, 1)) * 0.25 +
+        (infrastructureScores.lifestyle.close / Math.max(infrastructureScores.lifestyle.total, 1)) * 0.15 +
+        (infrastructureScores.safety.close / Math.max(infrastructureScores.safety.total, 1)) * 0.1
+      );
       
       // Premium area detection bonuses
       let premiumAreaBonus = 0;
@@ -903,14 +1039,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (techIndicators.length >= 4) premiumAreaBonus += 0.8; // Tech hub bonus
       
-      // Enhanced infrastructure scoring for premium urban recognition
+      // Comprehensive location scoring with quality and accessibility metrics
       result.locationScore = Math.min(5.0, (
-        healthcareScore * 0.20 +      // 20% - Healthcare infrastructure
-        educationScore * 0.15 +       // 15% - Educational infrastructure  
-        transportScore * 0.20 +       // 20% - Transport/Connectivity
-        commercialScore * 0.30 +      // 30% - Commercial & lifestyle infrastructure (increased)
-        finalConnectivityScore * 0.15      // 15% - Highway/Road connectivity
-      ) * 5 + proximityBonus + premiumAreaBonus); // Scale to 5-star + bonuses, capped at 5.0
+        healthcareScore * 0.18 +        // 18% - Healthcare infrastructure
+        educationScore * 0.14 +         // 14% - Educational infrastructure  
+        transportScore * 0.16 +         // 16% - Transport infrastructure
+        commercialScore * 0.20 +        // 20% - Commercial infrastructure
+        lifestyleScore * 0.12 +         // 12% - Lifestyle and amenities
+        finalConnectivityScore * 0.15 + // 15% - External connectivity
+        safetyScore * 0.03 +            // 3% - Safety infrastructure
+        environmentScore * 0.02         // 2% - Environmental quality
+      ) * 5 + proximityBonus + premiumAreaBonus); // Scale to 5-star + bonuses
 
       // Street View URL for all tiers
       result.streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${location.lat},${location.lng}&heading=0&pitch=0&key=${process.env.GOOGLE_MAPS_API_KEY}`;
@@ -1060,7 +1199,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       result.investmentRecommendation = generateInvestmentRecommendation();
 
-      // Add AI intelligence data to result for frontend display
+      // Enhanced market intelligence with infrastructure analysis
+      const marketIntelligence = {
+        // Demographic indicators
+        populationDensity: Math.min(100, (infrastructureScores.healthcare.total + infrastructureScores.education.total) * 10),
+        economicActivity: Math.min(100, (infrastructureScores.commercial.total + infrastructureScores.techCorridors) * 8),
+        infrastructureDensity: Math.min(100, (result.locationScore / 5) * 100),
+        
+        // Market indicators
+        investmentGrade: result.investmentViability >= 85 ? 'A+' : 
+                        result.investmentViability >= 75 ? 'A' :
+                        result.investmentViability >= 65 ? 'B+' :
+                        result.investmentViability >= 50 ? 'B' : 'C',
+        
+        liquidityScore: Math.min(100, infrastructureScores.transport.total * 20 + infrastructureScores.commercial.total * 15),
+        appreciationPotential: Math.min(100, finalConnectivityScore * 50 + infrastructureScores.lifestyle.total * 10),
+        
+        // Risk factors
+        riskFactors: [],
+        opportunities: []
+      };
+      
+      // Add risk factors based on analysis
+      if (infrastructureScores.safety.total < 1) marketIntelligence.riskFactors.push('Limited safety infrastructure');
+      if (infrastructureScores.connectivity < 20) marketIntelligence.riskFactors.push('Poor external connectivity');
+      if (infrastructureScores.healthcare.total < 2) marketIntelligence.riskFactors.push('Insufficient healthcare facilities');
+      
+      // Add opportunities
+      if (connectivityAnalysis.airports > 0) marketIntelligence.opportunities.push('Airport connectivity advantage');
+      if (connectivityAnalysis.metroStations > 0) marketIntelligence.opportunities.push('Metro connectivity boost');
+      if (infrastructureScores.lifestyle.premium > 2) marketIntelligence.opportunities.push('Premium lifestyle amenities');
+      if (connectivityAnalysis.techCorridors > 0) marketIntelligence.opportunities.push('Tech corridor proximity');
+
+      // Add AI and market intelligence to result
       (result as any).aiIntelligence = {
         locationType: locationIntelligence.locationType,
         safetyScore: locationIntelligence.safetyScore,
@@ -1071,6 +1242,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         reasoning: locationIntelligence.reasoning,
         confidence: locationIntelligence.confidence
       };
+      
+      (result as any).marketIntelligence = marketIntelligence;
 
       // Tier-specific enhancements
       if (planType === "basic" || planType === "pro") {
