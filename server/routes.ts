@@ -129,6 +129,7 @@ interface AnalysisResult {
   populationGrowthRate?: number; // Annual population growth percentage
   investmentRecommendation?: string; // Text recommendation
   locationImageUrl?: string; // Image for all tiers
+  aiIntelligence?: any; // AI location intelligence data
   topInvestmentLocations?: Array<{
     address: string;
     lat: number;
@@ -831,24 +832,24 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // ============================================
       
       // Get AI assessment of the location first to properly identify metropolitan areas
-      let aiIntelligence;
+      let aiIntelligence = {
+        locationType: 'town',
+        safetyScore: 5,
+        crimeRate: 'moderate',
+        developmentStage: 'developing',
+        investmentPotential: 50,
+        primaryConcerns: ['Limited data available'],
+        keyStrengths: ['Basic infrastructure present'],
+        reasoning: 'AI analysis temporarily unavailable',
+        confidence: 70
+      };
+      
       try {
         aiIntelligence = await analyzeLocationIntelligence(location.address, location.lat, location.lng);
         console.log('AI Location Intelligence:', aiIntelligence);
       } catch (error) {
         console.error('AI Intelligence error:', error);
-        // Fallback intelligence for basic assessment
-        aiIntelligence = {
-          locationType: 'town',
-          safetyScore: 5,
-          crimeRate: 'moderate',
-          developmentStage: 'developing',
-          investmentPotential: 50,
-          primaryConcerns: ['Limited data available'],
-          keyStrengths: ['Basic infrastructure present'],
-          reasoning: 'AI analysis temporarily unavailable',
-          confidence: 70
-        };
+        // Keep the fallback intelligence already set above
       }
 
       // Enhanced infrastructure scoring with AI-weighted categories and quality metrics

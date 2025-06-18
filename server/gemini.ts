@@ -67,12 +67,14 @@ Coordinates: ${lat}, ${lng}
 Analyze and provide a comprehensive assessment including:
 
 1. Location Type Classification:
-   - metropolitan: Major city centers with metro/IT hubs (Mumbai, Delhi NCR, Bangalore tech areas)
-   - city: Tier 1/2 cities with good infrastructure (Pune, Chennai, Hyderabad suburbs)
-   - town: Smaller urban centers with basic amenities (district headquarters, growing suburbs)
+   - metropolitan: Premium areas in major metros with tech hubs, IT corridors, high-end residential areas
+     (Examples: HSR Layout/Koramangala/Whitefield Bangalore, Gurgaon/Noida Delhi NCR, Bandra/Powai Mumbai, 
+     OMR/ECR Chennai, Hitech City Hyderabad, Hinjewadi Pune)
+   - city: Tier 1/2 city centers and established suburbs with good infrastructure
+   - town: Smaller urban centers with basic amenities (district headquarters, developing suburbs)
    - village: Rural areas with limited infrastructure
    - rural: Agricultural/remote areas with minimal development
-   - uninhabitable: Forests, water bodies, deserts, restricted military/government zones
+   - uninhabitable: Forests, water bodies, deserts, restricted zones
 
 2. Safety & Crime Assessment:
    - Research known crime statistics for this area
@@ -86,8 +88,10 @@ Analyze and provide a comprehensive assessment including:
    - restricted: Legal/environmental restrictions on development
 
 4. Investment Potential (0-100):
+   - Metropolitan areas like HSR Layout Bangalore should score 85-95 (premium tech corridors)
    - Consider: future growth prospects, infrastructure development, government projects
    - Factor in: connectivity projects, IT/industrial development, real estate trends
+   - Premium residential areas in major metros should score 80+ for investment potential
 
 Respond in this exact JSON format:
 {
