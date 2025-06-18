@@ -1,0 +1,188 @@
+import { genai } from 'google-generativeai';
+import { googleMapsClient } from './googleMaps';
+
+genai.configure({ apiKey: process.env.GOOGLE_API_KEY });
+
+interface InfrastructureScores {
+  healthcare: { total: number; close: number; premium: number };
+  education: { total: number; close: number; premium: number };
+  transport: { total: number; close: number; premium: number };
+  commercial: { total: number; close: number; premium: number };
+  lifestyle: { total: number; close: number; premium: number };
+  connectivity: number;
+  safety: { total: number };
+  environment: { total: number };
+  breakdown: { category: string; score: number; reason: string }[];
+}
+
+interface LocationIntelligence {
+  locationType: 'metropolitan' | 'city' | 'town' | 'village' | 'rural' | 'uninhabitable';
+  safetyScore: number;
+  crimeRate: 'very-low' | 'low' | 'moderate' | 'high' | 'very-high';
+  developmentStage: 'developed' | 'developing' | 'underdeveloped' | 'restricted';
+  investmentPotential: number;
+  primaryConcerns: string[];
+  keyStrengths: string[];
+  reasoning: string;
+  confidence: number;
+}
+
+interface UserPreferences {
+  riskTolerance?: 'low' | 'medium' | 'high';
+  investmentHorizon?: 'short' | 'medium' | 'long';
+}
+
+interface AIIntelligenceResult {
+  locationIntelligence: LocationIntelligence;
+  breakdown: { component: string; value: any; reason: string }[];
+  mapPreview: string;
+}
+
+async function analyzeLocationWithAI(
+  address: string,
+  lat: number,
+  lng: number,
+  infrastructureScores: InfrastructureScores,
+  investmentViability: number,
+  userPreferences: UserPreferences = {}
+): Promise<AIIntelligenceResult> {
+  const result: AIIntelligenceResult = {
+    locationIntelligence: {
+      locationType: 'rural',
+      safetyScore: 5,
+      crimeRate: 'moderate',
+      developmentStage: 'developing',
+      investmentPotential: 50,
+      primaryConcerns: [],
+      keyStrengths: [],
+      reasoning: 'Default analysis applied.',
+      confidence: 0.5
+    },
+    breakdown: [],
+    mapPreview: `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=400x200&key=${process.env.GOOGLE_API_KEY}`
+  };
+
+  const intelligence = await fetchLocationIntelligence(
+    address,
+    lat,
+    lng,
+    infrastructureScores,
+    investmentViability,
+    userPreferences
+  );
+
+  result.locationIntelligence = intelligence;
+  result.breakdown = [
+    { component: 'locationType', value: intelligence.locationType, reason: `Classified as ${intelligence.locationType} based on infrastructure and market data.` },
+    { component: 'safetyScore', value: intelligence.safetyScore, reason: `Safety score reflects crime rate and police presence.` },
+    { component: 'crimeRate', value: intelligence.crimeRate, reason: `Crime rate derived from local data analysis.` },
+    { component: 'developmentStage', value: intelligence.developmentStage, reason: `Development stage based on infrastructure maturity.` },
+    { component: 'investmentPotential', value: intelligence.investmentPotential, reason: `Investment potential aligns with market trends and viability.` },
+    { component: 'primaryConcerns', value: intelligence.primaryConcerns, reason: `Key concerns identified for investment risks.` },
+    { component: 'keyStrengths', value: intelligence.keyStrengths, reason: `Key strengths highlight investment opportunities.` }
+  ];
+
+  return result;
+}
+
+async function fetchLocationIntelligence(
+  address: string,
+  lat: number,
+  lng: number,
+  infrastructureScores: InfrastructureScores,
+  investmentViability: number,
+  userPreferences: UserPreferences
+): Promise<LocationIntelligence> {
+  const places = await fetchPlaces(lat, lng, ['police', 'office', 'school', 'hospital']);
+  const geocodingResponse = await googleMapsClient.reverseGeocode({ latlng: [lat, lng] });
+  const landUse = geocodingResponse.results[0]?.types || [];
+
+  const prompt = `As a location intelligence expert, analyze this specific location for real estate investment:
+
+Location: ${address}
+Coordinates: ${lat}, ${lng}
+Infrastructure:
+- Healthcare: ${infrastructureScores.healthcare.total}
+- Education: ${infrastructureScores.education.total}
+- Transport: ${infrastructureScores.transport.total}
+- Commercial: ${infrastructureScores.commercial.total}
+- Connectivity: ${infrastructureScores.connectivity}
+- Amenities: ${places.length}
+Investment Viability: ${investmentViability}/100
+User Preferences: Risk Tolerance - ${userPreferences.riskTolerance || 'medium'}, Horizon - ${userPreferences.investmentHorizon || 'medium'}
+Land Use: ${landUse.join(', ')}
+
+Provide a comprehensive assessment including:
+1. Location Type (metropolitan, city, town, village, rural, uninhabitable)
+2. Safety Score (1-10)
+3. Crime Rate (very-low, low, moderate, high, very-high)
+4. Development Stage (developed, developing, underdeveloped, restricted)
+5. Investment Potential (0-100)
+6. Primary Concerns (array of strings)
+7. Key Strengths (array of strings)
+8. Reasoning (string)
+9. Confidence (0-100)
+
+Respond in JSON format.`;
+
+  try {
+    const response = await genai.generateContent({
+      model: 'gemini-2.5-pro',
+      prompt,
+      grounding: 'google_search',
+      deepThink: true
+    });
+    const intelligence = JSON.parse(response.text) as LocationIntelligence;
+    return {
+      ...intelligence,
+      confidence: Math.min(100, Math.max(0, intelligence.confidence))
+    };
+  } catch (error) {
+    console.error('Gemini analysis failed:', error);
+    return {
+      locationType: landUse.includes('natural_feature') ? 'uninhabitable' : 'rural',
+      safetyScore: infrastructureScores.safety.total * 2,
+      crimeRate: infrastructureScores.safety.total < 2 ? 'high' : 'moderate',
+      developmentStage: infrastructureScores.commercial.total > 10 ? 'developing' : 'underdeveloped',
+      investmentPotential: Math.min(100, investmentViability),
+      primaryConcerns: ['Limited data available for precise analysis.'],
+      keyStrengths: ['Baseline infrastructure present.'],
+      reasoning: 'Fallback analysis due to AI error, based on infrastructure and viability.',
+      confidence: 0.5
+    };
+  }
+}
+
+async function fetchPlaces(lat: number, lng: number, types: string[]): Promise<any[]> {
+  const cacheKey = `places:${lat}:${lng}:${types.join(',')}`;
+  const cached = await redis.get(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  const places: any[] = [];
+  for (const type of types) {
+    const response = await fetchWithRetry({
+      url: `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=5000&type=${type}&key=${process.env.GOOGLE_API_KEY}`
+    });
+    places.push(...response.results);
+  }
+
+  await redis.set(cacheKey, JSON.stringify(places), 'EX', 86400);
+  return places;
+}
+
+async function fetchWithRetry({ url, maxRetries = 3 }: { url: string; maxRetries?: number }): Promise<any> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url);
+      return await response.json();
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+    }
+  }
+}
+
+const redis = {
+  get: async (key: string) => null,
+  set: async (key: string, value: string, mode: string, ttl: number) => {}
+};
