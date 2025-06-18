@@ -1297,21 +1297,36 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       const totalMarketScore = Object.values(marketFundamentals).reduce((sum, score) => sum + score, 0);
 
       // 2. AI-ENHANCED INVESTMENT VIABILITY CALCULATION
-      // Use AI intelligence to set proper baseline for metropolitan areas
-      let baseViability = 30;
+      // Base viability should reflect actual location quality, not just location type
+      let baseViability = 0;
       
-      // AI-based baseline adjustment for location types - Enhanced for metro areas
+      // Base viability should be driven by infrastructure and location score, not just AI classification
+      // Use location score as primary factor (0-5 scale) converted to 0-50 base points
+      const locationBasedViability = (result.locationScore / 5.0) * 50;
+      
+      // AI-based baseline adjustment for location types - More conservative
       const metroAreaType = aiIntelligence.areaClassification || 'Urban Areas';
       if (aiIntelligence.locationType === 'metropolitan' || metroAreaType === 'Metro city') {
-        baseViability = 85; // Metropolitan areas like HSR Layout Bangalore start at 85%
+        baseViability = Math.max(60, locationBasedViability); // Metro areas minimum 60% if infrastructure supports it
       } else if (aiIntelligence.locationType === 'city') {
-        baseViability = 60;
+        baseViability = Math.max(30, locationBasedViability); // City areas minimum 30% if infrastructure supports it
       } else if (aiIntelligence.developmentStage === 'developed') {
-        baseViability = 50;
+        baseViability = Math.max(25, locationBasedViability); // Developed areas minimum 25%
+      } else {
+        baseViability = locationBasedViability; // Rural/undeveloped areas use pure location score
       }
       
       // Add AI investment potential directly
       const aiViabilityBonus = Math.min(25, aiIntelligence.investmentPotential * 0.25);
+      
+      // Debug logging for all locations to identify the calculation issue
+      console.log(`INVESTMENT VIABILITY DEBUG for ${location.address}:
+        Location Score: ${result.locationScore}
+        Location-based Viability: ${locationBasedViability}
+        Base Viability: ${baseViability}
+        AI Viability Bonus: ${aiViabilityBonus}
+        Location Type: ${aiIntelligence.locationType}
+        Area Classification: ${metroAreaType}`);;
       
       // ENHANCED TIER-BASED PRIORITY SCORING SYSTEM
       // ============================================
@@ -1408,7 +1423,8 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
           Final Score: ${finalViability}`);
       }
       
-      result.investmentViability = Math.min(95, Math.max(30, Math.round(finalViability)));
+      // Allow true calculated scores without artificial constraints
+      result.investmentViability = Math.min(100, Math.max(0, Math.round(finalViability)));
 
       // 5. BUSINESS GROWTH ANALYSIS (More Conservative)
       const businessGrowthFactors = {
