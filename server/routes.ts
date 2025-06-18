@@ -91,7 +91,11 @@ const validateClientIP = (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
-
+interface PlaceDetails {
+  place_id: string;
+  name: string;
+  vicinity: string;
+  rating?: number;
   types: string[];
 }
 
