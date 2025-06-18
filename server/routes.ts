@@ -1,7 +1,7 @@
 import { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateInvestmentRecommendations, findTopInvestmentLocations, analyzeLocationIntelligence, findNearbyTouristAttractions, analyzeInfrastructureWithAI } from "./gemini";
+import { generateInvestmentRecommendations, findTopInvestmentLocations, analyzeLocationIntelligence, findNearbyTouristAttractions, analyzeInfrastructureWithAI, validateMajorTransportInfrastructure } from "./gemini";
 import { performSmartValidation } from "./smartValidation";
 import DOMPurify from "isomorphic-dompurify";
 import { z } from "zod";
@@ -1503,7 +1503,38 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       }
       
       // Allow scores from 0.1 to 5.0 (no artificial 1.0 minimum)
-      result.locationScore = Math.max(0.1, Math.min(5.0, finalLocationScore));
+      let preliminaryScore = Math.max(0.1, Math.min(5.0, finalLocationScore));
+      
+      // MANDATORY INFRASTRUCTURE CHECK FOR SCORES ABOVE 4.5
+      // ===================================================
+      if (preliminaryScore > 4.5) {
+        console.log(`MANDATORY INFRASTRUCTURE CHECK: Score ${preliminaryScore.toFixed(2)} > 4.5, validating major transport infrastructure within 5km...`);
+        
+        try {
+          const infrastructureValidation = await validateMajorTransportInfrastructure(location);
+          
+          if (!infrastructureValidation.hasMajorInfrastructure) {
+            console.log(`INFRASTRUCTURE CHECK FAILED: No major transport infrastructure found within 5km`);
+            console.log(`Infrastructure found: ${infrastructureValidation.infrastructureFound.join(', ') || 'None'}`);
+            console.log(`Reasoning: ${infrastructureValidation.reasoning}`);
+            
+            // Cap score at 4.4 if no major infrastructure exists
+            preliminaryScore = Math.min(4.4, preliminaryScore);
+            console.log(`SCORE CAPPED: Reduced from ${finalLocationScore.toFixed(2)} to ${preliminaryScore.toFixed(2)} due to lack of major transport infrastructure`);
+          } else {
+            console.log(`INFRASTRUCTURE CHECK PASSED: Major transport infrastructure found within 5km`);
+            console.log(`Infrastructure found: ${infrastructureValidation.infrastructureFound.join(', ')}`);
+            console.log(`Score maintained: ${preliminaryScore.toFixed(2)}`);
+          }
+        } catch (error) {
+          console.error('Error during infrastructure validation:', error);
+          // On error, apply conservative approach and cap the score
+          preliminaryScore = Math.min(4.4, preliminaryScore);
+          console.log(`SCORE CAPPED (ERROR): Reduced to ${preliminaryScore.toFixed(2)} due to infrastructure validation error`);
+        }
+      }
+      
+      result.locationScore = preliminaryScore;
       
       // QUALITY ASSESSMENT DEBUG LOGGING
       console.log(`QUALITY-BASED SCORING DEBUG:

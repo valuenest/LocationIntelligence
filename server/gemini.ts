@@ -559,7 +559,7 @@ export async function validateMajorTransportInfrastructure(
   location: { lat: number; lng: number; address: string }
 ): Promise<{ hasMajorInfrastructure: boolean; infrastructureFound: string[]; reasoning: string }> {
   try {
-    const model = genai.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     
     const prompt = `Analyze the major transport infrastructure within 5km radius of this location: ${location.address} (${location.lat}, ${location.lng}).
 
