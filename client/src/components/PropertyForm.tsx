@@ -71,7 +71,7 @@ export default function PropertyForm({ onSubmit, selectedLocation }: PropertyFor
         const response = await fetch('https://ipapi.co/json/');
         const data = await response.json();
         const countryCode = data.country_code;
-        
+
         const detectedCountry = countries.find(c => c.code === countryCode);
         if (detectedCountry) {
           setSelectedCountry(detectedCountry);
@@ -94,7 +94,7 @@ export default function PropertyForm({ onSubmit, selectedLocation }: PropertyFor
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Basic validation for all property types
     if (!amount || !propertyType || !propertySize) {
       alert('Please fill in all required fields');

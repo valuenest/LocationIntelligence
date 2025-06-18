@@ -74,25 +74,25 @@ export default function PricingPlans({ onPlanSelect, canUseFree, freeUsageCount,
 
   const getButtonClass = (plan: typeof plans[0]) => {
     const baseClass = "w-full py-4 rounded-xl font-semibold transition-colors duration-200";
-    
+
     if (plan.id === 'free') {
       return canUseFree && isFormValid 
         ? `${baseClass} bg-gray-100 text-gray-700 hover:bg-gray-200` 
         : `${baseClass} bg-gray-100 text-gray-400 cursor-not-allowed`;
     }
-    
+
     if (plan.color === 'red') {
       return isFormValid 
         ? `${baseClass} bg-[#FF5A5F] text-white hover:bg-[#e54852]`
         : `${baseClass} bg-gray-300 text-gray-500 cursor-not-allowed`;
     }
-    
+
     if (plan.color === 'orange') {
       return isFormValid 
         ? `${baseClass} bg-[#FC642D] text-white hover:bg-[#e55a29]`
         : `${baseClass} bg-gray-300 text-gray-500 cursor-not-allowed`;
     }
-    
+
     return `${baseClass} bg-gray-100 text-gray-700 hover:bg-gray-200`;
   };
 
@@ -114,7 +114,7 @@ export default function PricingPlans({ onPlanSelect, canUseFree, freeUsageCount,
           {plans.map((plan) => {
             const IconComponent = plan.icon;
             const iconColor = plan.color === 'red' ? '#FF5A5F' : plan.color === 'orange' ? '#FC642D' : '#6B7280';
-            
+
             return (
               <Card 
                 key={plan.id}
@@ -129,7 +129,7 @@ export default function PricingPlans({ onPlanSelect, canUseFree, freeUsageCount,
                     </Badge>
                   </div>
                 )}
-                
+
                 <CardHeader className="text-center pb-4">
                   <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
                        style={{ backgroundColor: `${iconColor}20` }}>
@@ -139,7 +139,7 @@ export default function PricingPlans({ onPlanSelect, canUseFree, freeUsageCount,
                   <p className="text-4xl font-bold" style={{ color: iconColor }}>₹{plan.price}</p>
                   <p className="text-gray-600 mt-2">{plan.description}</p>
                 </CardHeader>
-                
+
                 <CardContent className="pt-4">
                   <ul className="space-y-4 mb-8">
                     {plan.features.map((feature, index) => (
@@ -155,7 +155,7 @@ export default function PricingPlans({ onPlanSelect, canUseFree, freeUsageCount,
                       </li>
                     ))}
                   </ul>
-                  
+
                   <Button
                     onClick={() => onPlanSelect(plan.id)}
                     disabled={isButtonDisabled(plan)}
@@ -163,7 +163,7 @@ export default function PricingPlans({ onPlanSelect, canUseFree, freeUsageCount,
                   >
                     {getButtonText(plan)}
                   </Button>
-                  
+
                   <p className="text-sm text-gray-500 text-center mt-4">{plan.limitation}</p>
                 </CardContent>
               </Card>
