@@ -1,0 +1,208 @@
+import { googleMapsClient } from './googleMaps';
+import { genai } from 'google-generativeai';
+
+genai.configure({ api_key: process.env.GOOGLE_API_KEY });
+
+interface BusinessGrowthFactors {
+  techEcosystem: number;
+  commercialDensity: number;
+  economicPolicy: number;
+  workforceAvailability: number;
+}
+
+interface InfrastructureScores {
+  healthcare: { total: number; close: number; premium: number };
+  education: { total: number; close: number; premium: number };
+  transport: { total: number; close: number; premium: number };
+  commercial: { total: number; close: number; premium: number };
+  lifestyle: { total: number; close: number; premium: number };
+  connectivity: number;
+  safety: { total: number };
+  environment: { total: number };
+  breakdown: { category: string; score: number; reason: string }[];
+}
+
+interface UserPreferences {
+  riskTolerance?: 'low' | 'medium' | 'high';
+  investmentHorizon?: 'short' | 'medium' | 'long';
+}
+
+interface BusinessGrowthResult {
+  businessGrowthRate: number;
+  scenarios: { optimistic: number; conservative: number; expected: number };
+  breakdown: { factor: string; score: number; reason: string }[];
+  mapPreview: string;
+}
+
+async function calculateBusinessGrowthRate(
+  lat: number,
+  lng: number,
+  locationType: 'metropolitan' | 'city' | 'town' | 'village' | 'rural',
+  investmentViability: number,
+  infrastructureScores: InfrastructureScores,
+  userPreferences: UserPreferences = {}
+): Promise<BusinessGrowthResult> {
+  const result: BusinessGrowthResult = {
+    businessGrowthRate: 0,
+    scenarios: { optimistic: 0, conservative: 0, expected: 0 },
+    breakdown: [],
+    mapPreview: `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=400x200&key=${process.env.GOOGLE_API_KEY}`
+  };
+
+  const factors = await calculateBusinessGrowthFactors(lat, lng, locationType, infrastructureScores);
+  const totalBusinessGrowthScore = Object.values(factors.scores).reduce((sum, score) => sum + score, 0);
+
+  const growth = await calculateGrowthBase(
+    lat,
+    lng,
+    locationType,
+    totalBusinessGrowthScore,
+    investmentViability,
+    userPreferences
+  );
+
+  result.businessGrowthRate = growth.expected;
+  result.scenarios = growth;
+  result.breakdown.push(...factors.breakdown);
+
+  return result;
+}
+
+async function calculateBusinessGrowthFactors(
+  lat: number,
+  lng: number,
+  locationType: string,
+  infrastructureScores: InfrastructureScores
+): Promise<{
+  scores: BusinessGrowthFactors;
+  breakdown: { factor: string; score: number; reason: string }[];
+}> {
+  const scores: BusinessGrowthFactors = {
+    techEcosystem: 0,
+    commercialDensity: 0,
+    economicPolicy: 0,
+    workforceAvailability: 0
+  };
+  const breakdown: { factor: string; score: number; reason: string }[] = [];
+
+  const places = await fetchPlaces(lat, lng, ['office', 'university']);
+  const prompt = `Analyze business growth factors for a ${locationType} location at (${lat}, ${lng}) with:
+  - Commercial Score: ${infrastructureScores.commercial.total}
+  - Connectivity: ${infrastructureScores.connectivity}
+  - Offices: ${places.filter(p => p.types.includes('office')).length}
+  - Universities: ${places.filter(p => p.types.includes('university')).length}
+  Return JSON: {
+    techEcosystem: { score: number, reason: string },
+    commercialDensity: { score: number, reason: string },
+    economicPolicy: { score: number, reason: string },
+    workforceAvailability: { score: number, reason: string }
+  }`;
+
+  try {
+    const response = await genai.generateContent({
+      model: 'gemini-2.5-pro',
+      prompt,
+      grounding: 'google_search',
+      deepThink: true
+    });
+    const factors = JSON.parse(response.text);
+
+    scores.techEcosystem = Math.min(25, factors.techEcosystem.score);
+    scores.commercialDensity = Math.min(25, factors.commercialDensity.score);
+    scores.economicPolicy = Math.min(15, factors.economicPolicy.score);
+    scores.workforceAvailability = Math.min(20, factors.workforceAvailability.score);
+
+    breakdown.push(
+      { factor: 'techEcosystem', score: scores.techEcosystem, reason: factors.techEcosystem.reason },
+      { factor: 'commercialDensity', score: scores.commercialDensity, reason: factors.commercialDensity.reason },
+      { factor: 'economicPolicy', score: scores.economicPolicy, reason: factors.economicPolicy.reason },
+      { factor: 'workforceAvailability', score: scores.workforceAvailability, reason: factors.workforceAvailability.reason }
+    );
+  } catch (error) {
+    console.error('Gemini factor analysis failed:', error);
+    scores.commercialDensity = Math.min(25, infrastructureScores.commercial.total / 2);
+    scores.workforceAvailability = Math.min(20, infrastructureScores.education.total / 2);
+    breakdown.push(
+      { factor: 'commercialDensity', score: scores.commercialDensity, reason: 'Fallback: Based on commercial infrastructure.' },
+      { factor: 'workforceAvailability', score: scores.workforceAvailability, reason: 'Fallback: Based on education infrastructure.' }
+    );
+  }
+
+  return { scores, breakdown };
+}
+
+async function calculateGrowthBase(
+  lat: number,
+  lng: number,
+  locationType: string,
+  totalBusinessGrowthScore: number,
+  investmentViability: number,
+  userPreferences: UserPreferences
+): Promise<{ optimistic: number; conservative: number; expected: number }> {
+  const maxGrowth = locationType === 'metropolitan' ? 15 : locationType === 'city' ? 12 : 9;
+  const minGrowth = locationType === 'rural' ? -7 : -5;
+
+  let marketAdjustment = 0;
+  const marketPrompt = `Analyze business market trends for a ${locationType} location at (${lat}, ${lng}). Return JSON: { adjustment: number, reason: string }`;
+  try {
+    const response = await genai.generateContent({
+      model: 'gemini-2.5-pro',
+      prompt: marketPrompt,
+      grounding: 'google_search',
+      deepThink: true
+    });
+    marketAdjustment = JSON.parse(response.text).adjustment;
+  } catch (error) {
+    console.error('Gemini market trend analysis failed:', error);
+  }
+
+  let businessGrowthBase = (totalBusinessGrowthScore / 85) * maxGrowth + marketAdjustment;
+
+  if (investmentViability < 30) businessGrowthBase -= 2;
+  else if (investmentViability > 70) businessGrowthBase += 1.5;
+
+  if (userPreferences.riskTolerance === 'high') businessGrowthBase += 1;
+  else if (userPreferences.riskTolerance === 'low') businessGrowthBase -= 1;
+
+  const growth = {
+    optimistic: Math.max(minGrowth, Math.min(maxGrowth * 1.2, businessGrowthBase + 2)),
+    conservative: Math.max(minGrowth, Math.min(maxGrowth * 0.8, businessGrowthBase - 2)),
+    expected: Math.max(minGrowth, Math.min(maxGrowth, businessGrowthBase))
+  };
+
+  return growth;
+}
+
+async function fetchPlaces(lat: number, lng: number, types: string[]): Promise<any[]> {
+  const cacheKey = `places:${lat}:${lng}:${types.join(',')}`;
+  const cached = await redis.get(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  const places: any[] = [];
+  for (const type of types) {
+    const response = await fetchWithRetry({
+      url: `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=5000&type=${type}&key=${process.env.GOOGLE_API_KEY}`
+    });
+    places.push(...response.results);
+  }
+
+  await redis.set(cacheKey, JSON.stringify(places), 'EX', 86400);
+  return places;
+}
+
+async function fetchWithRetry({ url, maxRetries = 3 }: { url: string; maxRetries?: number }): Promise<any> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url);
+      return await response.json();
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+    }
+  }
+}
+
+const redis = {
+  get: async (key: string) => null,
+  set: async (key: string, value: string, mode: string, ttl: number) => {}
+};
