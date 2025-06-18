@@ -538,9 +538,9 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
 
       const validation = await performSmartValidation({ location, propertyData });
       
-      // Block uninhabitable locations completely - no report generation allowed
+      // Block uninhabitable and institutional locations completely - no report generation allowed
       if (!validation.isValid && validation.riskLevel === 'high') {
-        const hasUninhabitableIssues = validation.issues.some(issue => 
+        const hasBlockedIssues = validation.issues.some(issue => 
           issue.includes('uninhabitable') || 
           issue.includes('water body') || 
           issue.includes('restricted') ||
@@ -549,16 +549,25 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
           issue.includes('protected area') ||
           issue.includes('remote area') ||
           issue.includes('desert') ||
-          issue.includes('no infrastructure')
+          issue.includes('no infrastructure') ||
+          issue.includes('school') ||
+          issue.includes('college') ||
+          issue.includes('hospital') ||
+          issue.includes('playground') ||
+          issue.includes('campus') ||
+          issue.includes('institutional') ||
+          issue.includes('public facility') ||
+          issue.includes('illegal') ||
+          issue.includes('not suitable for private development')
         );
         
-        if (hasUninhabitableIssues) {
+        if (hasBlockedIssues) {
           return res.json({ 
             success: true, 
             validation: {
               ...validation,
               canProceed: false, // Explicitly block proceeding
-              blockReason: "Location is uninhabitable and cannot be analyzed"
+              blockReason: "Location is not suitable for property development and cannot be analyzed"
             }
           });
         }

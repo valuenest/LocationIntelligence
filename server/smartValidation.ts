@@ -29,16 +29,24 @@ interface ValidationResult {
 
 export async function performSmartValidation(data: ValidationRequest): Promise<ValidationResult> {
   try {
-    // Only check if location is in restricted areas
+    // First, check basic keyword-based validation
     const locationIssues = await checkLocationViability(data.location);
     
-    return {
-      isValid: locationIssues.length === 0,
-      issues: locationIssues,
-      recommendations: [],
-      riskLevel: locationIssues.length > 0 ? 'high' : 'low',
-      confidence: locationIssues.length === 0 ? 95 : 85
-    };
+    // If basic validation finds issues, return them
+    if (locationIssues.length > 0) {
+      return {
+        isValid: false,
+        issues: locationIssues,
+        recommendations: [],
+        riskLevel: 'high',
+        confidence: 85
+      };
+    }
+    
+    // If basic validation passes, use Gemini AI for intelligent validation
+    const aiValidation = await performAILocationValidation(data.location, data.propertyData);
+    
+    return aiValidation;
   } catch (error) {
     console.error('Smart validation error:', error);
     return {
@@ -166,5 +174,95 @@ async function checkLocationViability(location: { lat: number; lng: number; addr
   } catch (error) {
     console.error('Location viability check error:', error);
     return [];
+  }
+}
+
+async function performAILocationValidation(
+  location: { lat: number; lng: number; address: string },
+  propertyData: any
+): Promise<ValidationResult> {
+  try {
+    // Import Gemini AI
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
+    
+    if (!process.env.GEMINI_API_KEY) {
+      console.log('Gemini API key not available, skipping AI validation');
+      return {
+        isValid: true,
+        issues: [],
+        recommendations: [],
+        riskLevel: 'low',
+        confidence: 50
+      };
+    }
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const prompt = `Analyze this location for property development suitability:
+
+Location: ${location.address}
+Coordinates: ${location.lat}, ${location.lng}
+Property Type: ${propertyData.propertyType}
+Investment Amount: ${propertyData.amount} ${propertyData.currency || 'USD'}
+
+CRITICAL VALIDATION CRITERIA:
+1. Is this location suitable for private property development?
+2. Check if it's a school, college, hospital, government building, public facility
+3. Check if it's a playground, sports ground, park, recreational area
+4. Check if it's inside an institution's campus or premises
+5. Check if it's a commercial-only zone where residential development is restricted
+6. Check if it's agricultural land with development restrictions
+7. Check if it's environmentally protected or ecologically sensitive
+
+RESPOND WITH THIS EXACT JSON FORMAT:
+{
+  "isValid": boolean,
+  "issues": ["specific issue 1", "specific issue 2"],
+  "recommendations": ["recommendation 1", "recommendation 2"],
+  "riskLevel": "low|medium|high",
+  "confidence": number (0-100),
+  "locationCategory": "residential|commercial|institutional|public|restricted|unsuitable",
+  "developmentViability": "excellent|good|fair|poor|impossible",
+  "specificConcerns": ["concern 1", "concern 2"]
+}
+
+Be strict about institutional, public, and restricted areas. Flag any location that appears to be:
+- Inside school/college/hospital premises
+- Public recreational areas (playgrounds, parks, sports facilities)
+- Government or institutional buildings
+- Areas with development restrictions`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    // Extract JSON from response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Invalid AI response format');
+    }
+
+    const aiAnalysis = JSON.parse(jsonMatch[0]);
+
+    // Convert AI analysis to ValidationResult format
+    return {
+      isValid: aiAnalysis.isValid && aiAnalysis.developmentViability !== 'impossible',
+      issues: aiAnalysis.issues || [],
+      recommendations: aiAnalysis.recommendations || [],
+      riskLevel: aiAnalysis.riskLevel || 'medium',
+      confidence: aiAnalysis.confidence || 75
+    };
+
+  } catch (error) {
+    console.error('AI validation error:', error);
+    // Fallback to permissive validation if AI fails
+    return {
+      isValid: true,
+      issues: [],
+      recommendations: ['AI validation unavailable - manual review recommended'],
+      riskLevel: 'medium',
+      confidence: 30
+    };
   }
 }
