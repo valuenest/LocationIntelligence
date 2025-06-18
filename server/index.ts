@@ -35,13 +35,20 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Rate limiting
+// Rate limiting - exclude static assets
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 1000, // Increase limit for general requests including static assets
   message: { error: "Too many requests, please try again later" },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting for static assets
+    return req.url.includes('.js') || req.url.includes('.css') || 
+           req.url.includes('.png') || req.url.includes('.jpg') || 
+           req.url.includes('.ico') || req.url.includes('.svg') ||
+           req.url.includes('/assets/') || req.url === '/';
+  }
 });
 
 const apiLimiter = rateLimit({
