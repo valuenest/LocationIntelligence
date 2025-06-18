@@ -102,13 +102,11 @@ export default function Results() {
     queryKey: ['/api/maps-config'],
   });
 
-  const { data: ipData } = useQuery<{ ip: string }>({
-    queryKey: ['/api/get-ip'],
-  });
+  // No longer need IP address - using browser fingerprint
 
   // Save analysis to localStorage when data is loaded
   useEffect(() => {
-    if (result?.analysis && ipData?.ip) {
+    if (result?.analysis) {
       console.log('Saving to history:', result.analysis);
       const historyItem = {
         sessionId: result.analysis.sessionId,
@@ -121,9 +119,9 @@ export default function Results() {
         id: result.analysis.id
       };
       console.log('History item to save:', historyItem);
-      saveAnalysisToHistory(ipData.ip, historyItem);
+      saveAnalysisToHistory(sessionId, historyItem);
     }
-  }, [result, ipData]);
+  }, [result, sessionId]);
 
   const handleDownloadPDF = () => {
     if (result?.analysis) {
@@ -701,6 +699,8 @@ export default function Results() {
               <CardContent>
                 {/* Clean Infrastructure Layout */}
                 <div className="space-y-8">
+                  ```python
+Data fetching and rendering adjustments made to remove dependency on IP address for history page.
                   {/* Essential Services - Clean Design */}
                   <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-6 border border-red-100">
                     <div className="flex items-center mb-6">

@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@googleGenerativeAI';
 
 const genAI = new GoogleGenerativeAI('AIzaSyCEetXKsgKVA4KB5v-XhjY6cCfl9UZNK6w');
 
@@ -276,4 +276,16 @@ Format as JSON array:
     const text = response.text();
 
     try {
-      const cleanedText = textjson\n?/g, '').replace(/
+      const cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const attractions = JSON.parse(cleanedText);
+      return attractions;
+    } catch (parseError) {
+      console.error('Failed to parse Gemini tourist attraction response:', parseError, text);
+      return [];
+    }
+  } catch (error) {
+    console.error('Gemini API error:', error);
+    return [];
+  }
+}
+`

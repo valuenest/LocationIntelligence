@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,32 +35,47 @@ interface AnalysisHistory {
 
 export default function History() {
   const [history, setHistory] = useState<AnalysisHistory[]>([]);
+  const [browserKey, setBrowserKey] = useState<string>('');
 
-  // Get IP address to identify browser uniquely
-  const { data: ipData } = useQuery<{ ip: string }>({
-    queryKey: ['/api/get-ip'],
-  });
-
+  // Generate browser fingerprint without API calls
   useEffect(() => {
-    if (ipData?.ip) {
-      console.log('Loading history for IP:', ipData.ip);
-      const historyData = getAnalysisHistory(ipData.ip);
-      console.log('Retrieved history data:', historyData);
-      setHistory(historyData);
-    }
-  }, [ipData]);
+    const generateBrowserKey = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx!.textBaseline = 'top';
+      ctx!.font = '14px Arial';
+      ctx!.fillText('Browser fingerprint', 2, 2);
+      
+      const fingerprint = canvas.toDataURL() + 
+                         navigator.userAgent + 
+                         navigator.language + 
+                         screen.width + 
+                         screen.height + 
+                         new Date().getTimezoneOffset();
+      
+      return btoa(fingerprint).slice(0, 16); // Short unique identifier
+    };
+
+    const key = generateBrowserKey();
+    setBrowserKey(key);
+    
+    console.log('Loading history for browser:', key);
+    const historyData = getAnalysisHistory(key);
+    console.log('Retrieved history data:', historyData);
+    setHistory(historyData);
+  }, []);
 
   const clearHistory = () => {
-    if (ipData?.ip) {
-      clearAnalysisHistory(ipData.ip);
+    if (browserKey) {
+      clearAnalysisHistory(browserKey);
       setHistory([]);
     }
   };
 
   const removeHistoryItem = (sessionId: string) => {
-    if (ipData?.ip) {
-      removeAnalysisFromHistory(ipData.ip, sessionId);
-      const updatedHistory = getAnalysisHistory(ipData.ip);
+    if (browserKey) {
+      removeAnalysisFromHistory(browserKey, sessionId);
+      const updatedHistory = getAnalysisHistory(browserKey);
       setHistory(updatedHistory);
     }
   };
@@ -99,7 +113,7 @@ export default function History() {
     generatePDF(item);
   };
 
-  if (!ipData) {
+  if (!browserKey) {
     return (
       <div className="flex items-center justify-center py-16">
         <div className="text-center">
