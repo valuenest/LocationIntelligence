@@ -624,6 +624,130 @@ Return JSON format:
   }
 }
 
+export async function validateAllBonusesAndPenalties(
+  location: { lat: number; lng: number; address: string },
+  areaClassification: string,
+  locationType: string,
+  currentInvestmentViability: number,
+  locationScore: number
+): Promise<{
+  locationTypeBonus: number;
+  premiumAreaBonus: number;
+  disadvantagedAreaPenalty: number;
+  locationScorePenalty: number;
+  finalInvestmentViability: number;
+  finalLocationScore: number;
+  reasoning: string;
+  confidence: number;
+}> {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    
+    const prompt = `Analyze and calculate ALL bonuses and penalties for this location: ${location.address} (${location.lat}, ${location.lng}).
+
+CURRENT DATA:
+- Area Classification: ${areaClassification}
+- Location Type: ${locationType}
+- Current Investment Viability: ${currentInvestmentViability}%
+- Current Location Score: ${locationScore}
+
+CALCULATE THE FOLLOWING BONUSES/PENALTIES:
+
+1. LOCATION TYPE BONUS/PENALTY:
+   - Tourism hub: +6%
+   - Metropolitan: +5%
+   - Urban: +3%
+   - Industrial/IT: +4%
+   - Smart City: +7%
+   - Coastal: +4%
+   - City: +2%
+   - Town: +1%
+   - Village: -3%
+   - Default: 0%
+
+2. PREMIUM AREA BONUS (10% investment viability):
+   - ONLY if current investment viability < 90%
+   - ONLY for verified: Urban Areas, Metropolitan Areas, Industrial/IT Zones, Smart Cities, Coastal Areas
+   - Must provide evidence of premium status
+
+3. DISADVANTAGED AREA PENALTY:
+   - Investment viability: -10%
+   - Location score: -0.5%
+   - Applies to: Hill, Tribal, Village, Remote, Rural, Mountain, Hilly, Hill station, Tribal region, Remote village, Rural area, Backward area, Tribal area
+
+VERIFICATION REQUIREMENTS:
+- Verify the area classification is accurate
+- Check if location truly qualifies for premium status
+- Identify any disadvantaged area characteristics
+- Calculate final scores after all adjustments
+
+Return JSON format:
+{
+  "locationTypeBonus": number,
+  "premiumAreaBonus": number,
+  "disadvantagedAreaPenalty": number,
+  "locationScorePenalty": number,
+  "finalInvestmentViability": number,
+  "finalLocationScore": number,
+  "reasoning": "detailed explanation of all calculations",
+  "confidence": number
+}`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    
+    try {
+      let cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      
+      const startIdx = cleanedText.indexOf('{');
+      const endIdx = cleanedText.lastIndexOf('}');
+      
+      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+        cleanedText = cleanedText.substring(startIdx, endIdx + 1);
+      }
+      
+      const bonusData = JSON.parse(cleanedText);
+      
+      // Ensure all required fields are present with defaults
+      return {
+        locationTypeBonus: bonusData.locationTypeBonus || 0,
+        premiumAreaBonus: bonusData.premiumAreaBonus || 0,
+        disadvantagedAreaPenalty: bonusData.disadvantagedAreaPenalty || 0,
+        locationScorePenalty: bonusData.locationScorePenalty || 0,
+        finalInvestmentViability: bonusData.finalInvestmentViability || currentInvestmentViability,
+        finalLocationScore: bonusData.finalLocationScore || locationScore,
+        reasoning: bonusData.reasoning || "Analysis completed",
+        confidence: bonusData.confidence || 80
+      };
+    } catch (parseError) {
+      console.error('Failed to parse bonus/penalty data:', parseError);
+      return {
+        locationTypeBonus: 0,
+        premiumAreaBonus: 0,
+        disadvantagedAreaPenalty: 0,
+        locationScorePenalty: 0,
+        finalInvestmentViability: currentInvestmentViability,
+        finalLocationScore: locationScore,
+        reasoning: "Failed to parse bonus/penalty calculations",
+        confidence: 0
+      };
+    }
+  } catch (error) {
+    console.error('Error calculating bonuses and penalties:', error);
+    return {
+      locationTypeBonus: 0,
+      premiumAreaBonus: 0,
+      disadvantagedAreaPenalty: 0,
+      locationScorePenalty: 0,
+      finalInvestmentViability: currentInvestmentViability,
+      finalLocationScore: locationScore,
+      reasoning: "Error occurred during bonus/penalty analysis",
+      confidence: 0
+    };
+  }
+}
+
 export async function validatePremiumAreaType(
   location: { lat: number; lng: number; address: string },
   areaClassification: string,

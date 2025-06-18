@@ -1921,99 +1921,73 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         investmentViability -= 20;
       }
       
-      // 4. LOCATION TYPE BONUS/PENALTY based on area classification
+      // 4. GEMINI AI COMPREHENSIVE BONUS/PENALTY VERIFICATION
+      // Let Gemini AI calculate all bonuses and penalties before final report
+      console.log(`GEMINI AI VERIFICATION: Calculating all bonuses/penalties for ${areaType} (${locationType}) with viability ${investmentViability}%`);
+      
       let locationBonus = 0;
-      
-      console.log(`LOCATION BONUS DEBUG: locationType="${locationType}", areaClassification="${areaType}"`);
-      
-      // Premium location types get bonuses
-      if (locationType === 'metropolitan' || areaType.includes('Metro city') || areaType.includes('Metropolitan')) {
-        locationBonus += 5; // +5% for metropolitan areas
-        console.log('Applied Metropolitan bonus: +5%');
-      } else if (areaType.includes('Smart city') || areaType.includes('IT park') || areaType.includes('Tech hub')) {
-        locationBonus += 8; // +8% for tech/smart cities
-        console.log('Applied Tech/Smart city bonus: +8%');
-      } else if (areaType.includes('Tourism hub') || areaType.includes('Tourist town')) {
-        locationBonus += 6; // +6% for tourism hubs
-        console.log('Applied Tourism hub bonus: +6%');
-      } else if (locationType === 'city' || areaType.includes('Urban')) {
-        locationBonus += 3; // +3% for urban cities
-        console.log('Applied Urban city bonus: +3%');
-      } else if (areaType.includes('Industrial') || areaType.includes('SEZ')) {
-        locationBonus += 4; // +4% for industrial zones
-        console.log('Applied Industrial zone bonus: +4%');
-      } else if (locationType === 'town' || areaType.includes('Township')) {
-        locationBonus += 1; // +1% for towns
-        console.log('Applied Town bonus: +1%');
-      } else if (locationType === 'village' || areaType.includes('Village')) {
-        locationBonus -= 3; // -3% for villages
-        console.log('Applied Village penalty: -3%');
-      } else if (locationType === 'rural' || areaType.includes('Rural')) {
-        locationBonus -= 5; // -5% for rural areas
-        console.log('Applied Rural penalty: -5%');
-      } else {
-        console.log('No location bonus/penalty applied - no matching criteria');
-      }
-      
-      investmentViability += locationBonus;
-      
-      // 5. PREMIUM AREA VERIFICATION & 10% INVESTMENT BONUS
-      // Only apply bonus if investment viability is below 90%
       let premiumAreaBonus = 0;
-      
-      if (investmentViability < 90) {
-        try {
-          console.log(`PREMIUM AREA VERIFICATION: Current viability ${investmentViability.toFixed(1)}% < 90%, checking if ${areaType} (${locationType}) qualifies for 10% investment bonus...`);
-          
-          const premiumVerification = await validatePremiumAreaType(location, areaType, locationType);
-          
-          if (premiumVerification.isPremiumArea && premiumVerification.confidence >= 70) {
-            premiumAreaBonus = 10; // 10% bonus for verified premium areas
-            investmentViability += premiumAreaBonus;
-            
-            console.log(`PREMIUM AREA BONUS APPLIED: +${premiumAreaBonus}% for verified ${premiumVerification.verifiedType}`);
-            console.log(`Verification reasoning: ${premiumVerification.reasoning}`);
-            console.log(`Confidence: ${premiumVerification.confidence}%`);
-          } else {
-            console.log(`PREMIUM AREA VERIFICATION FAILED: Not qualified for premium bonus`);
-            console.log(`Verified type: ${premiumVerification.verifiedType}`);
-            console.log(`Reasoning: ${premiumVerification.reasoning}`);
-            console.log(`Confidence: ${premiumVerification.confidence}%`);
-          }
-        } catch (error) {
-          console.error('Error during premium area verification:', error);
-          console.log('Premium area bonus not applied due to verification error');
-        }
-      } else {
-        console.log(`PREMIUM AREA BONUS SKIPPED: Investment viability ${investmentViability.toFixed(1)}% >= 90%, no bonus needed`);
-      }
-      
-      // 6. HILL/TRIBAL/VILLAGE/REMOTE AREA PENALTIES
-      // Apply -10% investment viability and -0.5% location score for disadvantaged areas
       let areaPenalty = 0;
       let locationScorePenalty = 0;
       
-      const disadvantagedAreaTypes = [
-        'hill', 'tribal', 'village', 'remote', 'rural', 'hilly',
-        'mountain', 'tribal region', 'hill station', 'remote village',
-        'rural area', 'backward area', 'tribal area'
-      ];
-      
-      const isDisadvantagedArea = disadvantagedAreaTypes.some(type => 
-        areaType.toLowerCase().includes(type.toLowerCase()) ||
-        locationType.toLowerCase().includes(type.toLowerCase())
-      );
-      
-      console.log(`DISADVANTAGED AREA CHECK: areaType="${areaType}", locationType="${locationType}", isDisadvantaged=${isDisadvantagedArea}`);
-      
-      if (isDisadvantagedArea) {
-        areaPenalty = 10; // -10% investment viability
-        locationScorePenalty = 0.5; // -0.5% location score
+      try {
+        const { validateAllBonusesAndPenalties } = await import('./gemini');
+        const verificationResult = await validateAllBonusesAndPenalties(
+          location,
+          areaType,
+          locationType,
+          investmentViability,
+          result.locationScore
+        );
         
-        investmentViability -= areaPenalty;
-        result.locationScore -= locationScorePenalty;
+        console.log(`GEMINI AI CALCULATION COMPLETE:
+        Original Investment Viability: ${investmentViability}%
+        Original Location Score: ${result.locationScore}
+        Location Type Bonus: ${verificationResult.locationTypeBonus >= 0 ? '+' : ''}${verificationResult.locationTypeBonus}%
+        Premium Area Bonus: ${verificationResult.premiumAreaBonus >= 0 ? '+' : ''}${verificationResult.premiumAreaBonus}%
+        Disadvantaged Area Penalty: -${verificationResult.disadvantagedAreaPenalty}%
+        Location Score Penalty: -${verificationResult.locationScorePenalty}
+        Final Investment Viability: ${verificationResult.finalInvestmentViability}%
+        Final Location Score: ${verificationResult.finalLocationScore}
+        Confidence: ${verificationResult.confidence}%`);
         
-        console.log(`DISADVANTAGED AREA PENALTY APPLIED: -${areaPenalty}% investment, -${locationScorePenalty}% location score for ${areaType} (${locationType})`);
+        console.log(`VERIFICATION REASONING: ${verificationResult.reasoning}`);
+        
+        // Apply Gemini AI verified calculations
+        investmentViability = verificationResult.finalInvestmentViability;
+        result.locationScore = verificationResult.finalLocationScore;
+        
+        // Store individual components for debugging
+        locationBonus = verificationResult.locationTypeBonus;
+        premiumAreaBonus = verificationResult.premiumAreaBonus;
+        areaPenalty = verificationResult.disadvantagedAreaPenalty;
+        locationScorePenalty = verificationResult.locationScorePenalty;
+        
+      } catch (error) {
+        console.error('Error during Gemini AI bonus/penalty verification:', error);
+        console.log('Falling back to manual calculations...');
+        
+        // Fallback to original logic if Gemini AI fails
+        if (locationType === 'metropolitan' || areaType.includes('Metro city') || areaType.includes('Metropolitan')) {
+          locationBonus = 5;
+        } else if (areaType.includes('Smart city') || areaType.includes('IT park') || areaType.includes('Tech hub')) {
+          locationBonus = 8;
+        } else if (areaType.includes('Tourism hub') || areaType.includes('Tourist town')) {
+          locationBonus = 6;
+        } else if (locationType === 'city' || areaType.includes('Urban')) {
+          locationBonus = 3;
+        } else if (areaType.includes('Industrial') || areaType.includes('SEZ')) {
+          locationBonus = 4;
+        } else if (locationType === 'town' || areaType.includes('Township')) {
+          locationBonus = 1;
+        } else if (locationType === 'village' || areaType.includes('Village')) {
+          locationBonus = -3;
+        } else if (locationType === 'rural' || areaType.includes('Rural')) {
+          locationBonus = -5;
+        }
+        
+        investmentViability += locationBonus;
+        console.log(`FALLBACK: Applied ${locationBonus >= 0 ? '+' : ''}${locationBonus}% location bonus`);
       }
       
       // 7. QUALITY/REVIEW PENALTY
@@ -2047,7 +2021,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         Education + Transport Both Missing: ${essentialServices.education.length === 0 && essentialServices.transport.length === 0 && serviceCount > 0 ? 'YES (-20%)' : 'NO (0%)'}
         LOCATION TYPE BONUS: ${locationBonus >= 0 ? '+' : ''}${locationBonus}% (${locationType} - ${areaType})
         PREMIUM AREA BONUS: ${premiumAreaBonus >= 0 ? '+' : ''}${premiumAreaBonus}% (Gemini AI verified)
-        DISADVANTAGED AREA PENALTY: -${areaPenalty}% investment, -${locationScorePenalty}% location score
+        DISADVANTAGED AREA PENALTY: -${areaPenalty}% investment, -${locationScorePenalty}% location score (Gemini AI verified)
         Quality Penalty: -${qualityPenalty.toFixed(1)}% (${result.nearbyPlaces.filter(p => p.rating && p.rating < 3.0).length} low-rated facilities)
         Final Investment Viability: ${finalViability.toFixed(1)}%`);
       
