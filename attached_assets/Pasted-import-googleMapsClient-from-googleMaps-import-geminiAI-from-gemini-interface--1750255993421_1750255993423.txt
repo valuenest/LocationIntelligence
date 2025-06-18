@@ -1,0 +1,112 @@
+import { googleMapsClient } from './googleMaps';
+import { geminiAI } from './gemini';
+
+interface ValidationResult {
+  isHabitable: boolean;
+  reason: string;
+  confidence: number;
+  mapPreview: string; // URL for static map
+}
+
+async function validateLocation(address: string, lat: number, lng: number): Promise<ValidationResult> {
+  // Step 1: Geocoding Check
+  try {
+    const geocodingResponse = await googleMapsClient.reverseGeocode({ latlng: [lat, lng] });
+    const landUse = geocodingResponse.results[0]?.types || [];
+    const restrictedTypes = ['natural_feature', 'park', 'point_of_interest', 'premise'];
+
+    if (restrictedTypes.some(type => landUse.includes(type))) {
+      return {
+        isHabitable: false,
+        reason: `Location is classified as a ${landUse.join(', ')} (e.g., lake, park) and is not suitable for habitation.`,
+        confidence: 0.95,
+        mapPreview: `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=400x200&key=${process.env.GOOGLE_API_KEY}`
+      };
+    }
+  } catch (error) {
+    console.error('Geocoding failed:', error);
+    // Fallback to AI validation
+  }
+
+  // Step 2: Gemini AI Validation
+  const aiPrompt = `Analyze the location at ${address} (${lat}, ${lng}) for real estate viability. Return:
+  - isHabitable: boolean
+  - locationType: 'metropolitan' | 'city' | 'town' | 'village' | 'rural' | 'uninhabitable'
+  - reason: string
+  - confidence: number (0-1)`;
+  
+  try {
+    const aiResponse = await geminiAI.generateContent(aiPrompt);
+    const { isHabitable, locationType, reason, confidence } = JSON.parse(aiResponse.text);
+
+    if (confidence < 0.8) {
+      return {
+        isHabitable: false,
+        reason: `Low-confidence AI result: ${reason}. Please verify manually.`,
+        confidence,
+        mapPreview: `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=400x200&key=${process.env.GOOGLE_API_KEY}`
+      };
+    }
+
+    if (!isHabitable) {
+      return {
+        isHabitable: false,
+        reason,
+        confidence,
+        mapPreview: `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=400x200&key=${process.env.GOOGLE_API_KEY}`
+      };
+    }
+
+    // Step 3: Dynamic Infrastructure Check
+    const nearbyUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=5000&type=establishment&key=${process.env.GOOGLE_API_KEY}`;
+    const nearbyPlaces = await fetchWithRetry(nearbyUrl);
+    const placeWeights = {
+      hospital: 3, pharmacy: 2, doctor: 2, school: 2, university: 2,
+      bus_station: 1.5, train_station: 2, airport: 3, default: 1
+    };
+
+    let infrastructureScore = 0;
+    nearbyPlaces.results.forEach(place => {
+      const weight = place.types.some(type => placeWeights[type]) ? placeWeights[place.types.find(type => placeWeights[type]) || 'default'] : placeWeights.default;
+      infrastructureScore += weight;
+    });
+
+    // Adjust threshold based on location type
+    const minScore = locationType === 'rural' ? 5 : locationType === 'village' ? 8 : 12;
+    if (infrastructureScore < minScore) {
+      return {
+        isHabitable: false,
+        reason: `Insufficient infrastructure (score: ${infrastructureScore}, required: ${minScore}) for a ${locationType} area.`,
+        confidence: 0.9,
+        mapPreview: `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=400x200&key=${process.env.GOOGLE_API_KEY}`
+      };
+    }
+
+    return {
+      isHabitable: true,
+      reason: `Location is viable for development in a ${locationType} area with sufficient infrastructure (score: ${infrastructureScore}).`,
+      confidence: Math.max(confidence, 0.9),
+      mapPreview: `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=400x200&key=${process.env.GOOGLE_API_KEY}`
+    };
+  } catch (error) {
+    console.error('AI validation failed:', error);
+    return {
+      isHabitable: false,
+      reason: 'Validation failed due to API error. Please try again or verify manually.',
+      confidence: 0,
+      mapPreview: `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=400x200&key=${process.env.GOOGLE_API_KEY}`
+    };
+  }
+}
+
+async function fetchWithRetry(url: string, maxRetries: number = 3): Promise<any> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url);
+      return await response.json();
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+    }
+  }
+}
