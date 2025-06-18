@@ -511,7 +511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       for (const type of searchTypes) {
         try {
-          const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=10000&type=${type}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+          const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=5000&type=${type}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
           const response = await fetch(url);
           const data = await response.json();
           
@@ -541,9 +541,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       result.nearbyPlaces = uniquePlaces.slice(0, 25); // Limit to 25 best places
 
-      // Calculate distances for all places
+      // Calculate distances for all places and filter to 5km
       if (result.nearbyPlaces.length > 0) {
         result.distances = await calculateDistances(location, result.nearbyPlaces);
+        
+        // Filter out places beyond 5km from both nearbyPlaces and distances
+        const placesWithin5km = result.nearbyPlaces.filter(place => {
+          const distance = result.distances[place.name];
+          return distance && distance.distance.value <= 5000; // 5km = 5000 meters
+        });
+
+        console.log(`Filtered ${result.nearbyPlaces.length} places to ${placesWithin5km.length} within 5km`);
+        
+        // Update nearbyPlaces to only include places within 5km
+        result.nearbyPlaces = placesWithin5km;
+        
+        // Update distances object to only include places within 5km
+        const filteredDistances: Record<string, any> = {};
+        placesWithin5km.forEach(place => {
+          if (result.distances[place.name]) {
+            filteredDistances[place.name] = result.distances[place.name];
+          }
+        });
+        result.distances = filteredDistances;
       }
 
       // Advanced infrastructure scoring with categorized services
