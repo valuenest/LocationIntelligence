@@ -1,7 +1,7 @@
 import { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateInvestmentRecommendations, findTopInvestmentLocations, analyzeLocationIntelligence } from "./gemini";
+import { generateInvestmentRecommendations, findTopInvestmentLocations, analyzeLocationIntelligence, findNearbyTouristAttractions } from "./gemini";
 import { performSmartValidation } from "./smartValidation";
 import DOMPurify from "isomorphic-dompurify";
 import { z } from "zod";
@@ -137,6 +137,14 @@ interface AnalysisResult {
     reasoning: string;
     distance: string;
     imageUrl?: string;
+  }>;
+  touristAttractions?: Array<{
+    name: string;
+    description: string;
+    category: string;
+    rating: number;
+    distance: string;
+    why_visit: string;
   }>;
 }
 
@@ -1336,6 +1344,15 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
           console.error("Top locations error:", error);
           result.topInvestmentLocations = [];
         }
+      }
+
+      // Tourist attractions for all tiers - enhanced with Gemini AI
+      try {
+        const touristAttractions = await findNearbyTouristAttractions(location);
+        result.touristAttractions = touristAttractions;
+      } catch (error) {
+        console.error("Tourist attractions error:", error);
+        result.touristAttractions = [];
       }
 
       // Investment recommendation text based on area type and viability

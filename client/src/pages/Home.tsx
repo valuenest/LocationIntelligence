@@ -395,7 +395,7 @@ export default function Home() {
               Choose Your Analysis Plan
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="grid md:grid-cols-3 gap-4">
             {/* Free Plan */}
             <div className="border rounded-lg p-4 text-center">

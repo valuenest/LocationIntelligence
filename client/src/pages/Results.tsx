@@ -61,6 +61,14 @@ interface AnalysisResult {
     distance: string;
     imageUrl?: string;
   }>;
+  touristAttractions?: Array<{
+    name: string;
+    description: string;
+    category: string;
+    rating: number;
+    distance: string;
+    why_visit: string;
+  }>;
 }
 
 interface AnalysisData {
@@ -1350,38 +1358,57 @@ export default function Results() {
               </Card>
             )}
 
-          {/* Tourist Attractions & Visiting Places - Bottom Section */}
+          {/* AI-Powered Tourist Attractions & Visiting Places - Bottom Section */}
           <div className="mt-12 bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl p-8 border border-emerald-200">
             <div className="text-center mb-8">
               <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Eye className="h-8 w-8 text-white" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Popular Visiting Places</h2>
-              <p className="text-gray-600">Tourist attractions and recreational spots within 50km that people actually visit</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Popular Tourist Attractions</h2>
+              <p className="text-gray-600">AI-discovered sightseeing destinations and famous places people actually visit</p>
+              <Badge variant="secondary" className="mt-2 bg-purple-100 text-purple-600">
+                <Brain className="h-3 w-3 mr-1" />
+                Powered by Gemini AI
+              </Badge>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
-              {analysisResult.nearbyPlaces
-                .filter(p => p.types.some(t => [
-                  'park', 'tourist_attraction', 'amusement_park', 'zoo', 'museum', 
-                  'temple', 'church', 'mosque', 'shopping_mall', 'movie_theater', 
-                  'stadium', 'natural_feature', 'aquarium', 'art_gallery'
-                ].includes(t)))
-                .slice(0, 3)
-                .map((place, index) => {
-                  const rawDistance = analysisResult.distances[place.name]?.distance?.text || 'Calculating...';
-                  const distance = rawDistance.replace(/\*+/g, '').replace(/\*?Note:.*$/, '').trim();
-                  const duration = analysisResult.distances[place.name]?.duration?.text || '';
-                  const areaName = place.vicinity ? place.vicinity.split(',')[0] : 'Nearby';
-                  
+              {analysisResult.touristAttractions && analysisResult.touristAttractions.length > 0 ? (
+                analysisResult.touristAttractions.map((attraction, index) => {
+                  const getCategoryIcon = (category: string) => {
+                    switch (category.toLowerCase()) {
+                      case 'temple': return '🛕';
+                      case 'monument': return '🏛️';
+                      case 'natural': return '🌿';
+                      case 'cultural': return '🎭';
+                      case 'adventure': return '🏔️';
+                      case 'entertainment': return '🎢';
+                      default: return '📍';
+                    }
+                  };
+
+                  const getCategoryColor = (category: string) => {
+                    switch (category.toLowerCase()) {
+                      case 'temple': return 'from-orange-100 to-yellow-100';
+                      case 'monument': return 'from-gray-100 to-stone-100';
+                      case 'natural': return 'from-green-100 to-emerald-100';
+                      case 'cultural': return 'from-purple-100 to-pink-100';
+                      case 'adventure': return 'from-blue-100 to-cyan-100';
+                      case 'entertainment': return 'from-red-100 to-orange-100';
+                      default: return 'from-gray-100 to-blue-100';
+                    }
+                  };
+
                   return (
                     <div key={index} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
-                      {/* Placeholder for place image */}
-                      <div className="h-48 bg-gradient-to-br from-emerald-100 via-green-100 to-blue-100 relative overflow-hidden">
+                      {/* Category-based header */}
+                      <div className={`h-48 bg-gradient-to-br ${getCategoryColor(attraction.category)} relative overflow-hidden`}>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-center text-gray-600">
-                            <Eye className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm font-medium">{place.name}</p>
+                          <div className="text-center text-gray-700">
+                            <div className="text-6xl mb-2">{getCategoryIcon(attraction.category)}</div>
+                            <p className="text-sm font-semibold bg-white/80 rounded px-2 py-1 backdrop-blur-sm">
+                              {attraction.category.charAt(0).toUpperCase() + attraction.category.slice(1)} Attraction
+                            </p>
                           </div>
                         </div>
                         <div className="absolute top-4 left-4">
@@ -1389,89 +1416,84 @@ export default function Results() {
                             <span className="text-sm font-bold text-emerald-600">#{index + 1}</span>
                           </div>
                         </div>
-                        {place.rating && (
-                          <div className="absolute top-4 right-4">
-                            <div className="bg-white rounded-full px-3 py-1 shadow-md flex items-center">
-                              <Star className="h-4 w-4 text-yellow-500 mr-1" />
-                              <span className="text-sm font-bold text-gray-700">{place.rating}</span>
-                            </div>
+                        <div className="absolute top-4 right-4">
+                          <div className="bg-white rounded-full px-3 py-1 shadow-md flex items-center">
+                            <Star className="h-4 w-4 text-yellow-500 mr-1" />
+                            <span className="text-sm font-bold text-gray-700">{attraction.rating}</span>
                           </div>
-                        )}
+                        </div>
                       </div>
                       
                       <div className="p-6">
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">{place.name}</h3>
-                        <p className="text-sm text-gray-600 mb-4">{areaName}</p>
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">{attraction.name}</h3>
+                        <p className="text-sm text-gray-600 mb-4 leading-relaxed">{attraction.description}</p>
                         
                         <div className="grid grid-cols-2 gap-4 mb-4">
                           <div className="text-center bg-emerald-50 rounded-lg p-3">
-                            <div className="text-lg font-bold text-emerald-600">
-                              {distance === 'Calculating...' ? 'Unknown' : distance}
-                            </div>
-                            <div className="text-xs text-gray-600">Distance</div>
+                            <div className="text-lg font-bold text-emerald-600">{attraction.distance}</div>
+                            <div className="text-xs text-gray-600">Distance Away</div>
                           </div>
-                          <div className="text-center bg-blue-50 rounded-lg p-3">
-                            <div className="text-lg font-bold text-blue-600">
-                              {duration && duration !== '' ? duration : 'Unknown'}
-                            </div>
-                            <div className="text-xs text-gray-600">Travel Time</div>
+                          <div className="text-center bg-purple-50 rounded-lg p-3">
+                            <div className="text-lg font-bold text-purple-600 capitalize">{attraction.category}</div>
+                            <div className="text-xs text-gray-600">Category</div>
                           </div>
                         </div>
 
+                        <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                          <h5 className="text-xs font-semibold text-blue-800 mb-1">Why Visit:</h5>
+                          <p className="text-xs text-blue-700 leading-relaxed">{attraction.why_visit}</p>
+                        </div>
+
                         <div className="flex flex-wrap gap-1 mb-4">
-                          {place.types
-                            .filter(type => [
-                              'park', 'tourist_attraction', 'amusement_park', 'zoo', 'museum', 
-                              'temple', 'church', 'mosque', 'shopping_mall', 'movie_theater', 
-                              'stadium', 'natural_feature', 'aquarium', 'art_gallery'
-                            ].includes(type))
-                            .slice(0, 2)
-                            .map((type, idx) => (
-                              <span key={idx} className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">
-                                {type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                              </span>
-                            ))}
+                          <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">
+                            Tourist Destination
+                          </span>
+                          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                            {attraction.rating >= 4.0 ? 'Highly Rated' : 'Popular'}
+                          </span>
                         </div>
 
                         <Button 
                           className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
-                          onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(place.name + ' ' + (place.vicinity || ''))}`, '_blank')}
+                          onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(attraction.name)}`, '_blank')}
                         >
                           <MapPin className="h-4 w-4 mr-2" />
-                          Visit on Maps
+                          Find on Maps
                         </Button>
                       </div>
                     </div>
                   );
-                })}
+                })
+              ) : (
+                <div className="col-span-3 text-center py-8">
+                  {analysisResult.investmentViability === 0 || analysisResult.investmentRecommendation?.includes('Uninhabitable') ? (
+                    <>
+                      <AlertTriangle className="h-16 w-16 text-red-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-red-700 mb-2">No Tourist Attractions Found</h3>
+                      <p className="text-red-600">This remote location has no recreational or tourist facilities within 100km radius. The area lacks basic infrastructure and is unsuitable for tourism or entertainment activities.</p>
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-700 mb-2">AI Tourist Discovery in Progress</h3>
+                      <p className="text-gray-600">Our AI is analyzing the best tourist attractions and visiting places in this area. Please refresh in a moment to see the results.</p>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
-            {analysisResult.nearbyPlaces.filter(p => p.types.some(t => [
-              'park', 'tourist_attraction', 'amusement_park', 'zoo', 'museum', 
-              'temple', 'church', 'mosque', 'shopping_mall', 'movie_theater', 
-              'stadium', 'natural_feature', 'aquarium', 'art_gallery'
-            ].includes(t))).length === 0 && (
-              <div className="text-center py-8">
-                {analysisResult.investmentViability === 0 || analysisResult.investmentRecommendation?.includes('Uninhabitable') ? (
-                  <>
-                    <AlertTriangle className="h-16 w-16 text-red-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-red-700 mb-2">No Tourist Attractions Found</h3>
-                    <p className="text-red-600">This remote location has no recreational or tourist facilities within 100km radius. The area lacks basic infrastructure and is unsuitable for tourism or entertainment activities.</p>
-                  </>
-                ) : (
-                  <>
-                    <Eye className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-700 mb-2">Limited Tourist Attractions</h3>
-                    <p className="text-gray-600">This area appears to be more residential/commercial. Major attractions may be in nearby city centers.</p>
-                  </>
-                )}
-              </div>
-            )}
-
             <div className="mt-8 text-center">
-              <p className="text-sm text-emerald-700 bg-emerald-100 rounded-lg p-3">
-                These are popular recreational and tourist destinations within a reasonable distance from your location. Perfect for weekend visits and entertainment.
-              </p>
+              <div className="bg-emerald-100 rounded-lg p-4">
+                <div className="flex items-center justify-center mb-2">
+                  <Brain className="h-5 w-5 text-emerald-700 mr-2" />
+                  <span className="text-sm font-semibold text-emerald-800">AI-Powered Tourism Intelligence</span>
+                </div>
+                <p className="text-sm text-emerald-700">
+                  These attractions are carefully selected by Gemini AI based on popularity, cultural significance, natural beauty, and tourist reviews. 
+                  Each recommendation includes authentic visiting reasons and detailed insights about what makes these places special.
+                </p>
+              </div>
             </div>
           </div>
         </div>
