@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI('AIzaSyCEetXKsgKVA4KB5v-XhjY6cCfl9UZNK6w');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 interface InvestmentLocation {
   address: string;
@@ -512,8 +512,10 @@ Return ONLY valid JSON:
 }
 `;
 
-    const result = await genAI.generateContent(prompt);
-    const text = result.response.text();
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
     
     // Clean and parse the response
     const cleanedText = text.replace(/```json|```/g, '').trim();
