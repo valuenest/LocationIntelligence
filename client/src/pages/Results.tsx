@@ -385,12 +385,7 @@ export default function Results() {
                           : 'bg-orange-50 text-orange-700'
                       }`}>
                         <span className="mr-1">
-                          {analysisResult.investmentRecommendation.includes('Outstanding') || analysisResult.investmentRecommendation.includes('Exceptional') 
-                            ? '85-95%' 
-                            : analysisResult.investmentRecommendation.includes('Excellent') || analysisResult.investmentRecommendation.includes('Good')
-                            ? '70-84%'
-                            : '50-69%'
-                          }
+                          {Math.round(analysisResult.investmentViability || 0)}%
                         </span>
                         {analysisResult.investmentRecommendation.includes('Outstanding') || analysisResult.investmentRecommendation.includes('Exceptional') 
                           ? <TrendingUp className="h-3 w-3 text-green-600" />
@@ -563,13 +558,11 @@ export default function Results() {
                   Investment Analysis Overview
                   <div className="text-right">
                     <div className={`text-lg font-bold ${
-                      (analysisResult.investmentViability || 0) >= 65 ? 'text-green-600' :
+                      (analysisResult.investmentViability || 0) >= 85 ? 'text-green-600' :
+                      (analysisResult.investmentViability || 0) >= 70 ? 'text-blue-600' :
                       (analysisResult.investmentViability || 0) >= 50 ? 'text-yellow-600' : 'text-red-600'
                     }`}>
-                      {(analysisResult.investmentViability || 0) >= 65 ? '60-65% Good Investment' :
-                       (analysisResult.investmentViability || 0) >= 50 ? '50-50% Moderate Investment' :
-                       (analysisResult.investmentViability || 0) >= 35 ? '35-45% Risky Investment' :
-                       'Below 35% Poor Investment'}
+                      {Math.round(analysisResult.investmentViability || 0)}% Investment Viability
                     </div>
                     <div className="text-sm text-gray-600">Overall Recommendation</div>
                   </div>
