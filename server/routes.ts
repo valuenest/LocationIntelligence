@@ -1800,8 +1800,19 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         Total Penalty: ${totalPenalty}
         Infrastructure Multiplier: ${infrastructureAdequacyMultiplier.toFixed(2)}`);
       
-      // SIMPLIFIED INVESTMENT VIABILITY LOGIC
-      // Base viability starts at 100% for location scores 4.5-5.0
+      // Count present essential services for enhanced grading
+      const presentServices = [
+        essentialServices.healthcare.length > 0 ? 'healthcare' : null,
+        essentialServices.education.length > 0 ? 'education' : null,
+        essentialServices.transport.length > 0 ? 'transport' : null,
+        essentialServices.financial.length > 0 ? 'financial' : null,
+        essentialServices.daily_needs.length > 0 ? 'daily_needs' : null
+      ].filter(Boolean);
+      
+      const totalServices = 5;
+      const serviceCount = presentServices.length;
+      
+      // ENHANCED INVESTMENT VIABILITY LOGIC BASED ON SERVICE COUNT
       let investmentViability = 100;
       
       // 1. LOCATION SCORE BASED VIABILITY (4.5-5.0 = 100%)
@@ -1825,17 +1836,19 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         investmentViability = 20; // Extremely poor location
       }
       
-      // 2. ESSENTIAL SERVICES PENALTY (5 services: healthcare, education, transport, financial, daily needs)
+      // 2. ESSENTIAL SERVICES PENALTY - Enhanced with service count consideration
       // Missing any essential service = -2% each
-      if (essentialServices.healthcare.length === 0) investmentViability -= 2;
-      if (essentialServices.education.length === 0) investmentViability -= 2;
-      if (essentialServices.transport.length === 0) investmentViability -= 2;
-      if (essentialServices.financial.length === 0) investmentViability -= 2;
-      if (essentialServices.daily_needs.length === 0) investmentViability -= 2;
+      const missingServices = totalServices - serviceCount;
+      investmentViability -= missingServices * 2;
+      
+      // Special case: If ALL services are missing = additional -20% penalty
+      if (serviceCount === 0) {
+        investmentViability -= 20;
+      }
       
       // 3. EDUCATION & TRANSPORT SPECIAL PENALTY
       // If both education AND transport are missing = additional -20%
-      if (essentialServices.education.length === 0 && essentialServices.transport.length === 0) {
+      if (essentialServices.education.length === 0 && essentialServices.transport.length === 0 && serviceCount > 0) {
         investmentViability -= 20;
       }
       
@@ -1855,21 +1868,28 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // Use the simplified investment viability calculation
       const finalViability = investmentViability;
       
-      // Enhanced debug logging with simplified investment viability logic
-      console.log(`SIMPLIFIED INVESTMENT VIABILITY CALCULATION:
+      // Enhanced debug logging with service count
+      console.log(`ENHANCED INVESTMENT VIABILITY CALCULATION:
         Location Score: ${result.locationScore.toFixed(2)}
         Base Viability: ${result.locationScore >= 4.5 ? 100 : result.locationScore >= 4.0 ? 90 : result.locationScore >= 3.5 ? 80 : result.locationScore >= 3.0 ? 70 : result.locationScore >= 2.5 ? 60 : result.locationScore >= 2.0 ? 50 : result.locationScore >= 1.5 ? 40 : result.locationScore >= 1.0 ? 30 : 20}%
-        ESSENTIAL SERVICES PENALTIES:
-        - Healthcare Missing: ${essentialServices.healthcare.length === 0 ? 'YES (-2%)' : 'NO (0%)'} (${essentialServices.healthcare.length} facilities)
-        - Education Missing: ${essentialServices.education.length === 0 ? 'YES (-2%)' : 'NO (0%)'} (${essentialServices.education.length} facilities)
-        - Transport Missing: ${essentialServices.transport.length === 0 ? 'YES (-2%)' : 'NO (0%)'} (${essentialServices.transport.length} facilities)
-        - Financial Missing: ${essentialServices.financial.length === 0 ? 'YES (-2%)' : 'NO (0%)'} (${essentialServices.financial.length} facilities)
-        - Daily Needs Missing: ${essentialServices.daily_needs.length === 0 ? 'YES (-2%)' : 'NO (0%)'} (${essentialServices.daily_needs.length} facilities)
-        - Education + Transport Both Missing: ${essentialServices.education.length === 0 && essentialServices.transport.length === 0 ? 'YES (-20%)' : 'NO (0%)'}
+        ESSENTIAL SERVICES COUNT: ${serviceCount}/5 services present
+        - Healthcare: ${essentialServices.healthcare.length > 0 ? 'PRESENT' : 'MISSING'} (${essentialServices.healthcare.length} facilities)
+        - Education: ${essentialServices.education.length > 0 ? 'PRESENT' : 'MISSING'} (${essentialServices.education.length} facilities)
+        - Transport: ${essentialServices.transport.length > 0 ? 'PRESENT' : 'MISSING'} (${essentialServices.transport.length} facilities)
+        - Financial: ${essentialServices.financial.length > 0 ? 'PRESENT' : 'MISSING'} (${essentialServices.financial.length} facilities)
+        - Daily Needs: ${essentialServices.daily_needs.length > 0 ? 'PRESENT' : 'MISSING'} (${essentialServices.daily_needs.length} facilities)
+        Missing Services Penalty: -${missingServices * 2}% (${missingServices} missing × 2%)
+        All Services Missing: ${serviceCount === 0 ? 'YES (-20%)' : 'NO (0%)'}
+        Education + Transport Both Missing: ${essentialServices.education.length === 0 && essentialServices.transport.length === 0 && serviceCount > 0 ? 'YES (-20%)' : 'NO (0%)'}
         Quality Penalty: -${qualityPenalty.toFixed(1)}% (${result.nearbyPlaces.filter(p => p.rating && p.rating < 3.0).length} low-rated facilities)
         Final Investment Viability: ${finalViability.toFixed(1)}%`);
       
       result.investmentViability = Math.min(100, Math.max(0, Math.round(finalViability)));
+
+      // Add essential services count to result for enhanced frontend grading
+      (result as any).essentialServicesCount = serviceCount;
+      (result as any).totalEssentialServices = totalServices;
+      (result as any).presentServices = presentServices;
 
       // Generate investment recommendation using simplified logic
       const viabilityScore = result.investmentViability || 0;
