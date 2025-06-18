@@ -255,8 +255,7 @@ export default function Home() {
             <div className="space-y-12">
               {/* Location Selection */}
               <div>
-                <h3 className="text-2xl font-semibold text-gray-900 mb-8 flex items-center">
-                  <span className="bg-blue-500 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold mr-4">1</span>
+                <h3 className="text-2xl font-semibold text-gray-900 mb-8">
                   📍 Property Location
                 </h3>
                 <div className="bg-gray-50 p-8 rounded-xl">
@@ -266,8 +265,7 @@ export default function Home() {
               
               {/* Property Details Form */}
               <div>
-                <h3 className="text-2xl font-semibold text-gray-900 mb-8 flex items-center">
-                  <span className="bg-green-500 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold mr-4">2</span>
+                <h3 className="text-2xl font-semibold text-gray-900 mb-8">
                   🏠 Property Information
                 </h3>
                 <div className="bg-gray-50 p-8 rounded-xl">
