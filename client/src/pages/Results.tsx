@@ -692,8 +692,6 @@ export default function Results() {
               <CardContent>
                 {/* Clean Infrastructure Layout */}
                 <div className="space-y-8">
-                  ```python
-Data fetching and rendering adjustments made to remove dependency on IP address for history page.
                   {/* Essential Services - Clean Design */}
                   <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-6 border border-red-100">
                     <div className="flex items-center mb-6">

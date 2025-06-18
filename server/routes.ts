@@ -1319,14 +1319,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // Add AI investment potential directly
       const aiViabilityBonus = Math.min(25, aiIntelligence.investmentPotential * 0.25);
       
-      // Debug logging for all locations to identify the calculation issue
-      console.log(`INVESTMENT VIABILITY DEBUG for ${location.address}:
-        Location Score: ${result.locationScore}
-        Location-based Viability: ${locationBasedViability}
-        Base Viability: ${baseViability}
-        AI Viability Bonus: ${aiViabilityBonus}
-        Location Type: ${aiIntelligence.locationType}
-        Area Classification: ${metroAreaType}`);;
+      // Investment viability calculation complete;
       
       // ENHANCED TIER-BASED PRIORITY SCORING SYSTEM
       // ============================================
