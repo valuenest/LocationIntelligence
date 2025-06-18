@@ -1650,8 +1650,108 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // Metropolitan status multiplier
       if (isMetropolitan) viabilityMultiplier += 0.25;
 
-      // CRITICAL: LOCATION SCORE DEPENDENT CAPS
-      // Investment viability MUST be capped based on location score quality
+      // INFRASTRUCTURE ADEQUACY SCORING SYSTEM
+      // ======================================
+      
+      // Count essential services by category and distance (improved type matching)
+      const essentialServices = {
+        healthcare: result.nearbyPlaces.filter(p => 
+          p.types.some(t => ['hospital', 'clinic', 'pharmacy', 'health', 'medical_center'].includes(t))
+        ),
+        education: result.nearbyPlaces.filter(p => 
+          p.types.some(t => ['school', 'university', 'college', 'educational_institution'].includes(t))
+        ),
+        transport: result.nearbyPlaces.filter(p => 
+          p.types.some(t => ['bus_station', 'subway_station', 'train_station', 'transit_station', 'transportation'].includes(t))
+        ),
+        financial: result.nearbyPlaces.filter(p => 
+          p.types.some(t => ['bank', 'atm', 'financial'].includes(t))
+        ),
+        daily_needs: result.nearbyPlaces.filter(p => 
+          p.types.some(t => ['grocery_store', 'supermarket', 'gas_station', 'store', 'grocery', 'gas station'].includes(t))
+        )
+      };
+      
+      // Distance-based scoring for each category
+      const calculateCategoryScore = (places: any[], requiredCount: number) => {
+        if (places.length === 0) return { score: 0, penalty: -20 }; // No services = major penalty
+        
+        let categoryScore = 0;
+        let distancePenalty = 0;
+        
+        // Count adequacy scoring
+        if (places.length >= requiredCount) {
+          categoryScore = 100; // Full marks for adequate count
+        } else if (places.length >= Math.ceil(requiredCount * 0.6)) {
+          categoryScore = 70; // Partial adequacy
+        } else {
+          categoryScore = 40; // Insufficient count
+        }
+        
+        // Distance-based penalties/bonuses
+        places.slice(0, requiredCount).forEach(place => {
+          const distance = result.distances[place.name];
+          if (distance) {
+            const distanceKm = distance.distance.value / 1000;
+            if (distanceKm <= 1) {
+              distancePenalty += 10; // Bonus for very close
+            } else if (distanceKm <= 3) {
+              distancePenalty += 5; // Bonus for close
+            } else if (distanceKm <= 5) {
+              distancePenalty += 0; // Neutral
+            } else if (distanceKm <= 10) {
+              distancePenalty -= 10; // Penalty for far
+            } else {
+              distancePenalty -= 20; // Major penalty for very far
+            }
+          }
+        });
+        
+        const finalScore = Math.max(0, Math.min(100, categoryScore + distancePenalty));
+        const penalty = finalScore < 50 ? -15 : finalScore < 70 ? -8 : 0;
+        
+        return { score: finalScore, penalty };
+      };
+      
+      // Calculate infrastructure adequacy scores
+      const adequacyScores = {
+        healthcare: calculateCategoryScore(essentialServices.healthcare, 3), // Need 3+ healthcare
+        education: calculateCategoryScore(essentialServices.education, 2), // Need 2+ education
+        transport: calculateCategoryScore(essentialServices.transport, 2), // Need 2+ transport
+        financial: calculateCategoryScore(essentialServices.financial, 2), // Need 2+ financial
+        daily_needs: calculateCategoryScore(essentialServices.daily_needs, 3) // Need 3+ daily needs
+      };
+      
+      // Calculate overall infrastructure adequacy
+      const avgAdequacyScore = Object.values(adequacyScores).reduce((sum, cat) => sum + cat.score, 0) / 5;
+      const totalPenalty = Object.values(adequacyScores).reduce((sum, cat) => sum + cat.penalty, 0);
+      
+      // Infrastructure adequacy multiplier for investment viability
+      let infrastructureAdequacyMultiplier = 1.0;
+      if (avgAdequacyScore >= 80) {
+        infrastructureAdequacyMultiplier = 1.15; // Excellent infrastructure
+      } else if (avgAdequacyScore >= 60) {
+        infrastructureAdequacyMultiplier = 1.05; // Good infrastructure
+      } else if (avgAdequacyScore >= 40) {
+        infrastructureAdequacyMultiplier = 0.90; // Adequate infrastructure
+      } else if (avgAdequacyScore >= 20) {
+        infrastructureAdequacyMultiplier = 0.75; // Poor infrastructure
+      } else {
+        infrastructureAdequacyMultiplier = 0.60; // Very poor infrastructure
+      }
+      
+      console.log(`INFRASTRUCTURE ADEQUACY ANALYSIS:
+        Healthcare: ${essentialServices.healthcare.length} facilities (score: ${adequacyScores.healthcare.score}, penalty: ${adequacyScores.healthcare.penalty})
+        Education: ${essentialServices.education.length} facilities (score: ${adequacyScores.education.score}, penalty: ${adequacyScores.education.penalty})
+        Transport: ${essentialServices.transport.length} facilities (score: ${adequacyScores.transport.score}, penalty: ${adequacyScores.transport.penalty})
+        Financial: ${essentialServices.financial.length} facilities (score: ${adequacyScores.financial.score}, penalty: ${adequacyScores.financial.penalty})
+        Daily Needs: ${essentialServices.daily_needs.length} facilities (score: ${adequacyScores.daily_needs.score}, penalty: ${adequacyScores.daily_needs.penalty})
+        Average Adequacy Score: ${avgAdequacyScore.toFixed(1)}
+        Total Penalty: ${totalPenalty}
+        Infrastructure Multiplier: ${infrastructureAdequacyMultiplier.toFixed(2)}`);
+      
+      // CRITICAL: LOCATION SCORE DEPENDENT CAPS WITH INFRASTRUCTURE ADEQUACY
+      // Investment viability MUST be capped based on location score quality AND infrastructure adequacy
       let locationScoreCap = 100;
       
       if (result.locationScore < 1.0) {
@@ -1671,21 +1771,34 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       }
       // Outstanding infrastructure (4.0+) can reach 100%
       
-      // Calculate base investment viability with reduced multiplier impact
-      const preMultiplierScore = baseViability + (viabilityBonus * 0.5) + (aiViabilityBonus * 0.5) + (priorityScoreBonus * 0.3);
-      const preliminaryViability = preMultiplierScore * Math.min(1.2, viabilityMultiplier) * Math.min(1.3, tierViabilityMultiplier);
+      // Apply infrastructure adequacy penalty to caps
+      if (avgAdequacyScore < 20) {
+        locationScoreCap = Math.min(locationScoreCap, 30); // Very poor infrastructure - further cap reduction
+      } else if (avgAdequacyScore < 40) {
+        locationScoreCap = Math.min(locationScoreCap, locationScoreCap * 0.85); // Poor infrastructure - 15% cap reduction
+      } else if (avgAdequacyScore < 60) {
+        locationScoreCap = Math.min(locationScoreCap, locationScoreCap * 0.95); // Adequate infrastructure - 5% cap reduction
+      }
       
-      // Apply strict location score cap
+      // Calculate base investment viability with infrastructure adequacy impact
+      const preMultiplierScore = baseViability + (viabilityBonus * 0.5) + (aiViabilityBonus * 0.5) + (priorityScoreBonus * 0.3) + totalPenalty;
+      const preliminaryViability = preMultiplierScore * Math.min(1.2, viabilityMultiplier) * Math.min(1.3, tierViabilityMultiplier) * infrastructureAdequacyMultiplier;
+      
+      // Apply strict location score and infrastructure adequacy caps
       const finalViability = Math.min(locationScoreCap, preliminaryViability);
       
-      // Enhanced debug logging
+      // Enhanced debug logging with infrastructure adequacy
       console.log(`INVESTMENT VIABILITY CALCULATION DEBUG:
         Location Score: ${result.locationScore.toFixed(2)}
-        Location Score Cap: ${locationScoreCap}%
+        Base Location Score Cap: ${result.locationScore < 1.0 ? 20 : result.locationScore < 1.5 ? 35 : result.locationScore < 2.0 ? 50 : result.locationScore < 2.5 ? 65 : result.locationScore < 3.0 ? 75 : result.locationScore < 3.5 ? 85 : result.locationScore < 4.0 ? 95 : 100}%
+        Infrastructure Adequacy Score: ${avgAdequacyScore.toFixed(1)}
+        Infrastructure Multiplier: ${infrastructureAdequacyMultiplier.toFixed(2)}
+        Final Location Score Cap: ${locationScoreCap}%
         Base Viability: ${baseViability.toFixed(1)}
         Viability Bonus (reduced): ${(viabilityBonus * 0.5).toFixed(1)}
         AI Viability Bonus (reduced): ${(aiViabilityBonus * 0.5).toFixed(1)}
         Priority Score Bonus (reduced): ${(priorityScoreBonus * 0.3).toFixed(1)}
+        Infrastructure Penalty: ${totalPenalty.toFixed(1)}
         Pre-Multiplier Total: ${preMultiplierScore.toFixed(1)}
         Viability Multiplier (capped): ${Math.min(1.2, viabilityMultiplier).toFixed(2)}
         Tier Multiplier (capped): ${Math.min(1.3, tierViabilityMultiplier).toFixed(2)}
