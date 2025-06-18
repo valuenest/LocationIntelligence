@@ -1287,8 +1287,12 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // Apply all multipliers and constraints with AI intelligence
       const rawLocationScore = baseInfrastructureScore * economicMultiplier * densityMultiplier * distanceQualityFactor * aiLocationMultiplier * aiPotentialMultiplier;
 
-      // Enhanced scoring with AI baseline adjustment (metropolitan areas get higher baseline)
-      result.locationScore = Math.max(1.0, Math.min(5.0, rawLocationScore * 1.8 + aiBaselineBonus + 0.5));
+      // PRIORITY SCORE ENHANCEMENT FOR LOCATION SCORING
+      // ===============================================
+      const priorityLocationBonus = Math.min(1.0, aiIntelligence.priorityScore / 100); // Max 1.0 bonus
+      
+      // Enhanced scoring with AI baseline and priority score adjustment
+      result.locationScore = Math.max(1.0, Math.min(5.0, rawLocationScore * 1.8 + aiBaselineBonus + priorityLocationBonus + 0.5));
 
       // SOPHISTICATED INVESTMENT VIABILITY ANALYSIS
       // =============================================
@@ -1364,8 +1368,8 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // Metropolitan status multiplier
       if (isMetropolitan) viabilityMultiplier += 0.25;
 
-      // Calculate final investment viability with AI enhancement (30-95% range)
-      const finalViability = (baseViability + viabilityBonus + aiViabilityBonus) * viabilityMultiplier;
+      // Calculate final investment viability with AI and priority score enhancement (30-95% range)
+      const finalViability = (baseViability + viabilityBonus + aiViabilityBonus + priorityScoreBonus) * viabilityMultiplier;
       result.investmentViability = Math.min(95, Math.max(30, Math.round(finalViability)));
 
       // 5. BUSINESS GROWTH ANALYSIS (More Conservative)
@@ -1380,8 +1384,21 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
 
       const totalBusinessGrowthScore = Object.values(businessGrowthFactors).reduce((sum, score) => sum + score, 0);
 
-      // Business growth calculation (more realistic ranges)
+      // Business growth calculation with area classification bonuses
       let businessGrowthBase = (totalBusinessGrowthScore / 75) * 12 - 3; // Range: -3% to 9%
+
+      // AREA CLASSIFICATION BONUSES FOR BUSINESS GROWTH
+      // ===============================================
+      const areaClassification = aiIntelligence.areaClassification.toLowerCase();
+      if (areaClassification.includes('metro') || areaClassification.includes('metropolitan')) {
+        businessGrowthBase += 3.0; // Metro areas get 3% bonus
+      } else if (areaClassification.includes('it park') || areaClassification.includes('tech hub') || areaClassification.includes('sez')) {
+        businessGrowthBase += 4.0; // IT/Tech zones get 4% bonus
+      } else if (areaClassification.includes('smart city') || areaClassification.includes('planned township')) {
+        businessGrowthBase += 2.5; // Smart cities get 2.5% bonus
+      } else if (areaClassification.includes('industrial estate')) {
+        businessGrowthBase += 2.0; // Industrial areas get 2% bonus
+      }
 
       // Apply market condition modifiers
       if (result.investmentViability < 30) businessGrowthBase -= 2;
