@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import LocationInput from "@/components/LocationInput";
-import PropertyFormCompact from "../components/PropertyFormCompact";
-import PricingPlans from "@/components/PricingPlans";
-import SampleAnalysis from "@/components/SampleAnalysis";
+import { PropertyFormCompact } from "../components/PropertyFormCompact";
+import { SampleAnalysis } from "../components/SampleAnalysis";
+import { PricingPlans } from "../components/PricingPlans";
+import { SEOContent } from "../components/SEOContent";
 import PaymentModal from "@/components/PaymentModal";
 import AnalysisLoadingModal from "@/components/AnalysisLoadingModal";
 import UsageLimitModal from "@/components/UsageLimitModal";
@@ -74,13 +75,13 @@ export default function Home() {
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         const validation = result.validation;
-        
+
         console.log('Validation result:', validation);
         console.log('Should show popup:', !validation.isValid || validation.riskLevel === 'high' || validation.issues.length > 0);
-        
+
         // Always show validation popup if there are issues
         if (!validation.isValid || validation.issues.length > 0 || validation.riskLevel === 'high') {
           console.log('Showing validation popup');
@@ -107,13 +108,13 @@ export default function Home() {
 
   const proceedWithAnalysis = (data: PropertyFormData) => {
     setPropertyData(data);
-    
+
     // Check if user can use free analysis or needs to pay
     if (!canUseFree) {
       setUsageLimitModalOpen(true);
       return;
     }
-    
+
     // Always prompt user to select plan type first using pricing modal
     setPricingModalOpen(true);
   };
@@ -123,7 +124,7 @@ export default function Home() {
       alert('Please select a location first');
       return;
     }
-    
+
     console.log('Form submitted, starting validation for:', selectedLocation.address);
     // Perform smart validation before proceeding
     await performValidation(data);
@@ -203,35 +204,45 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Prominent Header Section */}
+      {/* SEO Optimized Header Section */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-4">
               Value<span className="text-[#FF5A5F]">Nest</span> AI
             </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Smart Real Estate Location Intelligence Tool
+            <h2 className="text-xl lg:text-2xl text-gray-600 max-w-4xl mx-auto mb-4">
+              #1 AI-Powered Real Estate Location Intelligence & Property Investment Analysis Platform
+            </h2>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-6">
+              Revolutionary artificial intelligence technology for real estate investment decisions. Get instant property analysis, crime rate assessment, growth predictions, and market insights to make smarter real estate investments.
             </p>
-            <div className="mt-6 flex justify-center space-x-8 text-sm text-gray-500">
+            <div className="mt-6 flex flex-wrap justify-center gap-4 text-sm text-gray-500">
               <div className="flex items-center">
                 <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                AI-Powered Analysis
+                AI Real Estate Analytics
               </div>
               <div className="flex items-center">
                 <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Crime Rate & Safety Assessment
+                Property Investment Intelligence
               </div>
               <div className="flex items-center">
                 <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Investment Growth Predictions
+                Crime Rate & Safety Analysis
               </div>
+              <div className="flex items-center">
+                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Market Growth Predictions
+              </div>
+              <div className="flex items-center"></div>
             </div>
           </div>
         </div>
@@ -262,7 +273,7 @@ export default function Home() {
                   <LocationInput onLocationSelect={handleLocationSelect} selectedLocation={selectedLocation} />
                 </div>
               </div>
-              
+
               {/* Property Details Form */}
               <div>
                 <h3 className="text-3xl font-bold text-gray-900 mb-8 text-center">
@@ -290,18 +301,19 @@ export default function Home() {
         </section>
       )}
 
-      {/* Pricing Plans */}
-      <div id="pricing-plans">
-        <PricingPlans 
-          onPlanSelect={handlePlanSelect} 
-          canUseFree={canUseFree}
-          freeUsageCount={freeUsageCount}
-          isFormValid={!!selectedLocation && !!propertyData}
-        />
-      </div>
-
       {/* Sample Analysis */}
       <SampleAnalysis />
+
+      {/* SEO Optimized Content */}
+      <SEOContent />
+
+      {/* Pricing Plans */}
+      <PricingPlans
+        onPlanSelect={handlePlanSelect}
+        canUseFree={canUseFree}
+        freeUsageCount={freeUsageCount}
+        isFormValid={!!selectedLocation && !!propertyData}
+      />
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">

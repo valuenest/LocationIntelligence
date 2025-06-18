@@ -128,6 +128,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(sanitizeInput);
   app.use(validateClientIP);
 
+  // SEO Sitemap endpoint
+  app.get("/sitemap.xml", (req: Request, res: Response) => {
+    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://valuenest-ai.replit.app/</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://valuenest-ai.replit.app/analysis</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://valuenest-ai.replit.app/pricing</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>`;
+    
+    res.set('Content-Type', 'text/xml');
+    res.send(sitemap);
+  });
+
+  // Robots.txt endpoint
+  app.get("/robots.txt", (req: Request, res: Response) => {
+    const robots = `User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+
+Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
+    
+    res.set('Content-Type', 'text/plain');
+    res.send(robots);
+  });
+
   // Google Maps configuration endpoint
   app.get("/api/maps-config", (req: Request, res: Response) => {
     res.json({ 
