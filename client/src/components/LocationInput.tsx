@@ -273,7 +273,6 @@ export default function LocationInput({ onLocationSelect, selectedLocation }: Lo
     <div className="space-y-6">
       {/* Instruction Text */}
       <div className="text-center mb-6">
-        <h3 className="text-2xl font-semibold text-gray-900 mb-2">Select Property Location</h3>
         <p className="text-gray-600">Click on the map to pin your location or search for an address below</p>
       </div>
 
