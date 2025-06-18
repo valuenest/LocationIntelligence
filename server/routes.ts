@@ -846,26 +846,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Classification Debug: Places=${totalPlaces}, Infrastructure=${totalInfrastructureForClassification}, RealMetro=${realMetroIndicators.length}, Commercial=${commercialIndicators.length}, RuralAddress=${isRuralByAddress}`);
       
+      // Known tech hubs override other classifications
+      const isTechHub = addressLower.includes('hsr') || addressLower.includes('electronic city') || 
+                       addressLower.includes('whitefield') || addressLower.includes('koramangala') ||
+                       addressLower.includes('indiranagar') || addressLower.includes('marathahalli') ||
+                       addressLower.includes('sarjapur') || addressLower.includes('bellandur');
+      
       // If address explicitly mentions rural/village, cap at village level
       if (isRuralByAddress) {
         areaType = 'village';
         maxViability = 35;
       }
-      // Very strict metropolitan classification
-      else if (totalPlaces >= 20 && totalInfrastructureForClassification >= 30 && 
-          realMetroIndicators.length >= 4 && commercialIndicators.length >= 10) {
+      // Known tech hubs get metropolitan status
+      else if (isTechHub) {
+        areaType = 'metropolitan';
+        maxViability = 95;
+      }
+      // Metropolitan classification based on infrastructure
+      else if (totalPlaces >= 15 && totalInfrastructureForClassification >= 20 && 
+          realMetroIndicators.length >= 2 && commercialIndicators.length >= 5) {
         areaType = 'metropolitan';
         maxViability = 95;
       } 
-      // Strict city classification
-      else if (totalPlaces >= 18 && totalInfrastructureForClassification >= 25 && 
-               realMetroIndicators.length >= 3 && commercialIndicators.length >= 8) {
+      // City classification
+      else if (totalPlaces >= 12 && totalInfrastructureForClassification >= 15 && 
+               commercialIndicators.length >= 3) {
         areaType = 'city';
         maxViability = 70;
       } 
       // Town classification
-      else if (totalPlaces >= 15 && totalInfrastructureForClassification >= 18 && 
-               commercialIndicators.length >= 6) {
+      else if (totalPlaces >= 8 && totalInfrastructureForClassification >= 10 && 
+               commercialIndicators.length >= 2) {
         areaType = 'town';
         maxViability = 50;
       }
