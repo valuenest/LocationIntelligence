@@ -812,15 +812,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Street View URL for all tiers
       result.streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${location.lat},${location.lng}&heading=0&pitch=0&key=${process.env.GOOGLE_MAPS_API_KEY}`;
 
-      // Enhanced investment viability calculation for premium areas
-      const scoreAsPercentage = Math.min((result.locationScore / 5) * 100, 120); // Allow higher base scores
+      // Area classification based on infrastructure and urban indicators
+      const totalPlaces = result.nearbyPlaces.length;
+      const totalInfrastructureForClassification = infrastructureScores.healthcare.total + infrastructureScores.education.total + 
+                                  infrastructureScores.transport.total + infrastructureScores.commercial.total;
       
-      // Premium area multipliers
+      let areaType = 'village'; // Default classification
+      let maxViability = 35; // Village max 35%
+      
+      // Metropolitan area indicators
+      const metroIndicators = result.nearbyPlaces.filter(place => {
+        const name = place.name.toLowerCase();
+        const vicinity = place.vicinity?.toLowerCase() || '';
+        return name.includes('metro') || name.includes('airport') || name.includes('mall') ||
+               name.includes('hospital') || name.includes('university') || 
+               vicinity.includes('metro') || vicinity.includes('airport');
+      });
+      
+      // City classification logic
+      if (totalPlaces >= 15 && totalInfrastructureForClassification >= 15 && metroIndicators.length >= 3) {
+        areaType = 'metropolitan';
+        maxViability = 95; // Metro areas can reach 95%
+      } else if (totalPlaces >= 10 && totalInfrastructureForClassification >= 8) {
+        areaType = 'city';
+        maxViability = 70; // Cities max 70%
+      } else if (totalPlaces >= 6 && totalInfrastructureForClassification >= 4) {
+        areaType = 'town';
+        maxViability = 50; // Towns max 50%
+      }
+      
+      // Enhanced investment viability calculation with area-based caps
+      const scoreAsPercentage = Math.min((result.locationScore / 5) * 100, 120);
+      
+      // Premium area multipliers (only for cities and metros)
       let viabilityMultiplier = 1.0;
-      if (premiumAreaBonus >= 1.0) viabilityMultiplier = 1.4; // Luxury areas get 40% boost
-      else if (premiumAreaBonus >= 0.5) viabilityMultiplier = 1.2; // Premium areas get 20% boost
+      if (areaType !== 'village') {
+        if (premiumAreaBonus >= 1.0) viabilityMultiplier = 1.4; // Luxury areas get 40% boost
+        else if (premiumAreaBonus >= 0.5) viabilityMultiplier = 1.2; // Premium areas get 20% boost
+      }
       
-      result.investmentViability = Math.min(scoreAsPercentage * viabilityMultiplier, 95); // Cap at 95%
+      result.investmentViability = Math.min(scoreAsPercentage * viabilityMultiplier, maxViability);
       
       // Enhanced business growth rate based on infrastructure, amenities & population indicators
       const businessGrowthFactors = {
@@ -886,17 +917,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Investment recommendation text
-      if (result.investmentViability >= 80) {
-        result.investmentRecommendation = "Excellent Investment Opportunity - High Growth Potential";
-      } else if (result.investmentViability >= 60) {
-        result.investmentRecommendation = "Good Investment Potential - Moderate Growth Expected";
-      } else if (result.investmentViability >= 40) {
-        result.investmentRecommendation = "Fair Investment Opportunity - Stable Growth";
-      } else if (result.investmentViability >= 20) {
-        result.investmentRecommendation = "Limited Investment Potential - High Risk";
-      } else {
-        result.investmentRecommendation = "Poor Investment Location - Not Recommended";
+      // Investment recommendation text based on area type and viability
+      if (areaType === 'metropolitan') {
+        if (result.investmentViability >= 80) {
+          result.investmentRecommendation = "Excellent Metropolitan Investment - Premium Location";
+        } else if (result.investmentViability >= 60) {
+          result.investmentRecommendation = "Good Metropolitan Investment - Strong Growth Potential";
+        } else if (result.investmentViability >= 40) {
+          result.investmentRecommendation = "Fair Metropolitan Investment - Moderate Growth";
+        } else {
+          result.investmentRecommendation = "Limited Metropolitan Investment - Consider Alternatives";
+        }
+      } else if (areaType === 'city') {
+        if (result.investmentViability >= 50) {
+          result.investmentRecommendation = "Good City Investment - Stable Urban Growth";
+        } else if (result.investmentViability >= 30) {
+          result.investmentRecommendation = "Fair City Investment - Moderate Potential";
+        } else {
+          result.investmentRecommendation = "Limited City Investment - High Risk";
+        }
+      } else if (areaType === 'town') {
+        if (result.investmentViability >= 35) {
+          result.investmentRecommendation = "Fair Town Investment - Basic Infrastructure Available";
+        } else if (result.investmentViability >= 20) {
+          result.investmentRecommendation = "Limited Town Investment - Minimal Growth Expected";
+        } else {
+          result.investmentRecommendation = "Poor Town Investment - Not Recommended";
+        }
+      } else { // village
+        if (result.investmentViability >= 25) {
+          result.investmentRecommendation = "Limited Village Investment - Rural Development Potential";
+        } else if (result.investmentViability >= 15) {
+          result.investmentRecommendation = "Poor Village Investment - Minimal Infrastructure";
+        } else {
+          result.investmentRecommendation = "Not Suitable for Investment - Insufficient Infrastructure";
+        }
       }
 
     } catch (error) {
