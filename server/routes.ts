@@ -1958,29 +1958,34 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       investmentViability += locationBonus;
       
       // 5. PREMIUM AREA VERIFICATION & 10% INVESTMENT BONUS
-      // Verify with Gemini AI if location qualifies for premium area bonus
+      // Only apply bonus if investment viability is below 90%
       let premiumAreaBonus = 0;
-      try {
-        console.log(`PREMIUM AREA VERIFICATION: Checking if ${areaType} (${locationType}) qualifies for 10% investment bonus...`);
-        
-        const premiumVerification = await validatePremiumAreaType(location, areaType, locationType);
-        
-        if (premiumVerification.isPremiumArea && premiumVerification.confidence >= 70) {
-          premiumAreaBonus = 10; // 10% bonus for verified premium areas
-          investmentViability += premiumAreaBonus;
+      
+      if (investmentViability < 90) {
+        try {
+          console.log(`PREMIUM AREA VERIFICATION: Current viability ${investmentViability.toFixed(1)}% < 90%, checking if ${areaType} (${locationType}) qualifies for 10% investment bonus...`);
           
-          console.log(`PREMIUM AREA BONUS APPLIED: +${premiumAreaBonus}% for verified ${premiumVerification.verifiedType}`);
-          console.log(`Verification reasoning: ${premiumVerification.reasoning}`);
-          console.log(`Confidence: ${premiumVerification.confidence}%`);
-        } else {
-          console.log(`PREMIUM AREA VERIFICATION FAILED: Not qualified for premium bonus`);
-          console.log(`Verified type: ${premiumVerification.verifiedType}`);
-          console.log(`Reasoning: ${premiumVerification.reasoning}`);
-          console.log(`Confidence: ${premiumVerification.confidence}%`);
+          const premiumVerification = await validatePremiumAreaType(location, areaType, locationType);
+          
+          if (premiumVerification.isPremiumArea && premiumVerification.confidence >= 70) {
+            premiumAreaBonus = 10; // 10% bonus for verified premium areas
+            investmentViability += premiumAreaBonus;
+            
+            console.log(`PREMIUM AREA BONUS APPLIED: +${premiumAreaBonus}% for verified ${premiumVerification.verifiedType}`);
+            console.log(`Verification reasoning: ${premiumVerification.reasoning}`);
+            console.log(`Confidence: ${premiumVerification.confidence}%`);
+          } else {
+            console.log(`PREMIUM AREA VERIFICATION FAILED: Not qualified for premium bonus`);
+            console.log(`Verified type: ${premiumVerification.verifiedType}`);
+            console.log(`Reasoning: ${premiumVerification.reasoning}`);
+            console.log(`Confidence: ${premiumVerification.confidence}%`);
+          }
+        } catch (error) {
+          console.error('Error during premium area verification:', error);
+          console.log('Premium area bonus not applied due to verification error');
         }
-      } catch (error) {
-        console.error('Error during premium area verification:', error);
-        console.log('Premium area bonus not applied due to verification error');
+      } else {
+        console.log(`PREMIUM AREA BONUS SKIPPED: Investment viability ${investmentViability.toFixed(1)}% >= 90%, no bonus needed`);
       }
       
       // 6. QUALITY/REVIEW PENALTY
