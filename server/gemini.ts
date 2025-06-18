@@ -193,6 +193,7 @@ Respond in this exact JSON format:
       intelligence.investmentPotential = Math.max(0, Math.min(100, intelligence.investmentPotential));
       intelligence.confidence = Math.max(0, Math.min(100, intelligence.confidence));
 
+      const cacheKey = `location_${lat}_${lng}`;
       locationCache.set(cacheKey, intelligence); // Cache the result
       return intelligence;
     } catch (parseError) {
@@ -200,12 +201,14 @@ Respond in this exact JSON format:
 
       // Fallback based on address keywords
       const fallbackIntelligence = generateFallbackIntelligence(address);
+      const cacheKey = `location_${lat}_${lng}`;
       locationCache.set(cacheKey, fallbackIntelligence); // Cache the fallback result
       return fallbackIntelligence;
     }
   } catch (error) {
     console.error('Gemini location intelligence error:', error);
     const fallbackIntelligence = generateFallbackIntelligence(address);
+    const cacheKey = `location_${lat}_${lng}`;
     locationCache.set(cacheKey, fallbackIntelligence); // Cache the fallback result
     return fallbackIntelligence;
   }
@@ -214,41 +217,55 @@ Respond in this exact JSON format:
 function generateFallbackIntelligence(address: string): LocationIntelligence {
   const addressLower = address.toLowerCase();
 
-  // Basic classification based on keywords
+  // KODAGU DISTRICT DETECTION - Critical for tourism areas
+  const isKodaguDistrict = addressLower.includes('kodagu') || 
+                          addressLower.includes('coorg') ||
+                          addressLower.includes('halugunda') ||
+                          addressLower.includes('bittangala') ||
+                          addressLower.includes('virajpet') ||
+                          addressLower.includes('madikeri') ||
+                          addressLower.includes('kushalnagar') ||
+                          addressLower.includes('pollibetta');
+
+  // Enhanced classification based on keywords
   let locationType: LocationIntelligence['locationType'] = 'village';
+  let areaClassification = 'Rural village';
+  let priorityScore = 35;
   let investmentPotential = 35;
   let safetyScore = 6;
 
-  if (addressLower.includes('hsr') || addressLower.includes('electronic city') || 
+  // KODAGU DISTRICT SPECIAL HANDLING - Takes precedence
+  if (isKodaguDistrict) {
+    locationType = 'town';
+    areaClassification = 'Tourism hub';
+    priorityScore = 87; // High priority for Kodagu tourism areas
+    investmentPotential = 72; // Good investment potential
+    safetyScore = 8; // Generally safe hill district
+  } else if (addressLower.includes('hsr') || addressLower.includes('electronic city') || 
       addressLower.includes('whitefield') || addressLower.includes('koramangala')) {
     locationType = 'metropolitan';
+    areaClassification = 'Metro city';
+    priorityScore = 95;
     investmentPotential = 85;
     safetyScore = 8;
   } else if (addressLower.includes('bengaluru') || addressLower.includes('mumbai') || 
              addressLower.includes('delhi') || addressLower.includes('chennai')) {
     locationType = 'city';
+    areaClassification = 'City';
+    priorityScore = 75;
     investmentPotential = 65;
     safetyScore = 7;
   } else if (addressLower.includes('village') || addressLower.includes('rural') || 
-             addressLower.includes('road') && !addressLower.includes('main')) {
+             (addressLower.includes('road') && !addressLower.includes('main'))) {
     locationType = 'village';
-    investmentPotential = 30;
-    safetyScore = 7;
-  }
-
-  // Determine area classification and priority score based on location type
-  let areaClassification = 'Urban locality';
-  let priorityScore = 50;
-  
-  if (locationType === 'metropolitan') {
-    areaClassification = 'Metro city';
-    priorityScore = 95;
-  } else if (locationType === 'city') {
-    areaClassification = 'City';
-    priorityScore = 75;
-  } else if (locationType === 'village') {
     areaClassification = 'Village';
     priorityScore = 30;
+    investmentPotential = 30;
+    safetyScore = 7;
+  } else {
+    // Default urban locality
+    areaClassification = 'Urban locality';
+    priorityScore = 50;
   }
 
   return {
