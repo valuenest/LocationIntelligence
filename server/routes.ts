@@ -948,13 +948,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const concerns = locationIntelligence.primaryConcerns;
         const strengths = locationIntelligence.keyStrengths;
 
-        if (viability >= 85) {
+        if (viability && viability >= 85) {
           return `Excellent ${areaType.charAt(0).toUpperCase() + areaType.slice(1)} Investment - Premium Location (Safety: ${safety}/10, Crime: ${crimeRate})`;
-        } else if (viability >= 70) {
+        } else if (viability && viability >= 70) {
           return `Good ${areaType.charAt(0).toUpperCase() + areaType.slice(1)} Investment - Stable Growth (Safety: ${safety}/10, Crime: ${crimeRate})`;
-        } else if (viability >= 50) {
+        } else if (viability && viability >= 50) {
           return `Moderate ${areaType.charAt(0).toUpperCase() + areaType.slice(1)} Investment - Consider Risks (Safety: ${safety}/10, Crime: ${crimeRate})`;
-        } else if (viability >= 35) {
+        } else if (viability && viability >= 35) {
           return `Limited ${areaType.charAt(0).toUpperCase() + areaType.slice(1)} Investment - High Risk Area (Safety: ${safety}/10, Crime: ${crimeRate})`;
         } else {
           return `Poor Investment Potential - Avoid This Location (Safety: ${safety}/10, Crime: ${crimeRate})`;
