@@ -260,7 +260,17 @@ Format as JSON array:
     const text = response.text();
 
     try {
-      const cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      // Extract JSON from response text more robustly
+      let cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      
+      // Find the first [ and last ] to extract just the JSON array
+      const startIdx = cleanedText.indexOf('[');
+      const endIdx = cleanedText.lastIndexOf(']');
+      
+      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+        cleanedText = cleanedText.substring(startIdx, endIdx + 1);
+      }
+      
       const locations = JSON.parse(cleanedText);
       return locations;
     } catch (parseError) {
@@ -329,7 +339,17 @@ Format as JSON array:
     const text = response.text();
 
     try {
-      const cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      // Extract JSON from response text more robustly
+      let cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      
+      // Find the first [ and last ] to extract just the JSON array
+      const startIdx = cleanedText.indexOf('[');
+      const endIdx = cleanedText.lastIndexOf(']');
+      
+      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+        cleanedText = cleanedText.substring(startIdx, endIdx + 1);
+      }
+      
       const attractions = JSON.parse(cleanedText);
       return attractions;
     } catch (parseError) {

@@ -1483,6 +1483,11 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         result.touristAttractions = [];
       }
 
+      // Determine area type based on infrastructure and connectivity
+      const areaType = infrastructureScores.commercial.total >= 5 && infrastructureScores.transport.total >= 3 ? 'metropolitan' :
+                      infrastructureScores.commercial.total >= 3 && infrastructureScores.transport.total >= 2 ? 'urban' :
+                      infrastructureScores.commercial.total >= 1 && infrastructureScores.transport.total >= 1 ? 'suburban' : 'rural';
+
       // Investment recommendation text based on area type and viability
       if (areaType === 'metropolitan') {
         if (result.investmentViability >= 80) {
