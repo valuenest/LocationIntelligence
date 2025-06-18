@@ -44,7 +44,8 @@ export default function ValidationModal({
     }
   };
 
-  const canProceed = validation.isValid || validation.riskLevel !== 'high';
+  // Block uninhabitable locations completely - check if location can proceed
+  const canProceed = validation.canProceed !== false && (validation.isValid || validation.riskLevel !== 'high');
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -67,9 +68,11 @@ export default function ValidationModal({
                 <AlertTriangle className="h-6 w-6 text-red-500 mt-0.5 flex-shrink-0" />
                 <div>
                   <h4 className="font-semibold text-red-800 mb-2">
-                    {validation.issues.some(issue => issue.includes('uninhabitable') || issue.includes('remote area')) 
-                      ? 'Uninhabitable Location Detected' 
-                      : 'Location Not Suitable'}
+                    {validation.canProceed === false 
+                      ? '🚫 Uninhabitable Location - Analysis Blocked' 
+                      : validation.issues.some(issue => issue.includes('uninhabitable') || issue.includes('remote area')) 
+                        ? 'Uninhabitable Location Detected' 
+                        : 'Location Not Suitable'}
                   </h4>
                   <div className="space-y-2">
                     {validation.issues.map((issue, index) => (
@@ -81,9 +84,15 @@ export default function ValidationModal({
                       💡 <strong>Recommendation:</strong> Please select a location with basic infrastructure like schools, hospitals, shops, or transportation within a reasonable distance for accurate property analysis.
                     </p>
                   </div>
-                  <p className="text-sm text-red-600 mt-3 font-medium">
-                    Please select a different location for property analysis.
-                  </p>
+                  {validation.canProceed === false ? (
+                    <p className="text-sm text-red-800 mt-3 font-bold">
+                      ⛔ This location cannot be analyzed. Please select a different location.
+                    </p>
+                  ) : (
+                    <p className="text-sm text-red-600 mt-3 font-medium">
+                      Please select a different location for property analysis.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

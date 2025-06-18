@@ -330,11 +330,43 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         });
       }
 
-      // Perform analysis
+      // Perform analysis with safety check
       const location = typeof analysisRequest.location === 'string' 
         ? JSON.parse(analysisRequest.location) 
         : analysisRequest.location;
       const propertyDetails = analysisRequest.propertyDetails ? JSON.parse(analysisRequest.propertyDetails) : null;
+
+      // Safety check: Re-validate location before analysis
+      const safetyValidation = await performSmartValidation({ 
+        location, 
+        propertyData: {
+          propertyType: analysisRequest.propertyType,
+          amount: analysisRequest.amount,
+          ...propertyDetails
+        }
+      });
+
+      // Block analysis if location is uninhabitable
+      if (!safetyValidation.isValid && safetyValidation.riskLevel === 'high') {
+        const hasUninhabitableIssues = safetyValidation.issues.some(issue => 
+          issue.includes('uninhabitable') || 
+          issue.includes('water body') || 
+          issue.includes('restricted') ||
+          issue.includes('military') ||
+          issue.includes('government area') ||
+          issue.includes('protected area') ||
+          issue.includes('remote area') ||
+          issue.includes('desert') ||
+          issue.includes('no infrastructure')
+        );
+        
+        if (hasUninhabitableIssues) {
+          return res.status(400).json({ 
+            error: "Location is uninhabitable and cannot be analyzed",
+            validationIssues: safetyValidation.issues
+          });
+        }
+      }
 
       const result = await performAnalysis(
         location,
@@ -454,7 +486,34 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       }
 
       const validation = await performSmartValidation({ location, propertyData });
-      res.json(validation);
+      
+      // Block uninhabitable locations completely - no report generation allowed
+      if (!validation.isValid && validation.riskLevel === 'high') {
+        const hasUninhabitableIssues = validation.issues.some(issue => 
+          issue.includes('uninhabitable') || 
+          issue.includes('water body') || 
+          issue.includes('restricted') ||
+          issue.includes('military') ||
+          issue.includes('government area') ||
+          issue.includes('protected area') ||
+          issue.includes('remote area') ||
+          issue.includes('desert') ||
+          issue.includes('no infrastructure')
+        );
+        
+        if (hasUninhabitableIssues) {
+          return res.json({
+            ...validation,
+            canProceed: false, // Explicitly block proceeding
+            blockReason: "Location is uninhabitable and cannot be analyzed"
+          });
+        }
+      }
+      
+      res.json({
+        ...validation,
+        canProceed: true // Allow proceeding for habitable locations
+      });
     } catch (error) {
       console.error("Validation error:", error);
       res.status(500).json({ error: "Validation failed" });
@@ -477,7 +536,40 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       const { location, propertyData } = validationResult.data;
 
       const validation = await performSmartValidation({ location, propertyData });
-      res.json({ success: true, validation });
+      
+      // Block uninhabitable locations completely - no report generation allowed
+      if (!validation.isValid && validation.riskLevel === 'high') {
+        const hasUninhabitableIssues = validation.issues.some(issue => 
+          issue.includes('uninhabitable') || 
+          issue.includes('water body') || 
+          issue.includes('restricted') ||
+          issue.includes('military') ||
+          issue.includes('government area') ||
+          issue.includes('protected area') ||
+          issue.includes('remote area') ||
+          issue.includes('desert') ||
+          issue.includes('no infrastructure')
+        );
+        
+        if (hasUninhabitableIssues) {
+          return res.json({ 
+            success: true, 
+            validation: {
+              ...validation,
+              canProceed: false, // Explicitly block proceeding
+              blockReason: "Location is uninhabitable and cannot be analyzed"
+            }
+          });
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        validation: {
+          ...validation,
+          canProceed: true // Allow proceeding for habitable locations
+        }
+      });
     } catch (error) {
       console.error("Validation error:", error);
       res.json({ success: false, validation: null });
