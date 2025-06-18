@@ -1485,39 +1485,50 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
 
       result.growthPrediction = Math.max(-8, Math.min(12, finalGrowthPrediction));
 
-      // SOPHISTICATED INVESTMENT RECOMMENDATION ENGINE
+      // SOPHISTICATED INVESTMENT RECOMMENDATION ENGINE USING AI CLASSIFICATION
       const generateInvestmentRecommendation = () => {
         const viability = result.investmentViability;
         const locationScore = result.locationScore;
         const businessGrowth = result.businessGrowthRate;
         const safety = aiIntelligence.safetyScore;
-        const crimeRate = aiIntelligence.crimeRate;
-        const areaType = aiIntelligence.locationType || 'urban';
+        const areaClassification = aiIntelligence.areaClassification || 'Urban Areas';
+        const locationType = aiIntelligence.locationType || 'urban';
 
-        // Multi-factor assessment for more nuanced recommendations
-        const marketStrength = techIndicators.length >= 2 ? 'Tech Hub' : 
-                              financialIndicators.length >= 1 ? 'Business District' :
-                              isMetropolitan ? 'Metropolitan' : 'Developing';
+        // Use AI's area classification for proper categorization
+        let areaCategory = '';
+        if (areaClassification === 'Metro city' || locationType === 'metropolitan') {
+          areaCategory = 'Premium Metropolitan';
+        } else if (areaClassification.includes('Smart city') || areaClassification.includes('IT park')) {
+          areaCategory = 'Smart City Tech Hub';
+        } else if (areaClassification.includes('Industrial') || areaClassification.includes('SEZ')) {
+          areaCategory = 'Industrial Zone';
+        } else if (locationType === 'city') {
+          areaCategory = 'Urban City';
+        } else if (locationType === 'town') {
+          areaCategory = 'Town Development';
+        } else {
+          areaCategory = 'Rural Development';
+        }
 
         const infrastructureGrade = locationScore >= 4.0 ? 'A-Grade' :
                                    locationScore >= 3.0 ? 'B-Grade' :
                                    locationScore >= 2.0 ? 'C-Grade' : 'D-Grade';
 
-        // Sophisticated recommendation matrix
-        if (viability >= 80 && locationScore >= 3.5 && businessGrowth >= 3) {
-          return `Outstanding ${marketStrength} Investment - ${infrastructureGrade} Infrastructure (Safety: ${safety}/10, Growth: +${businessGrowth.toFixed(1)}%)`;
-        } else if (viability >= 70 && locationScore >= 3.0 && businessGrowth >= 1) {
-          return `Excellent ${areaType.charAt(0).toUpperCase() + areaType.slice(1)} Investment - Strong Fundamentals (Safety: ${safety}/10, ${infrastructureGrade})`;
-        } else if (viability >= 55 && locationScore >= 2.5) {
-          return `Good Investment Opportunity - ${infrastructureGrade} Area (Safety: ${safety}/10, Consider Market Timing)`;
-        } else if (viability >= 40 && locationScore >= 2.0) {
-          return `Moderate Investment - ${infrastructureGrade} Infrastructure (Safety: ${safety}/10, Higher Risk-Reward)`;
-        } else if (viability >= 25 && locationScore >= 1.5) {
-          return `Speculative Investment - ${infrastructureGrade} Area (Safety: ${safety}/10, High Risk Zone)`;
+        // Investment recommendation based on viability ranges
+        if (viability >= 85) {
+          return `Outstanding ${areaCategory} Investment - ${infrastructureGrade} Infrastructure`;
+        } else if (viability >= 70) {
+          return `Excellent ${areaCategory} Investment - Strong Growth Potential`;
+        } else if (viability >= 55) {
+          return `Good ${areaCategory} Investment - Moderate Risk`;
+        } else if (viability >= 40) {
+          return `Limited ${areaCategory} Investment - Higher Risk`;
+        } else if (viability >= 25) {
+          return `Speculative ${areaCategory} Investment - High Risk`;
         } else if (viability >= 15) {
-          return `Poor Investment Viability - Infrastructure Deficient (Safety: ${safety}/10, Avoid Investment)`;
+          return `Poor Investment Potential - Infrastructure Constraints`;
         } else {
-          return `Uninhabitable Location - 0% Investment Potential (No Infrastructure/Safety Data)`;
+          return `Uninhabitable Location - No Investment Viability`;
         }
       };
 

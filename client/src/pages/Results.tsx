@@ -895,49 +895,7 @@ Data fetching and rendering adjustments made to remove dependency on IP address 
                       </div>
                     </div>
 
-                    {/* Investment Projection */}
-                    <div className={`rounded-lg p-6 mb-6 ${
-                      analysisResult.investmentViability === 0 ? 'bg-red-50 border border-red-200' : 'bg-gray-50'
-                    }`}>
-                      <h4 className="font-semibold text-gray-900 mb-4">Investment Projection</h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-600">Current Investment</span>
-                          <span className="font-semibold text-lg">₹{analysis.amount.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-600">Projected Value (3 years)</span>
-                          <span className={`font-bold text-lg ${
-                            analysisResult.investmentViability === 0 ? 'text-red-600' : 
-                            (analysisResult.growthPrediction || 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            ₹{Math.round(analysis.amount * (1 + (analysisResult.growthPrediction || 0) / 100)).toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="border-t pt-2 mt-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-600">
-                              {analysisResult.investmentViability === 0 ? 'Expected Loss' : 
-                               (analysisResult.growthPrediction || 0) >= 0 ? 'Potential Gain' : 'Potential Loss'}
-                            </span>
-                            <span className={`font-bold text-xl ${
-                              analysisResult.investmentViability === 0 ? 'text-red-600' : 
-                              (analysisResult.growthPrediction || 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                              {(analysisResult.growthPrediction || 0) >= 0 ? '+' : ''}₹{Math.round(analysis.amount * ((analysisResult.growthPrediction || 0) / 100)).toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
-                        {analysisResult.investmentViability === 0 && (
-                          <div className="mt-4 p-3 bg-red-100 border border-red-300 rounded-lg">
-                            <p className="text-sm text-red-800 font-medium">
-                              ⚠️ High Risk: This location has no infrastructure, connectivity, or market activity. 
-                              Property values are likely to decline significantly due to lack of buyer interest and development potential.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+
 
                     {/* Market Insights */}
                     <div className="grid md:grid-cols-2 gap-4">
