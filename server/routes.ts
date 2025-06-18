@@ -803,13 +803,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (techIndicators.length >= 4) premiumAreaBonus += 0.8; // Tech hub bonus
       
       // Enhanced infrastructure scoring for premium urban recognition
-      result.locationScore = (
+      result.locationScore = Math.min(5.0, (
         healthcareScore * 0.20 +      // 20% - Healthcare infrastructure
         educationScore * 0.15 +       // 15% - Educational infrastructure  
         transportScore * 0.20 +       // 20% - Transport/Connectivity
         commercialScore * 0.30 +      // 30% - Commercial & lifestyle infrastructure (increased)
         finalConnectivityScore * 0.15      // 15% - Highway/Road connectivity
-      ) * 5 + proximityBonus + premiumAreaBonus; // Scale to 5-star + bonuses
+      ) * 5 + proximityBonus + premiumAreaBonus); // Scale to 5-star + bonuses, capped at 5.0
 
       // Street View URL for all tiers
       result.streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${location.lat},${location.lng}&heading=0&pitch=0&key=${process.env.GOOGLE_MAPS_API_KEY}`;
@@ -846,14 +846,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Classification Debug: Places=${totalPlaces}, Infrastructure=${totalInfrastructureForClassification}, RealMetro=${realMetroIndicators.length}, Commercial=${commercialIndicators.length}, RuralAddress=${isRuralByAddress}`);
       
+      // Enhanced rural detection with more keywords
+      const enhancedRuralDetection = addressLower.includes('village') || addressLower.includes('rural') || 
+                                    addressLower.includes('farm') || addressLower.includes('countryside') ||
+                                    addressLower.includes('taluk') || addressLower.includes('tehsil') ||
+                                    addressLower.includes('gram') || addressLower.includes('panchayat') ||
+                                    addressLower.includes('hobli') || addressLower.includes('revenue') ||
+                                    (addressLower.includes('road') && !addressLower.includes('main road') && 
+                                     !addressLower.includes('highway') && totalPlaces < 10);
+      
       // Known tech hubs override other classifications
       const isTechHub = addressLower.includes('hsr') || addressLower.includes('electronic city') || 
                        addressLower.includes('whitefield') || addressLower.includes('koramangala') ||
                        addressLower.includes('indiranagar') || addressLower.includes('marathahalli') ||
                        addressLower.includes('sarjapur') || addressLower.includes('bellandur');
       
-      // If address explicitly mentions rural/village, cap at village level
-      if (isRuralByAddress) {
+      // Enhanced rural classification - very strict criteria for higher tiers
+      if (enhancedRuralDetection || (totalPlaces < 12 && commercialIndicators.length < 3)) {
         areaType = 'village';
         maxViability = 35;
       }
@@ -862,21 +871,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         areaType = 'metropolitan';
         maxViability = 95;
       }
-      // Metropolitan classification based on infrastructure
-      else if (totalPlaces >= 15 && totalInfrastructureForClassification >= 20 && 
-          realMetroIndicators.length >= 2 && commercialIndicators.length >= 5) {
+      // Very strict metropolitan classification
+      else if (totalPlaces >= 18 && totalInfrastructureForClassification >= 25 && 
+          realMetroIndicators.length >= 3 && commercialIndicators.length >= 8) {
         areaType = 'metropolitan';
         maxViability = 95;
       } 
-      // City classification
-      else if (totalPlaces >= 12 && totalInfrastructureForClassification >= 15 && 
-               commercialIndicators.length >= 3) {
+      // Strict city classification
+      else if (totalPlaces >= 15 && totalInfrastructureForClassification >= 20 && 
+               commercialIndicators.length >= 6) {
         areaType = 'city';
         maxViability = 70;
       } 
       // Town classification
-      else if (totalPlaces >= 8 && totalInfrastructureForClassification >= 10 && 
-               commercialIndicators.length >= 2) {
+      else if (totalPlaces >= 12 && totalInfrastructureForClassification >= 15 && 
+               commercialIndicators.length >= 4) {
         areaType = 'town';
         maxViability = 50;
       }
