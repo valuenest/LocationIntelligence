@@ -1367,6 +1367,9 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // Remove artificial inflation for poor rural areas
       let finalLocationScore = rawLocationScore * 1.2; // Reduce multiplier from 1.8 to 1.2
       
+      // Add tourism infrastructure bonus for tourism hubs like Bittangala
+      finalLocationScore += tourismInfrastructureBonus;
+      
       // Only add bonuses for locations that have some basic infrastructure
       if (finalLocationScore > 0.8) {
         finalLocationScore += aiBaselineBonus * 0.5; // Reduce AI baseline bonus
