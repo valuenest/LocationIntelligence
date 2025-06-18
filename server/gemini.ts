@@ -624,6 +624,81 @@ Return JSON format:
   }
 }
 
+export async function validatePremiumAreaType(
+  location: { lat: number; lng: number; address: string },
+  areaClassification: string,
+  locationType: string
+): Promise<{ isPremiumArea: boolean; verifiedType: string; reasoning: string; confidence: number }> {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    
+    const prompt = `Verify if this location qualifies as a PREMIUM AREA TYPE for investment purposes: ${location.address} (${location.lat}, ${location.lng}).
+
+CURRENT CLASSIFICATION: ${areaClassification} (${locationType})
+
+PREMIUM AREA TYPES TO VERIFY:
+1. Urban Areas - Major cities with developed infrastructure
+2. Metropolitan Areas - Large metro cities with excellent connectivity
+3. Industrial/IT Zones - SEZ, Tech parks, Industrial estates
+4. Smart Cities - Government smart city initiatives, planned townships
+5. Coastal Areas - Port cities, coastal urban centers
+
+VERIFICATION CRITERIA:
+- Does the location truly qualify as one of these premium types?
+- Is there evidence of appropriate infrastructure and development?
+- Does it have the characteristics expected for that area type?
+- Cross-reference with known urban centers, IT hubs, smart cities list, etc.
+
+ANALYSIS REQUIREMENTS:
+- Be strict and accurate - only verify if genuinely qualifies
+- Provide specific evidence for verification
+- Consider actual development level, not just proximity
+- Check against official classifications when possible
+
+Return JSON format:
+{
+  "isPremiumArea": true/false,
+  "verifiedType": "Urban/Metropolitan/Industrial-IT/Smart City/Coastal/None",
+  "reasoning": "detailed explanation with evidence",
+  "confidence": 85
+}`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    
+    try {
+      let cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      
+      const startIdx = cleanedText.indexOf('{');
+      const endIdx = cleanedText.lastIndexOf('}');
+      
+      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+        cleanedText = cleanedText.substring(startIdx, endIdx + 1);
+      }
+      
+      const verificationData = JSON.parse(cleanedText);
+      return verificationData;
+    } catch (parseError) {
+      console.error('Failed to parse premium area verification:', parseError);
+      return {
+        isPremiumArea: false,
+        verifiedType: 'None',
+        reasoning: 'Failed to parse verification data',
+        confidence: 0
+      };
+    }
+  } catch (error) {
+    console.error('Error validating premium area type:', error);
+    return {
+      isPremiumArea: false,
+      verifiedType: 'None',
+      reasoning: 'Error occurred during area verification',
+      confidence: 0
+    };
+  }
+}
+
 export async function analyzeInfrastructureWithAI(
   location: { lat: number; lng: number; address: string },
   locationIntelligence?: LocationIntelligence

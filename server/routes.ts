@@ -1,7 +1,7 @@
 import { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateInvestmentRecommendations, findTopInvestmentLocations, analyzeLocationIntelligence, findNearbyTouristAttractions, analyzeInfrastructureWithAI, validateMajorTransportInfrastructure } from "./gemini";
+import { generateInvestmentRecommendations, findTopInvestmentLocations, analyzeLocationIntelligence, findNearbyTouristAttractions, analyzeInfrastructureWithAI, validateMajorTransportInfrastructure, validatePremiumAreaType } from "./gemini";
 import { performSmartValidation } from "./smartValidation";
 import DOMPurify from "isomorphic-dompurify";
 import { z } from "zod";
@@ -1957,7 +1957,33 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       
       investmentViability += locationBonus;
       
-      // 5. QUALITY/REVIEW PENALTY
+      // 5. PREMIUM AREA VERIFICATION & 10% INVESTMENT BONUS
+      // Verify with Gemini AI if location qualifies for premium area bonus
+      let premiumAreaBonus = 0;
+      try {
+        console.log(`PREMIUM AREA VERIFICATION: Checking if ${areaType} (${locationType}) qualifies for 10% investment bonus...`);
+        
+        const premiumVerification = await validatePremiumAreaType(location, areaType, locationType);
+        
+        if (premiumVerification.isPremiumArea && premiumVerification.confidence >= 70) {
+          premiumAreaBonus = 10; // 10% bonus for verified premium areas
+          investmentViability += premiumAreaBonus;
+          
+          console.log(`PREMIUM AREA BONUS APPLIED: +${premiumAreaBonus}% for verified ${premiumVerification.verifiedType}`);
+          console.log(`Verification reasoning: ${premiumVerification.reasoning}`);
+          console.log(`Confidence: ${premiumVerification.confidence}%`);
+        } else {
+          console.log(`PREMIUM AREA VERIFICATION FAILED: Not qualified for premium bonus`);
+          console.log(`Verified type: ${premiumVerification.verifiedType}`);
+          console.log(`Reasoning: ${premiumVerification.reasoning}`);
+          console.log(`Confidence: ${premiumVerification.confidence}%`);
+        }
+      } catch (error) {
+        console.error('Error during premium area verification:', error);
+        console.log('Premium area bonus not applied due to verification error');
+      }
+      
+      // 6. QUALITY/REVIEW PENALTY
       // Low quality/review score = -0.5% for each poor facility
       let qualityPenalty = 0;
       result.nearbyPlaces.forEach(place => {
@@ -1987,6 +2013,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         All Services Missing: ${serviceCount === 0 ? 'YES (-20%)' : 'NO (0%)'}
         Education + Transport Both Missing: ${essentialServices.education.length === 0 && essentialServices.transport.length === 0 && serviceCount > 0 ? 'YES (-20%)' : 'NO (0%)'}
         LOCATION TYPE BONUS: ${locationBonus >= 0 ? '+' : ''}${locationBonus}% (${locationType} - ${areaType})
+        PREMIUM AREA BONUS: ${premiumAreaBonus >= 0 ? '+' : ''}${premiumAreaBonus}% (Gemini AI verified)
         Quality Penalty: -${qualityPenalty.toFixed(1)}% (${result.nearbyPlaces.filter(p => p.rating && p.rating < 3.0).length} low-rated facilities)
         Final Investment Viability: ${finalViability.toFixed(1)}%`);
       
@@ -1998,11 +2025,11 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       (result as any).presentServices = presentServices;
       (result as any).locationTypeBonus = locationBonus;
       (result as any).locationType = locationType;
-      (result as any).areaClassification = areaClassification;
+      (result as any).areaClassification = areaType;
 
       // Generate investment recommendation using simplified logic
       const viabilityScore = result.investmentViability || 0;
-      const areaTypeSimple = aiIntelligence.areaClassification || 'Urban Areas';
+      const areaTypeSimple = areaType;
       
       if (viabilityScore >= 85) {
         result.investmentRecommendation = `Excellent ${areaTypeSimple} Investment - Premium Grade Infrastructure`;
