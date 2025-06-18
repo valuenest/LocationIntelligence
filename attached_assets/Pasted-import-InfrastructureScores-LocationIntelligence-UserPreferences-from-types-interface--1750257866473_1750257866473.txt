@@ -1,0 +1,208 @@
+import { InfrastructureScores, LocationIntelligence, UserPreferences } from './types';
+
+interface RecommendationResult {
+  recommendation: string;
+  confidence: number;
+  keyFactors: { factor: string; value: any; impact: string }[];
+  suggestedActions: string[];
+  mapPreview: string;
+}
+
+async function generateInvestmentRecommendation(
+  lat: number,
+  lng: number,
+  address: string,
+  investmentViability: number,
+  locationScore: number,
+  businessGrowthRate: number,
+  populationGrowthRate: number,
+  growthPrediction: number,
+  infrastructureScores: InfrastructureScores,
+  locationIntelligence: LocationIntelligence,
+  userPreferences: UserPreferences = {}
+): Promise<RecommendationResult> {
+  const result: RecommendationResult = {
+    recommendation: '',
+    confidence: 0.5,
+    keyFactors: [],
+    suggestedActions: [],
+    mapPreview: `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=400x200&key=${process.env.GOOGLE_API_KEY}`
+  };
+
+  const factors = await analyzeRecommendationFactors(
+    lat,
+    lng,
+    address,
+    investmentViability,
+    locationScore,
+    businessGrowthRate,
+    populationGrowthRate,
+    growthPrediction,
+    infrastructureScores,
+    locationIntelligence,
+    userPreferences
+  );
+
+  const { recommendation, confidence, actions } = await generateRecommendationText(
+    lat,
+    lng,
+    address,
+    factors,
+    userPreferences
+  );
+
+  result.recommendation = recommendation;
+  result.confidence = confidence;
+  result.keyFactors = factors.breakdown;
+  result.suggestedActions = actions;
+
+  return result;
+}
+
+async function analyzeRecommendationFactors(
+  lat: number,
+  lng: number,
+  address: string,
+  investmentViability: number,
+  locationScore: number,
+  businessGrowthRate: number,
+  populationGrowthRate: number,
+  growthPrediction: number,
+  infrastructureScores: InfrastructureScores,
+  locationIntelligence: LocationIntelligence,
+  userPreferences: UserPreferences
+): Promise<{
+  breakdown: { factor: string; value: any; impact: string }[];
+}> {
+  const breakdown: { factor: string; value: any; impact: string }[] = [];
+
+  const marketStrength = investmentViability >= 80 ? 'High' : investmentViability >= 60 ? 'Moderate' : 'Low';
+  const infrastructureGrade = infrastructureScores.connectivity > 100 ? 'Excellent' : infrastructureScores.connectivity > 50 ? 'Good' : 'Limited';
+
+  breakdown.push(
+    {
+      factor: 'Investment Viability',
+      value: `${investmentViability}/100`,
+      impact: `Drives ${marketStrength} market potential for investment.`
+    },
+    {
+      factor: 'Location Score',
+      value: `${locationScore.toFixed(1)}/5`,
+      impact: `Reflects ${locationScore >= 3.5 ? 'strong' : 'average'} location quality.`
+    },
+    {
+      factor: 'Business Growth Rate',
+      value: `${businessGrowthRate.toFixed(1)}%`,
+      impact: `${businessGrowthRate >= 3 ? 'Positive' : 'Neutral'} economic growth outlook.`
+    },
+    {
+      factor: 'Population Growth Rate',
+      value: `${populationGrowthRate.toFixed(1)}%`,
+      impact: `${populationGrowthRate >= 2 ? 'Strong' : 'Moderate'} demand driver.`
+    },
+    {
+      factor: 'Growth Prediction',
+      value: `${growthPrediction.toFixed(1)}%`,
+      impact: `Indicates ${growthPrediction >= 5 ? 'high' : 'stable'} property value appreciation.`
+    },
+    {
+      factor: 'Safety Score',
+      value: `${locationIntelligence.safetyScore}/10`,
+      impact: `${locationIntelligence.safetyScore >= 7 ? 'Enhances' : 'Limits'} investor confidence.`
+    },
+    {
+      factor: 'Development Stage',
+      value: locationIntelligence.developmentStage,
+      impact: `Supports ${locationIntelligence.developmentStage === 'developed' ? 'immediate' : 'long-term'} investment.`
+    }
+  );
+
+  return { breakdown };
+}
+
+async function generateRecommendationText(
+  lat: number,
+  lng: number,
+  address: string,
+  factors: { breakdown: { factor: string; value: any; impact: string }[] },
+  userPreferences: UserPreferences
+): Promise<{ recommendation: string; confidence: number; actions: string[] }> {
+  const investmentViability = parseFloat(factors.breakdown.find(f => f.factor === 'Investment Viability')?.value.split('/')[0] || '50');
+  const locationScore = parseFloat(factors.breakdown.find(f => f.factor === 'Location Score')?.value.split('/')[0] || '3');
+  const businessGrowthRate = parseFloat(factors.breakdown.find(f => f.factor === 'Business Growth Rate')?.value || '0');
+  const populationGrowthRate = parseFloat(factors.breakdown.find(f => f.factor === 'Population Growth Rate')?.value || '0');
+  const growthPrediction = parseFloat(factors.breakdown.find(f => f.factor === 'Growth Prediction')?.value || '0');
+  const safetyScore = parseFloat(factors.breakdown.find(f => f.factor === 'Safety Score')?.value.split('/')[0] || '5');
+  const developmentStage = factors.breakdown.find(f => f.factor === 'Development Stage')?.value || 'developing';
+
+  const prompt = `Generate a human-readable real estate investment recommendation for:
+Address: ${address}
+Coordinates: ${lat}, ${lng}
+Metrics:
+- Investment Viability: ${investmentViability}/100
+- Location Score: ${locationScore}/5
+- Business Growth Rate: ${businessGrowthRate}%
+- Population Growth Rate: ${populationGrowthRate}%
+- Growth Prediction: ${growthPrediction}%
+- Safety Score: ${safetyScore}/10
+- Development Stage: ${developmentStage}
+User Preferences: Risk Tolerance - ${userPreferences.riskTolerance || 'medium'}, Horizon - ${userPreferences.investmentHorizon || 'medium'}
+
+Return JSON: {
+  recommendation: string,
+  confidence: number (0-1),
+  actions: string[]
+}`;
+  
+  try {
+    const response = await genai.generateContent({
+      model: 'gemini-2.5-pro',
+      prompt,
+      grounding: 'google_search',
+      deepThink: true
+    });
+    return JSON.parse(response.text);
+  } catch (error) {
+    console.error('Gemini recommendation generation failed:', error);
+    let recommendation = 'Neutral Investment Opportunity';
+    let confidence = 0.5;
+    const actions = ['Conduct further due diligence on local market trends.'];
+
+    if (investmentViability >= 80 && locationScore >= 3.5 && businessGrowthRate >= 3 && safetyScore >= 7) {
+      recommendation = `Outstanding Investment - High Market Potential (Safety: ${safetyScore}/10, Growth: +${businessGrowthRate.toFixed(1)}%)`;
+      confidence = 0.9;
+      actions.push('Secure property quickly due to strong fundamentals.', 'Explore short-term rental opportunities.');
+    } else if (investmentViability >= 70 && locationScore >= 3.0 && businessGrowthRate >= 1 && safetyScore >= 5) {
+      recommendation = `Excellent Investment - Strong Fundamentals (Safety: ${safetyScore}/10)`;
+      confidence = 0.8;
+      actions.push('Consider long-term holding strategy.', 'Assess local zoning regulations.');
+    } else if (investmentViability >= 50 && locationScore >= 2.5 && businessGrowthRate >= 0) {
+      recommendation = `Moderate Investment - Stable Opportunity (Safety: ${safetyScore}/10, Growth: ${businessGrowthRate.toFixed(1)}%)`;
+      confidence = 0.6;
+      actions.push('Monitor population growth trends.', 'Evaluate infrastructure development plans.');
+    } else {
+      recommendation = `Cautious Investment - Limited Potential (Safety: ${safetyScore}/10)`;
+      confidence = 0.4;
+      actions.push('Investigate risk mitigation strategies.', 'Wait for market stabilization.');
+    }
+
+    if (userPreferences.riskTolerance === 'low') {
+      confidence -= 0.1;
+      actions.push('Prioritize properties with established infrastructure.');
+    } else if (userPreferences.riskTolerance === 'high') {
+      confidence += 0.1;
+      actions.push('Consider speculative development opportunities.');
+    }
+
+    return { recommendation, confidence: Math.max(0, Math.min(1, confidence)), actions };
+  }
+}
+
+const genai = {
+  generateContent: async (options: { model: string; prompt: string; grounding?: string; deepThink?: boolean }) => {
+    // Simulated Gemini AI call (replace with actual implementation)
+    return { text: JSON.stringify({ recommendation: 'Sample recommendation', confidence: 0.5, actions: ['Sample action'] }) };
+  }
+};
+
+export { generateInvestmentRecommendation, RecommendationResult };
