@@ -1872,76 +1872,25 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       result.investmentViability = Math.min(100, Math.max(0, Math.round(finalViability)));
 
       // Generate investment recommendation using simplified logic
-      const viability = result.investmentViability;
-      const areaClassification = aiIntelligence.areaClassification || 'Urban Areas';
+      const viabilityScore = result.investmentViability || 0;
+      const areaTypeSimple = aiIntelligence.areaClassification || 'Urban Areas';
       
-      if (viability >= 85) {
-        result.investmentRecommendation = `Excellent ${areaClassification} Investment - Premium Grade Infrastructure`;
-      } else if (viability >= 70) {
-        result.investmentRecommendation = `Good ${areaClassification} Investment - A-Grade Infrastructure`;
-      } else if (viability >= 50) {
-        result.investmentRecommendation = `Moderate ${areaClassification} Investment - B-Grade Infrastructure`;
-      } else if (viability >= 30) {
-        result.investmentRecommendation = `Below Average ${areaClassification} Investment - C-Grade Infrastructure`;
+      if (viabilityScore >= 85) {
+        result.investmentRecommendation = `Excellent ${areaTypeSimple} Investment - Premium Grade Infrastructure`;
+      } else if (viabilityScore >= 70) {
+        result.investmentRecommendation = `Good ${areaTypeSimple} Investment - A-Grade Infrastructure`;
+      } else if (viabilityScore >= 50) {
+        result.investmentRecommendation = `Moderate ${areaTypeSimple} Investment - B-Grade Infrastructure`;
+      } else if (viabilityScore >= 30) {
+        result.investmentRecommendation = `Below Average ${areaTypeSimple} Investment - C-Grade Infrastructure`;
       } else {
-        result.investmentRecommendation = `Poor Investment Potential - ${areaClassification} Infrastructure Constraints`;
+        result.investmentRecommendation = `Poor Investment Potential - ${areaTypeSimple} Infrastructure Constraints`;
       }
       console.log(`Investment Recommendation Generated: "${result.investmentRecommendation}" for viability ${result.investmentViability}% and area "${aiIntelligence.areaClassification}"`);
 
-      // 5. BUSINESS GROWTH ANALYSIS (More Conservative)
-      const businessGrowthFactors = {
-        commercialInfrastructure: Math.min(15, infrastructureScores.commercial.total * 0.8),
-        transportConnectivity: Math.min(12, infrastructureScores.transport.total * 0.7),
-        techEcosystem: Math.min(20, techIndicators.length * 3.5),
-        financialServices: Math.min(10, financialIndicators.length * 5),
-        externalConnectivity: Math.min(8, infrastructureScores.connectivity * 0.04),
-        talentAvailability: Math.min(10, infrastructureScores.education.total * 0.6)
-      };
-
-      const totalBusinessGrowthScore = Object.values(businessGrowthFactors).reduce((sum, score) => sum + score, 0);
-
-      // Business growth calculation with area classification bonuses
-      let businessGrowthBase = (totalBusinessGrowthScore / 75) * 12 - 3; // Range: -3% to 9%
-
-      // AREA CLASSIFICATION BONUSES FOR BUSINESS GROWTH
-      // ===============================================
-      const areaClassification = aiIntelligence.areaClassification.toLowerCase();
-      if (areaClassification.includes('metro') || areaClassification.includes('metropolitan')) {
-        businessGrowthBase += 3.0; // Metro areas get 3% bonus
-      } else if (areaClassification.includes('it park') || areaClassification.includes('tech hub') || areaClassification.includes('sez')) {
-        businessGrowthBase += 4.0; // IT/Tech zones get 4% bonus
-      } else if (areaClassification.includes('smart city') || areaClassification.includes('planned township')) {
-        businessGrowthBase += 2.5; // Smart cities get 2.5% bonus
-      } else if (areaClassification.includes('industrial estate')) {
-        businessGrowthBase += 2.0; // Industrial areas get 2% bonus
-      }
-
-      // Apply market condition modifiers
-      if (result.investmentViability < 30) businessGrowthBase -= 2;
-      else if (result.investmentViability > 70) businessGrowthBase += 1.5;
-
-      result.businessGrowthRate = Math.max(-5, Math.min(12, businessGrowthBase));
-
-      // 6. POPULATION GROWTH ANALYSIS (More Realistic)
-      const populationGrowthFactors = {
-        housingSupport: Math.min(10, infrastructureScores.essential.total * 0.5),
-        healthcareCapacity: Math.min(12, infrastructureScores.healthcare.total * 0.8),
-        educationQuality: Math.min(10, infrastructureScores.education.total * 0.6),
-        transportAccess: Math.min(8, infrastructureScores.transport.total * 0.5),
-        economicOpportunity: Math.min(10, infrastructureScores.commercial.total * 0.4),
-        connectivityAppeals: Math.min(5, infrastructureScores.connectivity * 0.025)
-      };
-
-      const totalPopulationScore = Object.values(populationGrowthFactors).reduce((sum, score) => sum + score, 0);
-
-      // Population growth calculation (more conservative)
-      let populationGrowthBase = (totalPopulationScore / 55) * 8 - 2; // Range: -2% to 6%
-
-      // Apply viability modifiers
-      if (result.investmentViability < 25) populationGrowthBase -= 1.5;
-      else if (result.investmentViability > 75) populationGrowthBase += 1;
-
-      result.populationGrowthRate = Math.max(-4, Math.min(8, populationGrowthBase));
+      // Simplified growth rates based on investment viability
+      result.businessGrowthRate = Math.max(-5, Math.min(12, (result.investmentViability / 100) * 8 - 2));
+      result.populationGrowthRate = Math.max(-4, Math.min(8, (result.investmentViability / 100) * 6 - 1));
 
       // 7. ENHANCED PROPERTY GROWTH PREDICTION WITH NEGATIVE SCORING
       
@@ -1978,28 +1927,22 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
 
       // The investment recommendation is already set by the simplified logic above;
 
-      // Enhanced market intelligence with infrastructure analysis
+      // Simplified market intelligence
       const marketIntelligence = {
-        // Demographic indicators
         populationDensity: Math.min(100, (infrastructureScores.healthcare.total + infrastructureScores.education.total) * 10),
-        economicActivity: Math.min(100, (infrastructureScores.commercial.total + infrastructureScores.techCorridors) * 8),
+        economicActivity: Math.min(100, infrastructureScores.commercial.total * 12),
         infrastructureDensity: Math.min(100, (result.locationScore / 5) * 100),
-
-        // Market indicators
         investmentGrade: result.investmentViability >= 85 ? 'A+' : 
                         result.investmentViability >= 75 ? 'A' :
                         result.investmentViability >= 65 ? 'B+' :
                         result.investmentViability >= 50 ? 'B' : 'C',
-
         liquidityScore: Math.min(100, infrastructureScores.transport.total * 20 + infrastructureScores.commercial.total * 15),
         appreciationPotential: Math.min(100, finalConnectivityScore * 50 + infrastructureScores.lifestyle.total * 10),
-
-        // Risk factors
-        riskFactors: [],
-        opportunities: []
+        riskFactors: [] as string[],
+        opportunities: [] as string[]
       };
 
-      // Add risk factors based on analysis
+      // Add risk factors
       if (infrastructureScores.safety.total < 1) marketIntelligence.riskFactors.push('Limited safety infrastructure');
       if (infrastructureScores.connectivity < 20) marketIntelligence.riskFactors.push('Poor external connectivity');
       if (infrastructureScores.healthcare.total < 2) marketIntelligence.riskFactors.push('Insufficient healthcare facilities');
@@ -2008,7 +1951,6 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       if (connectivityAnalysis.airports > 0) marketIntelligence.opportunities.push('Airport connectivity advantage');
       if (connectivityAnalysis.metroStations > 0) marketIntelligence.opportunities.push('Metro connectivity boost');
       if (infrastructureScores.lifestyle.premium > 2) marketIntelligence.opportunities.push('Premium lifestyle amenities');
-      if (connectivityAnalysis.techCorridors > 0) marketIntelligence.opportunities.push('Tech corridor proximity');
 
       // Add AI and market intelligence to result
       (result as any).aiIntelligence = {
