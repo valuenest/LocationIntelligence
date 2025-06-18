@@ -84,10 +84,11 @@ async function checkLocationViability(location: { lat: number; lng: number; addr
 
     // Enhanced desert and uninhabitable area detection
     const uninhabitableKeywords = [
-      'desert', 'canyon', 'valley national', 'death valley', 'badlands',
-      'monument valley', 'antarctica', 'arctic', 'sahara', 'mojave',
-      'uninhabited', 'barren', 'wasteland', 'glacier', 'iceberg',
-      'mountain peak', 'volcano', 'crater', 'polar', 'tundra'
+      'desert', 'canyon', 'grand canyon', 'death valley', 'badlands', 'monument valley',
+      'antarctica', 'arctic', 'sahara', 'mojave', 'gobi', 'kalahari',
+      'uninhabited', 'barren', 'wasteland', 'glacier', 'iceberg', 'ice sheet',
+      'mountain peak', 'volcano', 'crater', 'polar', 'tundra', 'permafrost',
+      'wilderness area', 'remote forest', 'deep jungle', 'outback'
     ];
 
     // Water body detection
