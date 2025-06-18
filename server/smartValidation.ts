@@ -206,14 +206,16 @@ Coordinates: ${location.lat}, ${location.lng}
 Property Type: ${propertyData.propertyType}
 Investment Amount: ${propertyData.amount} ${propertyData.currency || 'USD'}
 
-CRITICAL VALIDATION CRITERIA:
-1. Is this location suitable for private property development?
-2. Check if it's a school, college, hospital, government building, public facility
-3. Check if it's a playground, sports ground, park, recreational area
-4. Check if it's inside an institution's campus or premises
-5. Check if it's a commercial-only zone where residential development is restricted
-6. Check if it's agricultural land with development restrictions
-7. Check if it's environmentally protected or ecologically sensitive
+CRITICAL VALIDATION CRITERIA - ONLY FLAG THESE SPECIFIC ISSUES:
+
+1. INSTITUTIONAL PREMISES: Schools, colleges, universities, hospitals within their campus boundaries
+2. PUBLIC FACILITIES: Playgrounds, parks, sports stadiums, government buildings
+3. PROTECTED AREAS: National parks, wildlife sanctuaries, restricted military zones
+4. UNINHABITABLE: Deserts, deep water bodies, extreme remote areas with zero infrastructure
+
+DO NOT flag general rural areas, roads, or locations just because they lack detailed information.
+DO NOT require "on-site verification" for normal property locations.
+ONLY flag if you can clearly identify it as one of the 4 categories above.
 
 RESPOND WITH THIS EXACT JSON FORMAT:
 {
@@ -227,11 +229,8 @@ RESPOND WITH THIS EXACT JSON FORMAT:
   "specificConcerns": ["concern 1", "concern 2"]
 }
 
-Be strict about institutional, public, and restricted areas. Flag any location that appears to be:
-- Inside school/college/hospital premises
-- Public recreational areas (playgrounds, parks, sports facilities)
-- Government or institutional buildings
-- Areas with development restrictions`;
+BE PERMISSIVE: If location appears to be a normal road, residential area, or commercial zone - mark as VALID.
+ONLY block obvious institutional/public/protected/uninhabitable areas.`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -246,11 +245,19 @@ Be strict about institutional, public, and restricted areas. Flag any location t
     const aiAnalysis = JSON.parse(jsonMatch[0]);
 
     // Convert AI analysis to ValidationResult format
+    // Only block if clearly identified as problematic (confidence > 70 and truly unsuitable)
+    const shouldBlock = aiAnalysis.developmentViability === 'impossible' || 
+                       (aiAnalysis.confidence > 70 && 
+                        aiAnalysis.locationCategory === 'institutional' || 
+                        aiAnalysis.locationCategory === 'public' || 
+                        aiAnalysis.locationCategory === 'restricted' ||
+                        aiAnalysis.locationCategory === 'unsuitable');
+    
     return {
-      isValid: aiAnalysis.isValid && aiAnalysis.developmentViability !== 'impossible',
-      issues: aiAnalysis.issues || [],
-      recommendations: aiAnalysis.recommendations || [],
-      riskLevel: aiAnalysis.riskLevel || 'medium',
+      isValid: !shouldBlock,
+      issues: shouldBlock ? (aiAnalysis.issues || []) : [],
+      recommendations: shouldBlock ? (aiAnalysis.recommendations || []) : [],
+      riskLevel: shouldBlock ? 'high' : 'low',
       confidence: aiAnalysis.confidence || 75
     };
 
