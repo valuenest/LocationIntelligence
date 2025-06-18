@@ -41,12 +41,22 @@ interface AIAnalysisRequest {
   distances: Record<string, any>;
 }
 
+// Simple in-memory cache for location intelligence
+const locationCache = new Map<string, LocationIntelligence>();
+
 export async function analyzeLocationIntelligence(
   address: string,
   lat: number,
   lng: number
 ): Promise<LocationIntelligence> {
   try {
+    // Simple caching to avoid duplicate AI calls for same location
+    const cacheKey = `${address}_${lat.toFixed(3)}_${lng.toFixed(3)}`;
+    const cached = locationCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const prompt = `As a location intelligence expert, analyze this specific location for real estate investment:
@@ -95,38 +105,43 @@ Respond in this exact JSON format:
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    
+
     // Parse JSON response
     try {
       const cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       const intelligence: LocationIntelligence = JSON.parse(cleanedText);
-      
+
       // Validate and ensure proper bounds
       intelligence.safetyScore = Math.max(1, Math.min(10, intelligence.safetyScore));
       intelligence.investmentPotential = Math.max(0, Math.min(100, intelligence.investmentPotential));
       intelligence.confidence = Math.max(0, Math.min(100, intelligence.confidence));
-      
+
+      locationCache.set(cacheKey, intelligence); // Cache the result
       return intelligence;
     } catch (parseError) {
       console.error('Failed to parse Gemini location intelligence response:', parseError);
-      
+
       // Fallback based on address keywords
-      return generateFallbackIntelligence(address);
+      const fallbackIntelligence = generateFallbackIntelligence(address);
+      locationCache.set(cacheKey, fallbackIntelligence); // Cache the fallback result
+      return fallbackIntelligence;
     }
   } catch (error) {
     console.error('Gemini location intelligence error:', error);
-    return generateFallbackIntelligence(address);
+    const fallbackIntelligence = generateFallbackIntelligence(address);
+    locationCache.set(cacheKey, fallbackIntelligence); // Cache the fallback result
+    return fallbackIntelligence;
   }
 }
 
 function generateFallbackIntelligence(address: string): LocationIntelligence {
   const addressLower = address.toLowerCase();
-  
+
   // Basic classification based on keywords
   let locationType: LocationIntelligence['locationType'] = 'village';
   let investmentPotential = 35;
   let safetyScore = 6;
-  
+
   if (addressLower.includes('hsr') || addressLower.includes('electronic city') || 
       addressLower.includes('whitefield') || addressLower.includes('koramangala')) {
     locationType = 'metropolitan';
@@ -143,7 +158,7 @@ function generateFallbackIntelligence(address: string): LocationIntelligence {
     investmentPotential = 30;
     safetyScore = 7;
   }
-  
+
   return {
     locationType,
     safetyScore,
@@ -261,239 +276,4 @@ Format as JSON array:
     const text = response.text();
 
     try {
-      const cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      const attractions = JSON.parse(cleanedText);
-      
-      // Add Google Street View images for attractions that don't have imageUrl
-      const enhancedAttractions = Array.isArray(attractions) ? attractions.slice(0, 3).map((attraction: any, index: number) => {
-        if (!attraction.imageUrl) {
-          // Generate approximate coordinates for the attraction (within 50km of center)
-          const offsetLat = (Math.random() - 0.5) * 0.8;
-          const offsetLng = (Math.random() - 0.5) * 0.8;
-          const attractionLat = centerLocation.lat + offsetLat;
-          const attractionLng = centerLocation.lng + offsetLng;
-          
-          attraction.imageUrl = `https://maps.googleapis.com/maps/api/streetview?size=400x300&location=${attractionLat},${attractionLng}&heading=${Math.floor(Math.random() * 360)}&pitch=0&key=${process.env.GOOGLE_MAPS_API_KEY}`;
-        }
-        return attraction;
-      }) : [];
-      
-      return enhancedAttractions;
-    } catch (parseError) {
-      console.error('Failed to parse tourist attractions response:', parseError);
-      
-      // Fallback tourist attractions based on location
-      const addressLower = centerLocation.address.toLowerCase();
-      
-      if (addressLower.includes('karnataka') || addressLower.includes('bangalore')) {
-        return [
-          {
-            name: "Nandi Hills",
-            description: "Ancient hill fortress with stunning sunrise views and historical significance",
-            category: "natural",
-            rating: 4.2,
-            distance: "60 km",
-            why_visit: "Famous for sunrise views, trekking, and historical Tipu Sultan's fort",
-            imageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop"
-          },
-          {
-            name: "Bangalore Palace",
-            description: "Tudor-style architectural marvel inspired by Windsor Castle",
-            category: "monument",
-            rating: 4.0,
-            distance: "45 km",
-            why_visit: "Royal architecture, vintage car collection, and cultural heritage",
-            imageUrl: "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=400&h=300&fit=crop"
-          },
-          {
-            name: "Cubbon Park",
-            description: "Large green lung of the city with botanical gardens and walking trails",
-            category: "natural",
-            rating: 4.1,
-            distance: "50 km",
-            why_visit: "Nature walks, jogging, photography, and peaceful environment",
-            imageUrl: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop"
-          }
-        ];
-      }
-      
-      // Generic fallback for other locations
-      return [
-        {
-          name: "Regional Heritage Site",
-          description: "Local historical monument with cultural significance",
-          category: "monument",
-          rating: 3.8,
-          distance: "30 km",
-          why_visit: "Cultural heritage and historical importance",
-          imageUrl: "https://images.unsplash.com/photo-1539650116574-75c0c6d73925?w=400&h=300&fit=crop"
-        },
-        {
-          name: "Natural Park/Garden",
-          description: "Local recreational area with natural beauty",
-          category: "natural",
-          rating: 3.5,
-          distance: "25 km",
-          why_visit: "Nature walks and family recreation",
-          imageUrl: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop"
-        },
-        {
-          name: "Local Temple/Religious Site",
-          description: "Regional place of worship with architectural beauty",
-          category: "temple",
-          rating: 4.0,
-          distance: "20 km",
-          why_visit: "Spiritual significance and traditional architecture",
-          imageUrl: "https://images.unsplash.com/photo-1548013146-72479768bada?w=400&h=300&fit=crop"
-        }
-      ];
-    }
-  } catch (error) {
-    console.error('Gemini API error for tourist attractions:', error);
-    
-    // Fallback attractions
-    return [
-      {
-        name: "Heritage Monument",
-        description: "Historical site with cultural significance",
-        category: "monument",
-        rating: 3.8,
-        distance: "35 km",
-        why_visit: "Historical and cultural importance",
-        imageUrl: "https://images.unsplash.com/photo-1539650116574-75c0c6d73925?w=400&h=300&fit=crop"
-      },
-      {
-        name: "Nature Reserve",
-        description: "Natural area for recreation and sightseeing",
-        category: "natural",
-        rating: 3.6,
-        distance: "40 km", 
-        why_visit: "Natural beauty and wildlife observation",
-        imageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop"
-      },
-      {
-        name: "Cultural Center",
-        description: "Local cultural and artistic hub",
-        category: "cultural",
-        rating: 3.5,
-        distance: "30 km",
-        why_visit: "Art exhibitions and cultural events",
-        imageUrl: "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=400&h=300&fit=crop"
-      }
-    ];
-  }
-}
-
-export async function findTopInvestmentLocations(
-  centerLocation: { lat: number; lng: number; address: string },
-  propertyType: string,
-  budget: number
-): Promise<InvestmentLocation[]> {
-  try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
-    const prompt = `As a real estate investment expert, suggest 3 specific cities or major investment locations within 50km of ${centerLocation.address}.
-
-Consider:
-- Property Type: ${propertyType}
-- Budget: ₹${budget.toLocaleString()}
-- Distance from current location: ${centerLocation.address}
-
-For each location, provide:
-1. Specific city/major area name (not just localities)
-2. Brief reasoning for investment potential
-3. Approximate distance from the center location
-
-Focus on cities/areas with:
-- Major infrastructure development
-- Metro/highway connectivity
-- Commercial and IT growth potential
-- Government development projects
-- Industrial corridors
-
-Format as: City/Area Name | Reasoning | Distance`;
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
-    // Parse the response into structured data
-    const locations: InvestmentLocation[] = [];
-    const lines = text.split('\n').filter(line => line.includes('|') && line.trim().length > 10);
-
-    for (let i = 0; i < Math.min(3, lines.length); i++) {
-      const parts = lines[i].split('|').map(p => p.trim());
-      if (parts.length >= 3) {
-        // Generate approximate coordinates (this would ideally use geocoding)
-        const offsetLat = (Math.random() - 0.5) * 0.8; // ~50km range
-        const offsetLng = (Math.random() - 0.5) * 0.4;
-        
-        locations.push({
-          address: parts[0],
-          lat: centerLocation.lat + offsetLat,
-          lng: centerLocation.lng + offsetLng,
-          score: 75 + Math.random() * 20, // Random score between 75-95
-          reasoning: parts[1],
-          distance: parts[2],
-          imageUrl: `https://maps.googleapis.com/maps/api/staticmap?center=${centerLocation.lat + offsetLat},${centerLocation.lng + offsetLng}&zoom=15&size=300x200&maptype=roadmap&markers=color:blue%7C${centerLocation.lat + offsetLat},${centerLocation.lng + offsetLng}&key=${process.env.GOOGLE_MAPS_API_KEY}`
-        });
-      }
-    }
-
-    // Fallback if parsing fails
-    if (locations.length === 0) {
-      const fallbackAreas = [
-        'Electronic City Phase 2',
-        'Whitefield Extension',
-        'Sarjapur Road Corridor'
-      ];
-
-      fallbackAreas.forEach((area, index) => {
-        const offsetLat = (Math.random() - 0.5) * 0.3;
-        const offsetLng = (Math.random() - 0.5) * 0.3;
-        
-        locations.push({
-          address: area,
-          lat: centerLocation.lat + offsetLat,
-          lng: centerLocation.lng + offsetLng,
-          score: 80 + Math.random() * 15,
-          reasoning: 'Strong infrastructure development and connectivity options',
-          distance: `${(15 + Math.random() * 10).toFixed(1)} km`,
-          imageUrl: `https://maps.googleapis.com/maps/api/staticmap?center=${centerLocation.lat + offsetLat},${centerLocation.lng + offsetLng}&zoom=15&size=300x200&maptype=roadmap&markers=color:blue%7C${centerLocation.lat + offsetLat},${centerLocation.lng + offsetLng}&key=${process.env.GOOGLE_MAPS_API_KEY}`
-        });
-      });
-    }
-
-    return locations.slice(0, 3);
-  } catch (error) {
-    console.error('Gemini API error for location suggestions:', error);
-    
-    // Fallback locations
-    return [
-      {
-        address: 'Electronic City Phase 2',
-        lat: centerLocation.lat + 0.1,
-        lng: centerLocation.lng + 0.1,
-        score: 85,
-        reasoning: 'Major IT hub with excellent infrastructure and appreciation potential',
-        distance: '18 km'
-      },
-      {
-        address: 'Sarjapur Road Corridor',
-        lat: centerLocation.lat - 0.08,
-        lng: centerLocation.lng + 0.12,
-        score: 82,
-        reasoning: 'Upcoming metro connectivity and commercial development projects',
-        distance: '22 km'  
-      },
-      {
-        address: 'Whitefield Extension',
-        lat: centerLocation.lat + 0.15,
-        lng: centerLocation.lng - 0.05,
-        score: 78,
-        reasoning: 'Growing residential demand with proximity to tech parks',
-        distance: '24 km'
-      }
-    ];
-  }
-}
+      const cleanedText = textjson\n?/g, '').replace(/
