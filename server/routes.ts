@@ -1,7 +1,7 @@
 import { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateInvestmentRecommendations, findTopInvestmentLocations } from "./gemini";
+import { generateInvestmentRecommendations, findTopInvestmentLocations, analyzeLocationIntelligence } from "./gemini";
 import { performSmartValidation } from "./smartValidation";
 
 interface LocationData {
@@ -486,6 +486,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       throw new Error("Google Maps API key not configured");
     }
 
+    // Get AI-powered location intelligence first
+    console.log("Analyzing location intelligence with Gemini AI...");
+    const locationIntelligence = await analyzeLocationIntelligence(location.address, location.lat, location.lng);
+
     try {
       // Enhanced place search with infrastructure-focused types
       const placeTypes = [
@@ -846,53 +850,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Classification Debug: Places=${totalPlaces}, Infrastructure=${totalInfrastructureForClassification}, RealMetro=${realMetroIndicators.length}, Commercial=${commercialIndicators.length}, RuralAddress=${isRuralByAddress}`);
       
-      // Enhanced rural detection with more keywords
-      const enhancedRuralDetection = addressLower.includes('village') || addressLower.includes('rural') || 
-                                    addressLower.includes('farm') || addressLower.includes('countryside') ||
-                                    addressLower.includes('taluk') || addressLower.includes('tehsil') ||
-                                    addressLower.includes('gram') || addressLower.includes('panchayat') ||
-                                    addressLower.includes('hobli') || addressLower.includes('revenue') ||
-                                    (addressLower.includes('road') && !addressLower.includes('main road') && 
-                                     !addressLower.includes('highway') && totalPlaces < 10);
+      // Use AI-powered location intelligence for classification
+      console.log(`AI Location Intelligence: Type=${locationIntelligence.locationType}, Safety=${locationIntelligence.safetyScore}/10, Crime=${locationIntelligence.crimeRate}, Investment=${locationIntelligence.investmentPotential}%, Confidence=${locationIntelligence.confidence}%`);
       
-      // Known tech hubs override other classifications
-      const isTechHub = addressLower.includes('hsr') || addressLower.includes('electronic city') || 
-                       addressLower.includes('whitefield') || addressLower.includes('koramangala') ||
-                       addressLower.includes('indiranagar') || addressLower.includes('marathahalli') ||
-                       addressLower.includes('sarjapur') || addressLower.includes('bellandur');
+      // Map AI classification to our system with investment viability caps
+      const aiClassificationMap = {
+        'metropolitan': { type: 'metropolitan', max: 95 },
+        'city': { type: 'city', max: 70 },
+        'town': { type: 'town', max: 50 },
+        'village': { type: 'village', max: 35 },
+        'rural': { type: 'village', max: 30 },
+        'uninhabitable': { type: 'village', max: 0 }
+      };
       
-      // Enhanced rural classification - very strict criteria for higher tiers
-      if (enhancedRuralDetection || (totalPlaces < 12 && commercialIndicators.length < 3)) {
-        areaType = 'village';
-        maxViability = 35;
+      // Use AI classification as primary, fall back to infrastructure analysis
+      const aiMapping = aiClassificationMap[locationIntelligence.locationType] || { type: 'village', max: 35 };
+      areaType = aiMapping.type;
+      maxViability = aiMapping.max;
+      
+      // Override for uninhabitable areas
+      if (locationIntelligence.locationType === 'uninhabitable') {
+        result.locationScore = 0.0;
+        result.investmentViability = 0;
+        result.growthPrediction = -10;
+        result.businessGrowthRate = -5.0;
+        result.populationGrowthRate = -3.0;
+        result.investmentRecommendation = "Uninhabitable Location - Property Development Not Possible";
+        return result;
       }
-      // Known tech hubs get metropolitan status
-      else if (isTechHub) {
-        areaType = 'metropolitan';
-        maxViability = 95;
-      }
-      // Very strict metropolitan classification
-      else if (totalPlaces >= 18 && totalInfrastructureForClassification >= 25 && 
-          realMetroIndicators.length >= 3 && commercialIndicators.length >= 8) {
-        areaType = 'metropolitan';
-        maxViability = 95;
-      } 
-      // Strict city classification
-      else if (totalPlaces >= 15 && totalInfrastructureForClassification >= 20 && 
-               commercialIndicators.length >= 6) {
+      
+      // Apply safety score adjustments to investment viability
+      const safetyAdjustment = (locationIntelligence.safetyScore - 5) * 2; // -10 to +10 adjustment
+      maxViability = Math.max(0, Math.min(95, maxViability + safetyAdjustment));
+      
+      // Cross-verify with infrastructure data for accuracy
+      if (areaType === 'metropolitan' && totalPlaces < 10) {
         areaType = 'city';
         maxViability = 70;
-      } 
-      // Town classification
-      else if (totalPlaces >= 12 && totalInfrastructureForClassification >= 15 && 
-               commercialIndicators.length >= 4) {
+        console.log("AI classified as metropolitan but low infrastructure - downgraded to city");
+      } else if (areaType === 'city' && totalPlaces < 8) {
         areaType = 'town';
         maxViability = 50;
-      }
-      // Default to village for lower infrastructure
-      else {
-        areaType = 'village';
-        maxViability = 35;
+        console.log("AI classified as city but low infrastructure - downgraded to town");
       }
       
       console.log(`Classified as: ${areaType} (max: ${maxViability}%)`);
@@ -940,6 +939,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ));
       
       result.growthPrediction = Math.min(scoreAsPercentage * 0.2, 15); // Cap at 15%
+
+      // Enhanced investment recommendation incorporating AI intelligence
+      const generateInvestmentRecommendation = () => {
+        const viability = result.investmentViability;
+        const safety = locationIntelligence.safetyScore;
+        const crimeRate = locationIntelligence.crimeRate;
+        const concerns = locationIntelligence.primaryConcerns;
+        const strengths = locationIntelligence.keyStrengths;
+
+        if (viability >= 85) {
+          return `Excellent ${areaType.charAt(0).toUpperCase() + areaType.slice(1)} Investment - Premium Location (Safety: ${safety}/10, Crime: ${crimeRate})`;
+        } else if (viability >= 70) {
+          return `Good ${areaType.charAt(0).toUpperCase() + areaType.slice(1)} Investment - Stable Growth (Safety: ${safety}/10, Crime: ${crimeRate})`;
+        } else if (viability >= 50) {
+          return `Moderate ${areaType.charAt(0).toUpperCase() + areaType.slice(1)} Investment - Consider Risks (Safety: ${safety}/10, Crime: ${crimeRate})`;
+        } else if (viability >= 35) {
+          return `Limited ${areaType.charAt(0).toUpperCase() + areaType.slice(1)} Investment - High Risk Area (Safety: ${safety}/10, Crime: ${crimeRate})`;
+        } else {
+          return `Poor Investment Potential - Avoid This Location (Safety: ${safety}/10, Crime: ${crimeRate})`;
+        }
+      };
+
+      result.investmentRecommendation = generateInvestmentRecommendation();
+
+      // Add AI intelligence data to result for frontend display
+      (result as any).aiIntelligence = {
+        locationType: locationIntelligence.locationType,
+        safetyScore: locationIntelligence.safetyScore,
+        crimeRate: locationIntelligence.crimeRate,
+        developmentStage: locationIntelligence.developmentStage,
+        primaryConcerns: locationIntelligence.primaryConcerns,
+        keyStrengths: locationIntelligence.keyStrengths,
+        reasoning: locationIntelligence.reasoning,
+        confidence: locationIntelligence.confidence
+      };
 
       // Tier-specific enhancements
       if (planType === "basic" || planType === "pro") {

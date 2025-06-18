@@ -12,6 +12,18 @@ interface InvestmentLocation {
   imageUrl?: string;
 }
 
+interface LocationIntelligence {
+  locationType: 'metropolitan' | 'city' | 'town' | 'village' | 'rural' | 'uninhabitable';
+  safetyScore: number; // 1-10 scale
+  crimeRate: 'very-low' | 'low' | 'moderate' | 'high' | 'very-high';
+  developmentStage: 'developed' | 'developing' | 'underdeveloped' | 'restricted';
+  investmentPotential: number; // 0-100 scale
+  primaryConcerns: string[];
+  keyStrengths: string[];
+  reasoning: string;
+  confidence: number; // 0-100 scale
+}
+
 interface AIAnalysisRequest {
   location: {
     lat: number;
@@ -27,6 +39,122 @@ interface AIAnalysisRequest {
     types: string[];
   }>;
   distances: Record<string, any>;
+}
+
+export async function analyzeLocationIntelligence(
+  address: string,
+  lat: number,
+  lng: number
+): Promise<LocationIntelligence> {
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    const prompt = `As a location intelligence expert, analyze this specific location for real estate investment:
+
+Location: ${address}
+Coordinates: ${lat}, ${lng}
+
+Analyze and provide a comprehensive assessment including:
+
+1. Location Type Classification:
+   - metropolitan: Major city centers with metro/IT hubs (Mumbai, Delhi NCR, Bangalore tech areas)
+   - city: Tier 1/2 cities with good infrastructure (Pune, Chennai, Hyderabad suburbs)
+   - town: Smaller urban centers with basic amenities (district headquarters, growing suburbs)
+   - village: Rural areas with limited infrastructure
+   - rural: Agricultural/remote areas with minimal development
+   - uninhabitable: Forests, water bodies, deserts, restricted military/government zones
+
+2. Safety & Crime Assessment:
+   - Research known crime statistics for this area
+   - Consider factors like: theft rates, safety for families, women's safety, law enforcement presence
+   - Rate safety on 1-10 scale (10 = very safe, 1 = dangerous)
+
+3. Development Stage:
+   - developed: Established infrastructure, mature market
+   - developing: Active infrastructure projects, growing market
+   - underdeveloped: Limited infrastructure, high potential
+   - restricted: Legal/environmental restrictions on development
+
+4. Investment Potential (0-100):
+   - Consider: future growth prospects, infrastructure development, government projects
+   - Factor in: connectivity projects, IT/industrial development, real estate trends
+
+Respond in this exact JSON format:
+{
+  "locationType": "one of: metropolitan|city|town|village|rural|uninhabitable",
+  "safetyScore": number between 1-10,
+  "crimeRate": "one of: very-low|low|moderate|high|very-high",
+  "developmentStage": "one of: developed|developing|underdeveloped|restricted",
+  "investmentPotential": number between 0-100,
+  "primaryConcerns": ["list of main concerns"],
+  "keyStrengths": ["list of main advantages"],
+  "reasoning": "brief explanation of assessment",
+  "confidence": number between 0-100
+}`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    
+    // Parse JSON response
+    try {
+      const cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const intelligence: LocationIntelligence = JSON.parse(cleanedText);
+      
+      // Validate and ensure proper bounds
+      intelligence.safetyScore = Math.max(1, Math.min(10, intelligence.safetyScore));
+      intelligence.investmentPotential = Math.max(0, Math.min(100, intelligence.investmentPotential));
+      intelligence.confidence = Math.max(0, Math.min(100, intelligence.confidence));
+      
+      return intelligence;
+    } catch (parseError) {
+      console.error('Failed to parse Gemini location intelligence response:', parseError);
+      
+      // Fallback based on address keywords
+      return generateFallbackIntelligence(address);
+    }
+  } catch (error) {
+    console.error('Gemini location intelligence error:', error);
+    return generateFallbackIntelligence(address);
+  }
+}
+
+function generateFallbackIntelligence(address: string): LocationIntelligence {
+  const addressLower = address.toLowerCase();
+  
+  // Basic classification based on keywords
+  let locationType: LocationIntelligence['locationType'] = 'village';
+  let investmentPotential = 35;
+  let safetyScore = 6;
+  
+  if (addressLower.includes('hsr') || addressLower.includes('electronic city') || 
+      addressLower.includes('whitefield') || addressLower.includes('koramangala')) {
+    locationType = 'metropolitan';
+    investmentPotential = 85;
+    safetyScore = 8;
+  } else if (addressLower.includes('bengaluru') || addressLower.includes('mumbai') || 
+             addressLower.includes('delhi') || addressLower.includes('chennai')) {
+    locationType = 'city';
+    investmentPotential = 65;
+    safetyScore = 7;
+  } else if (addressLower.includes('village') || addressLower.includes('rural') || 
+             addressLower.includes('road') && !addressLower.includes('main')) {
+    locationType = 'village';
+    investmentPotential = 30;
+    safetyScore = 7;
+  }
+  
+  return {
+    locationType,
+    safetyScore,
+    crimeRate: safetyScore >= 7 ? 'low' : safetyScore >= 5 ? 'moderate' : 'high',
+    developmentStage: investmentPotential >= 70 ? 'developed' : investmentPotential >= 40 ? 'developing' : 'underdeveloped',
+    investmentPotential,
+    primaryConcerns: ['Limited AI analysis available'],
+    keyStrengths: ['Location assessment based on keywords'],
+    reasoning: 'Fallback analysis due to AI service limitations',
+    confidence: 60
+  };
 }
 
 export async function generateInvestmentRecommendations(
