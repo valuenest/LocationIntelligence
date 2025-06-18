@@ -651,23 +651,30 @@ CURRENT DATA:
 - Current Investment Viability: ${currentInvestmentViability}%
 - Current Location Score: ${locationScore}
 
-STEP 1: DETERMINE ACTUAL LOCATION TYPE
-Research this specific location using coordinates and address. Answer these questions:
-- Is this location in a village, rural area, or remote location?
-- What is the actual settlement size and infrastructure level?
-- Is it truly urban/metropolitan or is it a small village/rural area?
+STEP 1: LOCATION CLASSIFICATION
+Research this specific location using coordinates and address. 
 
-STEP 2: APPLY DISADVANTAGED AREA PENALTY FIRST (MANDATORY CHECK)
-CRITICAL RULE: If the location is ANY of these, apply -10% investment viability and -0.5% location score:
-- Village (regardless of tourism classification)
-- Rural area
-- Remote location
-- Hill station/Mountain area
-- Tribal region
-- Any small settlement in rural Karnataka
+ANSWER THIS QUESTION: Which ONE category does this location belong to?
+A) Metropolitan Areas - Major metro cities with excellent connectivity
+B) Urban Areas - Major cities with developed infrastructure  
+C) Rural Areas - Villages, small towns, farming communities
+D) Industrial/IT Zones - SEZ, Tech parks, Industrial estates
+E) Coastal Areas - Port cities, coastal urban centers
+F) Hill or Tribal Regions - Mountain areas, tribal communities, hill stations
+G) Smart Cities / Planned Cities - Government smart city initiatives, planned townships
 
-SPECIFIC CASE: "Halugunda Road, Karnataka" at coordinates (12.2630827, 75.8305606):
-This is definitively a VILLAGE in rural Kodagu district, Karnataka. It MUST receive the disadvantaged area penalty of -10% investment viability and -0.5% location score, regardless of any tourism hub classification.
+STEP 2: AUTOMATIC PENALTY/BONUS APPLICATION
+Based on your classification in Step 1, automatically apply:
+
+IF CLASSIFIED AS Rural Areas (C) OR Hill/Tribal Regions (F):
+- MANDATORY: Apply -10% investment viability and -0.5% location score
+- This is NON-NEGOTIABLE for villages, rural areas, hill stations, tribal regions
+
+IF CLASSIFIED AS Metropolitan (A), Urban (B), Industrial/IT (D), Coastal (E), or Smart Cities (G):
+- Check if investment viability < 90%, if yes: apply +10% premium bonus
+- These are premium area types
+
+SPECIFIC GUIDANCE: Halugunda Road, Karnataka at (12.2630827, 75.8305606) is clearly a RURAL AREA (Category C) - a village in rural Kodagu district. It MUST receive the -10% investment and -0.5% location score penalty.
 
 STEP 3: CALCULATE BONUSES/PENALTIES IN ORDER:
 1. LOCATION TYPE BONUS/PENALTY:
@@ -694,13 +701,14 @@ DO NOT SKIP THE DISADVANTAGED AREA PENALTY FOR VILLAGES OR RURAL LOCATIONS.
 
 Return JSON format:
 {
+  "locationClassification": "A/B/C/D/E/F/G with description",
   "locationTypeBonus": number,
   "premiumAreaBonus": number,
   "disadvantagedAreaPenalty": number,
   "locationScorePenalty": number,
   "finalInvestmentViability": number,
   "finalLocationScore": number,
-  "reasoning": "detailed explanation of all calculations",
+  "reasoning": "detailed explanation including which category was selected and why penalties/bonuses were applied",
   "confidence": number
 }`;
 
