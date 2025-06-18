@@ -101,15 +101,15 @@ export default function PropertyFormCompact({ onSubmit, selectedLocation }: Prop
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* Budget & Country Row */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-6">
         <div>
-          <Label htmlFor="amount" className="text-sm font-medium text-gray-700 mb-1.5 block">
+          <Label htmlFor="amount" className="text-base font-medium text-gray-700 mb-2 block">
             Budget ({selectedCountry.symbol})
           </Label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm font-medium">
+            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-base font-medium">
               {selectedCountry.symbol}
             </span>
             <Input
@@ -117,18 +117,18 @@ export default function PropertyFormCompact({ onSubmit, selectedLocation }: Prop
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="pl-8 pr-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent"
+              className="pl-10 pr-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent"
               placeholder="Enter amount"
               required
             />
           </div>
         </div>
         <div>
-          <Label className="text-sm font-medium text-gray-700 mb-1.5 block">
+          <Label className="text-base font-medium text-gray-700 mb-2 block">
             Country
           </Label>
           <Select value={selectedCountry.code} onValueChange={handleCountryChange}>
-            <SelectTrigger className="w-full py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent">
+            <SelectTrigger className="w-full py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -143,13 +143,13 @@ export default function PropertyFormCompact({ onSubmit, selectedLocation }: Prop
       </div>
 
       {/* Property Type & Size Row */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-6">
         <div>
-          <Label htmlFor="propertyType" className="text-sm font-medium text-gray-700 mb-1.5 block">
+          <Label htmlFor="propertyType" className="text-base font-medium text-gray-700 mb-2 block">
             Property Type
           </Label>
           <Select value={propertyType} onValueChange={setPropertyType} required>
-            <SelectTrigger className="w-full py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent">
+            <SelectTrigger className="w-full py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent">
               <SelectValue placeholder="Select type..." />
             </SelectTrigger>
             <SelectContent>
@@ -162,20 +162,20 @@ export default function PropertyFormCompact({ onSubmit, selectedLocation }: Prop
           </Select>
         </div>
         <div>
-          <Label htmlFor="propertySize" className="text-sm font-medium text-gray-700 mb-1.5 block">
+          <Label htmlFor="propertySize" className="text-base font-medium text-gray-700 mb-2 block">
             Size ({sizeUnit})
           </Label>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Input
               id="propertySize"
               type="number"
               value={propertySize}
               onChange={(e) => setPropertySize(e.target.value)}
-              className="flex-1 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent"
+              className="flex-1 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent"
               placeholder="1000"
             />
             <Select value={sizeUnit} onValueChange={setSizeUnit}>
-              <SelectTrigger className="w-20 py-2.5 text-sm border border-gray-300 rounded-lg">
+              <SelectTrigger className="w-24 py-3 text-base border border-gray-300 rounded-lg">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -189,13 +189,13 @@ export default function PropertyFormCompact({ onSubmit, selectedLocation }: Prop
 
       {/* Conditional Fields for Non-Land Properties */}
       {propertyType && propertyType !== 'land' && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-6">
           <div>
-            <Label htmlFor="bedrooms" className="text-sm font-medium text-gray-700 mb-1.5 block">
+            <Label htmlFor="bedrooms" className="text-base font-medium text-gray-700 mb-2 block">
               Bedrooms
             </Label>
             <Select value={bedrooms} onValueChange={setBedrooms}>
-              <SelectTrigger className="w-full py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent">
+              <SelectTrigger className="w-full py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent">
                 <SelectValue placeholder="Select..." />
               </SelectTrigger>
               <SelectContent>
@@ -208,11 +208,11 @@ export default function PropertyFormCompact({ onSubmit, selectedLocation }: Prop
             </Select>
           </div>
           <div>
-            <Label htmlFor="propertyAge" className="text-sm font-medium text-gray-700 mb-1.5 block">
+            <Label htmlFor="propertyAge" className="text-base font-medium text-gray-700 mb-2 block">
               Property Age
             </Label>
             <Select value={propertyAge} onValueChange={setPropertyAge}>
-              <SelectTrigger className="w-full py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent">
+              <SelectTrigger className="w-full py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent">
                 <SelectValue placeholder="Select..." />
               </SelectTrigger>
               <SelectContent>
@@ -228,12 +228,12 @@ export default function PropertyFormCompact({ onSubmit, selectedLocation }: Prop
       )}
 
       {/* Submit Button */}
-      <div className="pt-2">
+      <div className="pt-4">
         <Button
           type="submit"
-          className="w-full bg-[#FF5A5F] hover:bg-[#e54852] text-white py-3 rounded-lg font-semibold text-base transition-colors duration-200 shadow-lg hover:shadow-xl"
+          className="w-full bg-[#FF5A5F] hover:bg-[#e54852] text-white py-4 rounded-lg font-semibold text-lg transition-colors duration-200 shadow-lg hover:shadow-xl"
         >
-          🔍 Analyze Property Investment
+          Analyze Property Investment
         </Button>
       </div>
     </form>
