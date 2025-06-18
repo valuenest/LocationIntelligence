@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@googleGenerativeAI';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI('AIzaSyCEetXKsgKVA4KB5v-XhjY6cCfl9UZNK6w');
 
@@ -217,6 +217,59 @@ Format as a simple list without numbering or bullet points.`;
       'Growing commercial development in the area indicates rising property demand and rental yields',
       'Proximity to educational institutions and healthcare facilities ensures consistent tenant demand'
     ];
+  }
+}
+
+export async function findTopInvestmentLocations(
+  centerLocation: { lat: number; lng: number; address: string },
+  radius: number = 10
+): Promise<InvestmentLocation[]> {
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    const prompt = `As a real estate investment expert, identify the top 3 investment locations within ${radius}km of ${centerLocation.address}.
+
+Focus on areas with:
+- High growth potential for property appreciation
+- Strong infrastructure development
+- Commercial and business growth
+- Educational institutions nearby
+- Transportation connectivity
+- Emerging neighborhoods with investment potential
+
+For each location, provide:
+1. Specific area/locality name with full address
+2. Investment score (1-100)
+3. Distance from the reference location
+4. Detailed reasoning for investment potential
+
+Format as JSON array:
+[
+  {
+    "address": "Specific locality name, City, State",
+    "lat": 12.34567,
+    "lng": 77.89012,
+    "score": 85,
+    "reasoning": "Detailed investment reasoning",
+    "distance": "5.2 km"
+  }
+]`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    try {
+      const cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const locations = JSON.parse(cleanedText);
+      return locations;
+    } catch (parseError) {
+      console.error('Failed to parse investment locations response:', parseError);
+      return [];
+    }
+  } catch (error) {
+    console.error('Gemini API error for investment locations:', error);
+    return [];
   }
 }
 
