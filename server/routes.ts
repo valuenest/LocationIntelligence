@@ -1988,7 +1988,35 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         console.log(`PREMIUM AREA BONUS SKIPPED: Investment viability ${investmentViability.toFixed(1)}% >= 90%, no bonus needed`);
       }
       
-      // 6. QUALITY/REVIEW PENALTY
+      // 6. HILL/TRIBAL/VILLAGE/REMOTE AREA PENALTIES
+      // Apply -10% investment viability and -0.5% location score for disadvantaged areas
+      let areaPenalty = 0;
+      let locationScorePenalty = 0;
+      
+      const disadvantagedAreaTypes = [
+        'hill', 'tribal', 'village', 'remote', 'rural', 'hilly',
+        'mountain', 'tribal region', 'hill station', 'remote village',
+        'rural area', 'backward area', 'tribal area'
+      ];
+      
+      const isDisadvantagedArea = disadvantagedAreaTypes.some(type => 
+        areaType.toLowerCase().includes(type.toLowerCase()) ||
+        locationType.toLowerCase().includes(type.toLowerCase())
+      );
+      
+      console.log(`DISADVANTAGED AREA CHECK: areaType="${areaType}", locationType="${locationType}", isDisadvantaged=${isDisadvantagedArea}`);
+      
+      if (isDisadvantagedArea) {
+        areaPenalty = 10; // -10% investment viability
+        locationScorePenalty = 0.5; // -0.5% location score
+        
+        investmentViability -= areaPenalty;
+        result.locationScore -= locationScorePenalty;
+        
+        console.log(`DISADVANTAGED AREA PENALTY APPLIED: -${areaPenalty}% investment, -${locationScorePenalty}% location score for ${areaType} (${locationType})`);
+      }
+      
+      // 7. QUALITY/REVIEW PENALTY
       // Low quality/review score = -0.5% for each poor facility
       let qualityPenalty = 0;
       result.nearbyPlaces.forEach(place => {
@@ -2019,6 +2047,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         Education + Transport Both Missing: ${essentialServices.education.length === 0 && essentialServices.transport.length === 0 && serviceCount > 0 ? 'YES (-20%)' : 'NO (0%)'}
         LOCATION TYPE BONUS: ${locationBonus >= 0 ? '+' : ''}${locationBonus}% (${locationType} - ${areaType})
         PREMIUM AREA BONUS: ${premiumAreaBonus >= 0 ? '+' : ''}${premiumAreaBonus}% (Gemini AI verified)
+        DISADVANTAGED AREA PENALTY: -${areaPenalty}% investment, -${locationScorePenalty}% location score
         Quality Penalty: -${qualityPenalty.toFixed(1)}% (${result.nearbyPlaces.filter(p => p.rating && p.rating < 3.0).length} low-rated facilities)
         Final Investment Viability: ${finalViability.toFixed(1)}%`);
       
