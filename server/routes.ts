@@ -1437,11 +1437,15 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       } else if (metroAreaType.includes('Coastal') || metroAreaType.includes('Port')) {
         // TIER 6: Coastal Areas
         baseViability = Math.max(30, locationBasedViability * 0.8);
+      } else if (metroAreaType === 'Tourism hub' || metroAreaType === 'Tourist town' || metroAreaType === 'Resort area' || metroAreaType === 'Weekend getaway') {
+        // TIER 6: Tourism & Highway Corridors - CRITICAL FIX for Coorg areas
+        // Tourism viability should be location score dependent, not artificially high
+        baseViability = Math.max(15, locationBasedViability * 0.9); // Moderate boost for tourism areas
       } else if (metroAreaType.includes('Hill') || metroAreaType.includes('Tribal')) {
-        // TIER 7: Hill/Tribal Regions
+        // TIER 8: Hill/Tribal Regions
         baseViability = Math.max(15, locationBasedViability * 0.6);
       } else {
-        // TIER 4: Rural Areas (default)
+        // TIER 9: Rural Areas (default)
         baseViability = Math.max(12, locationBasedViability * 0.6);
       }
       
