@@ -1800,103 +1800,93 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         Total Penalty: ${totalPenalty}
         Infrastructure Multiplier: ${infrastructureAdequacyMultiplier.toFixed(2)}`);
       
-      // STRICT INFRASTRUCTURE REQUIREMENTS FOR 100% VIABILITY
-      // 100% viability is ONLY possible when ALL essential services are adequately available
-      let locationScoreCap = 100;
+      // SIMPLIFIED INVESTMENT VIABILITY LOGIC
+      // Base viability starts at 100% for location scores 4.5-5.0
+      let investmentViability = 100;
       
-      // MANDATORY RULE: 100% viability requires ALL essential services to score 80+ (equivalent to 5/5 rating)
-      const hasAdequateHealthcare = adequacyScores.healthcare.score >= 80 && essentialServices.healthcare.length >= 3;
-      const hasAdequateEducation = adequacyScores.education.score >= 80 && essentialServices.education.length >= 2;
-      const hasAdequateTransport = adequacyScores.transport.score >= 80 && essentialServices.transport.length >= 2;
-      const hasAdequateFinancial = adequacyScores.financial.score >= 80 && essentialServices.financial.length >= 2;
-      const hasAdequateDailyNeeds = adequacyScores.daily_needs.score >= 80 && essentialServices.daily_needs.length >= 3;
+      // 1. LOCATION SCORE BASED VIABILITY (4.5-5.0 = 100%)
+      if (result.locationScore >= 4.5) {
+        investmentViability = 100; // Perfect location score
+      } else if (result.locationScore >= 4.0) {
+        investmentViability = 90; // Excellent location
+      } else if (result.locationScore >= 3.5) {
+        investmentViability = 80; // Very good location
+      } else if (result.locationScore >= 3.0) {
+        investmentViability = 70; // Good location
+      } else if (result.locationScore >= 2.5) {
+        investmentViability = 60; // Average location
+      } else if (result.locationScore >= 2.0) {
+        investmentViability = 50; // Below average location
+      } else if (result.locationScore >= 1.5) {
+        investmentViability = 40; // Poor location
+      } else if (result.locationScore >= 1.0) {
+        investmentViability = 30; // Very poor location
+      } else {
+        investmentViability = 20; // Extremely poor location
+      }
       
-      // STRICT ENFORCEMENT: 100% viability only if ALL essential services are adequate
-      if (!(hasAdequateHealthcare && hasAdequateEducation && hasAdequateTransport && hasAdequateFinancial && hasAdequateDailyNeeds)) {
-        locationScoreCap = 95; // Hard cap at 95% if ANY essential service is inadequate
-        
-        // Apply progressive caps based on missing services
-        let missingServicesCount = 0;
-        if (!hasAdequateHealthcare) missingServicesCount++;
-        if (!hasAdequateEducation) missingServicesCount++;
-        if (!hasAdequateTransport) missingServicesCount++;
-        if (!hasAdequateFinancial) missingServicesCount++;
-        if (!hasAdequateDailyNeeds) missingServicesCount++;
-        
-        // Progressive cap reduction based on missing essential services
-        if (missingServicesCount >= 4) {
-          locationScoreCap = 25; // 4+ missing services = max 25%
-        } else if (missingServicesCount >= 3) {
-          locationScoreCap = 40; // 3 missing services = max 40%
-        } else if (missingServicesCount >= 2) {
-          locationScoreCap = 65; // 2 missing services = max 65%
-        } else if (missingServicesCount >= 1) {
-          locationScoreCap = 80; // 1 missing service = max 80%
+      // 2. ESSENTIAL SERVICES PENALTY (5 services: healthcare, education, transport, financial, daily needs)
+      // Missing any essential service = -2% each
+      if (essentialServices.healthcare.length === 0) investmentViability -= 2;
+      if (essentialServices.education.length === 0) investmentViability -= 2;
+      if (essentialServices.transport.length === 0) investmentViability -= 2;
+      if (essentialServices.financial.length === 0) investmentViability -= 2;
+      if (essentialServices.daily_needs.length === 0) investmentViability -= 2;
+      
+      // 3. EDUCATION & TRANSPORT SPECIAL PENALTY
+      // If both education AND transport are missing = additional -20%
+      if (essentialServices.education.length === 0 && essentialServices.transport.length === 0) {
+        investmentViability -= 20;
+      }
+      
+      // 4. QUALITY/REVIEW PENALTY
+      // Low quality/review score = -0.5% for each poor facility
+      let qualityPenalty = 0;
+      result.nearbyPlaces.forEach(place => {
+        if (place.rating && place.rating < 3.0) {
+          qualityPenalty += 0.5; // -0.5% for each low-rated facility
         }
-      }
+      });
+      investmentViability -= qualityPenalty;
       
-      // Additional location score based caps
-      if (result.locationScore < 0.5) {
-        locationScoreCap = Math.min(locationScoreCap, 10); // 0-0.5 score = max 10%
-      } else if (result.locationScore < 1.0) {
-        locationScoreCap = Math.min(locationScoreCap, 20); // 0.5-1.0 score = max 20%
-      } else if (result.locationScore < 1.5) {
-        locationScoreCap = Math.min(locationScoreCap, 30); // 1.0-1.5 score = max 30%
-      } else if (result.locationScore < 2.0) {
-        locationScoreCap = Math.min(locationScoreCap, 40); // 1.5-2.0 score = max 40%
-      } else if (result.locationScore < 2.5) {
-        locationScoreCap = Math.min(locationScoreCap, 50); // 2.0-2.5 score = max 50%
-      } else if (result.locationScore < 3.0) {
-        locationScoreCap = Math.min(locationScoreCap, 60); // 2.5-3.0 score = max 60%
-      } else if (result.locationScore < 3.5) {
-        locationScoreCap = Math.min(locationScoreCap, 70); // 3.0-3.5 score = max 70%
-      } else if (result.locationScore < 4.0) {
-        locationScoreCap = Math.min(locationScoreCap, 80); // 3.5-4.0 score = max 80%
-      } else if (result.locationScore < 4.5) {
-        locationScoreCap = Math.min(locationScoreCap, 90); // 4.0-4.5 score = max 90%
-      }
+      // 5. ENSURE MINIMUM VIABILITY
+      investmentViability = Math.max(0, Math.min(100, investmentViability));
       
-      // Apply infrastructure adequacy penalty to caps
-      if (avgAdequacyScore < 20) {
-        locationScoreCap = Math.min(locationScoreCap, 30); // Very poor infrastructure - further cap reduction
-      } else if (avgAdequacyScore < 40) {
-        locationScoreCap = Math.min(locationScoreCap, locationScoreCap * 0.85); // Poor infrastructure - 15% cap reduction
-      } else if (avgAdequacyScore < 60) {
-        locationScoreCap = Math.min(locationScoreCap, locationScoreCap * 0.95); // Adequate infrastructure - 5% cap reduction
-      }
+      // Use the simplified investment viability calculation
+      const finalViability = investmentViability;
       
-      // Calculate base investment viability with infrastructure adequacy impact (balanced approach)
-      const preMultiplierScore = baseViability + (viabilityBonus * 0.5) + (aiViabilityBonus * 0.5) + (priorityScoreBonus * 0.3);
-      const preliminaryViability = (preMultiplierScore + Math.max(-15, totalPenalty * 0.3)) * Math.min(1.2, viabilityMultiplier) * Math.min(1.3, tierViabilityMultiplier) * infrastructureAdequacyMultiplier;
-      
-      // Apply strict location score and infrastructure adequacy caps
-      const finalViability = Math.min(locationScoreCap, preliminaryViability);
-      
-      // Enhanced debug logging with strict infrastructure requirements
-      console.log(`INVESTMENT VIABILITY CALCULATION DEBUG:
+      // Enhanced debug logging with simplified investment viability logic
+      console.log(`SIMPLIFIED INVESTMENT VIABILITY CALCULATION:
         Location Score: ${result.locationScore.toFixed(2)}
-        Base Location Score Cap: ${result.locationScore < 0.5 ? 10 : result.locationScore < 1.0 ? 20 : result.locationScore < 1.5 ? 30 : result.locationScore < 2.0 ? 40 : result.locationScore < 2.5 ? 50 : result.locationScore < 3.0 ? 60 : result.locationScore < 3.5 ? 70 : result.locationScore < 4.0 ? 80 : result.locationScore < 4.5 ? 90 : 100}%
-        Infrastructure Adequacy Score: ${avgAdequacyScore.toFixed(1)}
-        Infrastructure Multiplier: ${infrastructureAdequacyMultiplier.toFixed(2)}
-        Final Location Score Cap: ${locationScoreCap}%
-        STRICT REQUIREMENTS CHECK:
-        - Healthcare Adequate: ${hasAdequateHealthcare} (${essentialServices.healthcare.length} facilities, score: ${adequacyScores.healthcare.score})
-        - Education Adequate: ${hasAdequateEducation} (${essentialServices.education.length} facilities, score: ${adequacyScores.education.score})
-        - Transport Adequate: ${hasAdequateTransport} (${essentialServices.transport.length} facilities, score: ${adequacyScores.transport.score})
-        - Financial Adequate: ${hasAdequateFinancial} (${essentialServices.financial.length} facilities, score: ${adequacyScores.financial.score})
-        - Daily Needs Adequate: ${hasAdequateDailyNeeds} (${essentialServices.daily_needs.length} facilities, score: ${adequacyScores.daily_needs.score})
-        Base Viability: ${baseViability.toFixed(1)}
-        Viability Bonus (reduced): ${(viabilityBonus * 0.5).toFixed(1)}
-        AI Viability Bonus (reduced): ${(aiViabilityBonus * 0.5).toFixed(1)}
-        Priority Score Bonus (reduced): ${(priorityScoreBonus * 0.3).toFixed(1)}
-        Infrastructure Penalty Applied: ${Math.max(-15, totalPenalty * 0.3).toFixed(1)}
-        Pre-Multiplier Total: ${preMultiplierScore.toFixed(1)}
-        Viability Multiplier (capped): ${Math.min(1.2, viabilityMultiplier).toFixed(2)}
-        Tier Multiplier (capped): ${Math.min(1.3, tierViabilityMultiplier).toFixed(2)}
-        Preliminary Score: ${preliminaryViability.toFixed(1)}
-        Final Score (after cap): ${finalViability.toFixed(1)}`);
+        Base Viability: ${result.locationScore >= 4.5 ? 100 : result.locationScore >= 4.0 ? 90 : result.locationScore >= 3.5 ? 80 : result.locationScore >= 3.0 ? 70 : result.locationScore >= 2.5 ? 60 : result.locationScore >= 2.0 ? 50 : result.locationScore >= 1.5 ? 40 : result.locationScore >= 1.0 ? 30 : 20}%
+        ESSENTIAL SERVICES PENALTIES:
+        - Healthcare Missing: ${essentialServices.healthcare.length === 0 ? 'YES (-2%)' : 'NO (0%)'} (${essentialServices.healthcare.length} facilities)
+        - Education Missing: ${essentialServices.education.length === 0 ? 'YES (-2%)' : 'NO (0%)'} (${essentialServices.education.length} facilities)
+        - Transport Missing: ${essentialServices.transport.length === 0 ? 'YES (-2%)' : 'NO (0%)'} (${essentialServices.transport.length} facilities)
+        - Financial Missing: ${essentialServices.financial.length === 0 ? 'YES (-2%)' : 'NO (0%)'} (${essentialServices.financial.length} facilities)
+        - Daily Needs Missing: ${essentialServices.daily_needs.length === 0 ? 'YES (-2%)' : 'NO (0%)'} (${essentialServices.daily_needs.length} facilities)
+        - Education + Transport Both Missing: ${essentialServices.education.length === 0 && essentialServices.transport.length === 0 ? 'YES (-20%)' : 'NO (0%)'}
+        Quality Penalty: -${qualityPenalty.toFixed(1)}% (${result.nearbyPlaces.filter(p => p.rating && p.rating < 3.0).length} low-rated facilities)
+        Final Investment Viability: ${finalViability.toFixed(1)}%`);
       
       result.investmentViability = Math.min(100, Math.max(0, Math.round(finalViability)));
+
+      // Generate investment recommendation using simplified logic
+      const viability = result.investmentViability;
+      const areaClassification = aiIntelligence.areaClassification || 'Urban Areas';
+      
+      if (viability >= 85) {
+        result.investmentRecommendation = `Excellent ${areaClassification} Investment - Premium Grade Infrastructure`;
+      } else if (viability >= 70) {
+        result.investmentRecommendation = `Good ${areaClassification} Investment - A-Grade Infrastructure`;
+      } else if (viability >= 50) {
+        result.investmentRecommendation = `Moderate ${areaClassification} Investment - B-Grade Infrastructure`;
+      } else if (viability >= 30) {
+        result.investmentRecommendation = `Below Average ${areaClassification} Investment - C-Grade Infrastructure`;
+      } else {
+        result.investmentRecommendation = `Poor Investment Potential - ${areaClassification} Infrastructure Constraints`;
+      }
+      console.log(`Investment Recommendation Generated: "${result.investmentRecommendation}" for viability ${result.investmentViability}% and area "${aiIntelligence.areaClassification}"`);
 
       // 5. BUSINESS GROWTH ANALYSIS (More Conservative)
       const businessGrowthFactors = {
@@ -1986,97 +1976,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         result.growthPrediction = Math.max(-8, Math.min(12, finalGrowthPrediction));
       }
 
-      // ENHANCED INVESTMENT RECOMMENDATION ENGINE WITH 8-TIER CLASSIFICATION
-      const generateInvestmentRecommendation = () => {
-        const viability = result.investmentViability;
-        const locationScore = result.locationScore;
-        const areaClassification = aiIntelligence.areaClassification || 'Urban Areas';
-        const locationType = aiIntelligence.locationType || 'urban';
-
-        // 8-TIER CLASSIFICATION SYSTEM
-        let areaCategory = '';
-        let tierRisk = '';
-        
-        // TIER 1: Metropolitan Areas
-        if (areaClassification === 'Metro city' || locationType === 'metropolitan') {
-          areaCategory = 'Premium Metropolitan';
-          tierRisk = locationScore >= 4.0 ? 'Ultra-Premium' : locationScore >= 3.5 ? 'Premium' : 'Standard Metropolitan';
-        }
-        // TIER 8: Smart Cities/Planned Cities  
-        else if (areaClassification.includes('Smart city') || areaClassification.includes('Planned')) {
-          areaCategory = 'Smart City Development';
-          tierRisk = 'Tech-Forward';
-        }
-        // TIER 5: Industrial/IT Zones
-        else if (areaClassification.includes('Industrial') || areaClassification.includes('SEZ') || areaClassification.includes('IT')) {
-          areaCategory = 'Industrial Tech Hub';
-          tierRisk = 'Business-Focused';
-        }
-        // TIER 2: Urban Areas
-        else if (locationType === 'city' || areaClassification === 'Urban locality') {
-          areaCategory = 'Urban City';
-          tierRisk = locationScore >= 3.0 ? 'Established Urban' : 'Developing Urban';
-        }
-        // TIER 3: Semi-Urban Areas
-        else if (areaClassification.includes('Township') || areaClassification.includes('Suburban')) {
-          areaCategory = 'Semi-Urban Development';
-          tierRisk = 'Growth Corridor';
-        }
-        // TIER 6: Tourism & Highway Corridors (NEW - HIGH PRIORITY)
-        else if (areaClassification.includes('Tourism') || areaClassification.includes('Highway') || 
-                 areaClassification.includes('Tourist') || areaClassification.includes('Resort') ||
-                 areaClassification.includes('Weekend') || areaClassification.includes('Scenic')) {
-          areaCategory = 'Tourism Investment Hub';
-          tierRisk = 'High-Growth Tourism';
-        }
-        // TIER 7: Coastal Areas
-        else if (areaClassification.includes('Coastal') || areaClassification.includes('Port')) {
-          areaCategory = 'Coastal Zone';
-          tierRisk = 'Maritime Hub';
-        }
-        // TIER 8: Hill/Tribal Regions
-        else if (areaClassification.includes('Hill') || areaClassification.includes('Tribal')) {
-          areaCategory = 'Hill Station/Tribal';
-          tierRisk = 'Remote Eco-Zone';
-        }
-        // TIER 9: Rural Areas
-        else {
-          areaCategory = 'Rural Development';
-          tierRisk = locationScore >= 2.0 ? 'Accessible Rural' : 'Remote Rural';
-        }
-
-        const infrastructureGrade = locationScore >= 4.0 ? 'A-Grade' :
-                                   locationScore >= 3.0 ? 'B-Grade' :
-                                   locationScore >= 2.0 ? 'C-Grade' : 
-                                   locationScore >= 1.0 ? 'D-Grade' : 'E-Grade';
-
-        // CRITICAL: Handle very poor locations (score < 2.0) with negative outlook
-        if (locationScore < 1.5) {
-          return `Not Recommended - ${areaCategory} (${infrastructureGrade} Infrastructure) - Severe Infrastructure Deficit`;
-        } else if (locationScore < 2.0) {
-          return `High Risk Investment - ${areaCategory} (${infrastructureGrade} Infrastructure) - Major Infrastructure Gaps`;
-        }
-        
-        // Standard viability-based recommendations for decent locations (score >= 2.0)
-        if (viability >= 85) {
-          return `Outstanding ${areaCategory} Investment - ${infrastructureGrade} Infrastructure`;
-        } else if (viability >= 70) {
-          return `Excellent ${areaCategory} Investment - ${tierRisk} Growth Potential`;
-        } else if (viability >= 55) {
-          return `Good ${areaCategory} Investment - Moderate Risk`;
-        } else if (viability >= 40) {
-          return `Limited ${areaCategory} Investment - Higher Risk`;
-        } else if (viability >= 25) {
-          return `Speculative ${areaCategory} Investment - High Risk`;
-        } else {
-          return `Poor Investment Potential - ${areaCategory} Infrastructure Constraints`;
-        }
-      };
-
-      result.investmentRecommendation = generateInvestmentRecommendation();
-      
-      // Debug log the recommendation generation
-      console.log(`Investment Recommendation Generated: "${result.investmentRecommendation}" for viability ${result.investmentViability}% and area "${aiIntelligence.areaClassification}"`);;
+      // The investment recommendation is already set by the simplified logic above;
 
       // Enhanced market intelligence with infrastructure analysis
       const marketIntelligence = {
