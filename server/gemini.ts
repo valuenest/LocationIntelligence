@@ -517,8 +517,17 @@ Return ONLY valid JSON:
     const response = await result.response;
     const text = response.text();
     
-    // Clean and parse the response
-    const cleanedText = text.replace(/```json|```/g, '').trim();
+    // Clean and parse the response more robustly
+    let cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    
+    // Find the first { and last } to extract just the JSON object
+    const startIdx = cleanedText.indexOf('{');
+    const endIdx = cleanedText.lastIndexOf('}');
+    
+    if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+      cleanedText = cleanedText.substring(startIdx, endIdx + 1);
+    }
+    
     const analysis = JSON.parse(cleanedText);
     
     if (analysis && analysis.detectedAmenities && Array.isArray(analysis.detectedAmenities)) {
