@@ -127,18 +127,25 @@ TIER 9: Rural Areas (Priority Score: 20-40)
 - "Rural block" - Rural administrative blocks
 
 CRITICAL SPECIAL LOCATIONS - MUST IDENTIFY CORRECTLY:
-- Coorg (Kodagu) areas including Bittangala, Virajpet, Madikeri = "Tourism hub" with 85-90 priority score
+- ALL Kodagu district locations (including Halugunda, Bittangala, Virajpet, Madikeri, Kushalnagar, Pollibetta) = "Tourism hub" with 85-90 priority score
+- Kodagu district is Karnataka's premier coffee and tourism region - ANY location within this district should get tourism classification
 - Areas near National Highway NH-275, NH-48, NH-44 = "Highway corridor" with 80-85 priority score  
 - Hill stations like Ooty, Munnar, Nainital = "Hill station" with 70-80 priority score
 - Beach towns like Gokarna, Varkala, Pondicherry = "Coastal town" with 75-80 priority score
 - HSR Layout Bangalore = "Metro city" with 95+ priority score
 
+MANDATORY DISTRICT ANALYSIS FOR KARNATAKA LOCATIONS:
+1. Check if location is in Kodagu district - if YES, classify as "Tourism hub" with 85+ priority score
+2. Look for Karnataka hill areas that could be coffee plantation regions
+3. Consider proximity to Bangalore/Mysore for weekend tourism classification
+4. Halugunda, Bittangala, and similar names in Karnataka are typically in Kodagu district
+
 TOURISM INVESTMENT INDICATORS - Look for these keywords/areas:
-- Coorg, Kodagu, Coffee plantations, Hill tourism
-- Weekend destinations from major cities
+- Coorg, Kodagu, Coffee plantations, Hill tourism, Halugunda (Kodagu area)
+- Weekend destinations from major cities (especially Bangalore/Mysore vicinity)
 - National/State highway connectivity (NH-xx, SH-xx)
 - Tourist attractions, resorts, homestays nearby
-- Scenic beauty, nature tourism potential
+- Scenic beauty, nature tourism potential in hill districts
 
 2. Safety & Crime Assessment:
    - Research known crime statistics for this area

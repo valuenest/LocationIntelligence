@@ -1452,6 +1452,43 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // Add tourism infrastructure bonus for tourism hubs like Bittangala
       finalLocationScore += tourismInfrastructureBonus;
       
+      // ESSENTIAL SERVICES ADEQUACY BONUS
+      // ================================
+      // Locations with good essential services coverage should get proper scoring
+      const essentialServicesCount = {
+        healthcare: result.nearbyPlaces.filter(p => 
+          p.types.some(t => ['hospital', 'clinic', 'pharmacy', 'health', 'medical_center'].includes(t))
+        ).length,
+        education: result.nearbyPlaces.filter(p => 
+          p.types.some(t => ['school', 'university', 'college', 'educational_institution'].includes(t))
+        ).length,
+        financial: result.nearbyPlaces.filter(p => 
+          p.types.some(t => ['bank', 'atm', 'financial'].includes(t))
+        ).length,
+        daily_needs: result.nearbyPlaces.filter(p => 
+          p.types.some(t => ['grocery_store', 'supermarket', 'gas_station', 'store', 'grocery', 'gas station'].includes(t))
+        ).length
+      };
+      
+      // Calculate essential services adequacy bonus
+      let essentialServicesBonus = 0;
+      if (essentialServicesCount.healthcare >= 2) essentialServicesBonus += 0.4; // Good healthcare
+      else if (essentialServicesCount.healthcare >= 1) essentialServicesBonus += 0.2; // Basic healthcare
+      
+      if (essentialServicesCount.education >= 1) essentialServicesBonus += 0.3; // Education available
+      if (essentialServicesCount.financial >= 1) essentialServicesBonus += 0.3; // Financial services
+      if (essentialServicesCount.daily_needs >= 1) essentialServicesBonus += 0.3; // Daily needs covered
+      
+      // Additional bonus for comprehensive coverage
+      const servicesAvailable = Object.values(essentialServicesCount).filter(count => count > 0).length;
+      if (servicesAvailable >= 4) {
+        essentialServicesBonus += 0.5; // All essential services present
+      } else if (servicesAvailable >= 3) {
+        essentialServicesBonus += 0.3; // Most essential services present
+      }
+      
+      finalLocationScore += essentialServicesBonus;
+      
       // Only add bonuses for locations that have some basic infrastructure
       if (finalLocationScore > 0.8) {
         finalLocationScore += aiBaselineBonus * 0.5; // Reduce AI baseline bonus
