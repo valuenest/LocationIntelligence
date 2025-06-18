@@ -100,7 +100,19 @@ export default function Results() {
   // Save analysis to localStorage when data is loaded
   useEffect(() => {
     if (result?.analysis && ipData?.ip) {
-      saveAnalysisToHistory(ipData.ip, result.analysis);
+      console.log('Saving to history:', result.analysis);
+      const historyItem = {
+        sessionId: result.analysis.sessionId,
+        location: result.analysis.location,
+        amount: result.analysis.amount,
+        propertyType: result.analysis.propertyType,
+        planType: result.analysis.planType,
+        analysisData: result.analysis.analysisData,
+        createdAt: result.analysis.createdAt,
+        id: result.analysis.id
+      };
+      console.log('History item to save:', historyItem);
+      saveAnalysisToHistory(ipData.ip, historyItem);
     }
   }, [result, ipData]);
 

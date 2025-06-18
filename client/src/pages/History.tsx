@@ -44,7 +44,9 @@ export default function History() {
 
   useEffect(() => {
     if (ipData?.ip) {
+      console.log('Loading history for IP:', ipData.ip);
       const historyData = getAnalysisHistory(ipData.ip);
+      console.log('Retrieved history data:', historyData);
       setHistory(historyData);
     }
   }, [ipData]);
