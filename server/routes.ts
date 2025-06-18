@@ -1650,24 +1650,48 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // Metropolitan status multiplier
       if (isMetropolitan) viabilityMultiplier += 0.25;
 
-      // Calculate final investment viability with tier multiplier enhancement (30-95% range)
-      const preMultiplierScore = baseViability + viabilityBonus + aiViabilityBonus + priorityScoreBonus;
-      const finalViability = preMultiplierScore * viabilityMultiplier * tierViabilityMultiplier;
+      // CRITICAL: LOCATION SCORE DEPENDENT CAPS
+      // Investment viability MUST be capped based on location score quality
+      let locationScoreCap = 100;
       
-      // Debug logging for HSR Layout and premium metro areas
-      if (location.address.toLowerCase().includes('hsr') || tierAreaType === 'Metro city') {
-        console.log(`METRO AREA CALCULATION DEBUG:
-          Base Viability: ${baseViability}
-          Viability Bonus: ${viabilityBonus}
-          AI Viability Bonus: ${aiViabilityBonus}
-          Priority Score Bonus: ${priorityScoreBonus}
-          Pre-Multiplier Total: ${preMultiplierScore}
-          Viability Multiplier: ${viabilityMultiplier}
-          Tier Multiplier: ${tierViabilityMultiplier}
-          Final Score: ${finalViability}`);
+      if (result.locationScore < 1.0) {
+        locationScoreCap = 20; // Very poor infrastructure - max 20%
+      } else if (result.locationScore < 1.5) {
+        locationScoreCap = 35; // Poor infrastructure - max 35%
+      } else if (result.locationScore < 2.0) {
+        locationScoreCap = 50; // Below average infrastructure - max 50%
+      } else if (result.locationScore < 2.5) {
+        locationScoreCap = 65; // Average infrastructure - max 65%
+      } else if (result.locationScore < 3.0) {
+        locationScoreCap = 75; // Good infrastructure - max 75%
+      } else if (result.locationScore < 3.5) {
+        locationScoreCap = 85; // Very good infrastructure - max 85%
+      } else if (result.locationScore < 4.0) {
+        locationScoreCap = 95; // Excellent infrastructure - max 95%
       }
+      // Outstanding infrastructure (4.0+) can reach 100%
       
-      // Allow true calculated scores without artificial constraints
+      // Calculate base investment viability with reduced multiplier impact
+      const preMultiplierScore = baseViability + (viabilityBonus * 0.5) + (aiViabilityBonus * 0.5) + (priorityScoreBonus * 0.3);
+      const preliminaryViability = preMultiplierScore * Math.min(1.2, viabilityMultiplier) * Math.min(1.3, tierViabilityMultiplier);
+      
+      // Apply strict location score cap
+      const finalViability = Math.min(locationScoreCap, preliminaryViability);
+      
+      // Enhanced debug logging
+      console.log(`INVESTMENT VIABILITY CALCULATION DEBUG:
+        Location Score: ${result.locationScore.toFixed(2)}
+        Location Score Cap: ${locationScoreCap}%
+        Base Viability: ${baseViability.toFixed(1)}
+        Viability Bonus (reduced): ${(viabilityBonus * 0.5).toFixed(1)}
+        AI Viability Bonus (reduced): ${(aiViabilityBonus * 0.5).toFixed(1)}
+        Priority Score Bonus (reduced): ${(priorityScoreBonus * 0.3).toFixed(1)}
+        Pre-Multiplier Total: ${preMultiplierScore.toFixed(1)}
+        Viability Multiplier (capped): ${Math.min(1.2, viabilityMultiplier).toFixed(2)}
+        Tier Multiplier (capped): ${Math.min(1.3, tierViabilityMultiplier).toFixed(2)}
+        Preliminary Score: ${preliminaryViability.toFixed(1)}
+        Final Score (after cap): ${finalViability.toFixed(1)}`);
+      
       result.investmentViability = Math.min(100, Math.max(0, Math.round(finalViability)));
 
       // 5. BUSINESS GROWTH ANALYSIS (More Conservative)
