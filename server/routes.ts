@@ -824,7 +824,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
 
         // Commercial infrastructure with rating consideration (expanded for business districts)
         if (place.types.some(type => [
-          'store', 'supermarket', 'grocery_or_supermarket', 'shopping_mall', 'bank, 'atm',
+          'store', 'supermarket', 'grocery_or_supermarket', 'shopping_mall', 'bank', 'atm',
           'establishment', 'finance', 'insurance_agency', 'real_estate_agency', 'accounting',
           'lawyer', 'point_of_interest', 'business_center', 'office_building'
         ].includes(type))) {
