@@ -1800,30 +1800,61 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         Total Penalty: ${totalPenalty}
         Infrastructure Multiplier: ${infrastructureAdequacyMultiplier.toFixed(2)}`);
       
-      // REALISTIC LOCATION SCORE DEPENDENT CAPS
-      // Investment viability based on actual location quality tiers
+      // STRICT INFRASTRUCTURE REQUIREMENTS FOR 100% VIABILITY
+      // 100% viability is ONLY possible when ALL essential services are adequately available
       let locationScoreCap = 100;
       
-      if (result.locationScore < 0.5) {
-        locationScoreCap = 10; // 0-0.5 score = max 10%
-      } else if (result.locationScore < 1.0) {
-        locationScoreCap = 20; // 0.5-1.0 score = max 20%
-      } else if (result.locationScore < 1.5) {
-        locationScoreCap = 30; // 1.0-1.5 score = max 30%
-      } else if (result.locationScore < 2.0) {
-        locationScoreCap = 40; // 1.5-2.0 score = max 40%
-      } else if (result.locationScore < 2.5) {
-        locationScoreCap = 50; // 2.0-2.5 score = max 50%
-      } else if (result.locationScore < 3.0) {
-        locationScoreCap = 60; // 2.5-3.0 score = max 60%
-      } else if (result.locationScore < 3.5) {
-        locationScoreCap = 70; // 3.0-3.5 score = max 70%
-      } else if (result.locationScore < 4.0) {
-        locationScoreCap = 80; // 3.5-4.0 score = max 80%
-      } else if (result.locationScore < 4.5) {
-        locationScoreCap = 90; // 4.0-4.5 score = max 90%
+      // MANDATORY RULE: 100% viability requires ALL essential services to score 80+ (equivalent to 5/5 rating)
+      const hasAdequateHealthcare = adequacyScores.healthcare.score >= 80 && essentialServices.healthcare.length >= 3;
+      const hasAdequateEducation = adequacyScores.education.score >= 80 && essentialServices.education.length >= 2;
+      const hasAdequateTransport = adequacyScores.transport.score >= 80 && essentialServices.transport.length >= 2;
+      const hasAdequateFinancial = adequacyScores.financial.score >= 80 && essentialServices.financial.length >= 2;
+      const hasAdequateDailyNeeds = adequacyScores.daily_needs.score >= 80 && essentialServices.daily_needs.length >= 3;
+      
+      // STRICT ENFORCEMENT: 100% viability only if ALL essential services are adequate
+      if (!(hasAdequateHealthcare && hasAdequateEducation && hasAdequateTransport && hasAdequateFinancial && hasAdequateDailyNeeds)) {
+        locationScoreCap = 95; // Hard cap at 95% if ANY essential service is inadequate
+        
+        // Apply progressive caps based on missing services
+        let missingServicesCount = 0;
+        if (!hasAdequateHealthcare) missingServicesCount++;
+        if (!hasAdequateEducation) missingServicesCount++;
+        if (!hasAdequateTransport) missingServicesCount++;
+        if (!hasAdequateFinancial) missingServicesCount++;
+        if (!hasAdequateDailyNeeds) missingServicesCount++;
+        
+        // Progressive cap reduction based on missing essential services
+        if (missingServicesCount >= 4) {
+          locationScoreCap = 25; // 4+ missing services = max 25%
+        } else if (missingServicesCount >= 3) {
+          locationScoreCap = 40; // 3 missing services = max 40%
+        } else if (missingServicesCount >= 2) {
+          locationScoreCap = 65; // 2 missing services = max 65%
+        } else if (missingServicesCount >= 1) {
+          locationScoreCap = 80; // 1 missing service = max 80%
+        }
       }
-      // Only exceptional 4.5+ scores can reach 100%
+      
+      // Additional location score based caps
+      if (result.locationScore < 0.5) {
+        locationScoreCap = Math.min(locationScoreCap, 10); // 0-0.5 score = max 10%
+      } else if (result.locationScore < 1.0) {
+        locationScoreCap = Math.min(locationScoreCap, 20); // 0.5-1.0 score = max 20%
+      } else if (result.locationScore < 1.5) {
+        locationScoreCap = Math.min(locationScoreCap, 30); // 1.0-1.5 score = max 30%
+      } else if (result.locationScore < 2.0) {
+        locationScoreCap = Math.min(locationScoreCap, 40); // 1.5-2.0 score = max 40%
+      } else if (result.locationScore < 2.5) {
+        locationScoreCap = Math.min(locationScoreCap, 50); // 2.0-2.5 score = max 50%
+      } else if (result.locationScore < 3.0) {
+        locationScoreCap = Math.min(locationScoreCap, 60); // 2.5-3.0 score = max 60%
+      } else if (result.locationScore < 3.5) {
+        locationScoreCap = Math.min(locationScoreCap, 70); // 3.0-3.5 score = max 70%
+      } else if (result.locationScore < 4.0) {
+        locationScoreCap = Math.min(locationScoreCap, 80); // 3.5-4.0 score = max 80%
+      } else if (result.locationScore < 4.5) {
+        locationScoreCap = Math.min(locationScoreCap, 90); // 4.0-4.5 score = max 90%
+      }
       
       // Apply infrastructure adequacy penalty to caps
       if (avgAdequacyScore < 20) {
@@ -1841,13 +1872,19 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // Apply strict location score and infrastructure adequacy caps
       const finalViability = Math.min(locationScoreCap, preliminaryViability);
       
-      // Enhanced debug logging with infrastructure adequacy
+      // Enhanced debug logging with strict infrastructure requirements
       console.log(`INVESTMENT VIABILITY CALCULATION DEBUG:
         Location Score: ${result.locationScore.toFixed(2)}
         Base Location Score Cap: ${result.locationScore < 0.5 ? 10 : result.locationScore < 1.0 ? 20 : result.locationScore < 1.5 ? 30 : result.locationScore < 2.0 ? 40 : result.locationScore < 2.5 ? 50 : result.locationScore < 3.0 ? 60 : result.locationScore < 3.5 ? 70 : result.locationScore < 4.0 ? 80 : result.locationScore < 4.5 ? 90 : 100}%
         Infrastructure Adequacy Score: ${avgAdequacyScore.toFixed(1)}
         Infrastructure Multiplier: ${infrastructureAdequacyMultiplier.toFixed(2)}
         Final Location Score Cap: ${locationScoreCap}%
+        STRICT REQUIREMENTS CHECK:
+        - Healthcare Adequate: ${hasAdequateHealthcare} (${essentialServices.healthcare.length} facilities, score: ${adequacyScores.healthcare.score})
+        - Education Adequate: ${hasAdequateEducation} (${essentialServices.education.length} facilities, score: ${adequacyScores.education.score})
+        - Transport Adequate: ${hasAdequateTransport} (${essentialServices.transport.length} facilities, score: ${adequacyScores.transport.score})
+        - Financial Adequate: ${hasAdequateFinancial} (${essentialServices.financial.length} facilities, score: ${adequacyScores.financial.score})
+        - Daily Needs Adequate: ${hasAdequateDailyNeeds} (${essentialServices.daily_needs.length} facilities, score: ${adequacyScores.daily_needs.score})
         Base Viability: ${baseViability.toFixed(1)}
         Viability Bonus (reduced): ${(viabilityBonus * 0.5).toFixed(1)}
         AI Viability Bonus (reduced): ${(aiViabilityBonus * 0.5).toFixed(1)}
