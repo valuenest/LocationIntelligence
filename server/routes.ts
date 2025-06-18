@@ -1265,20 +1265,34 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
 
       if (isMetropolitan) economicMultiplier += 0.15;
 
-      // 5. INFRASTRUCTURE DENSITY SCORING (More Balanced Approach)
-      // Give credit for available amenities rather than heavy penalties
+      // 5. INFRASTRUCTURE DENSITY SCORING (Realistic Approach for AI-Detected Areas)
+      // Give proper credit for AI-detected amenities
       const totalAmenities = result.nearbyPlaces.length;
       let densityMultiplier = 1.0;
+      let baseInfrastructureBonus = 0;
 
-      if (totalAmenities >= 50) densityMultiplier = 1.4; // Excellent density
-      else if (totalAmenities >= 35) densityMultiplier = 1.3; // Very good density
-      else if (totalAmenities >= 25) densityMultiplier = 1.2; // Good density  
-      else if (totalAmenities >= 15) densityMultiplier = 1.1; // Adequate density
-      else if (totalAmenities >= 8) densityMultiplier = 1.0; // Basic density
-      else if (totalAmenities >= 3) densityMultiplier = 0.9; // Limited amenities
-      else densityMultiplier = 0.8; // Very limited amenities
+      // AI-detected amenities should get proper scoring credit
+      if (totalAmenities >= 50) {
+        densityMultiplier = 1.8; // Excellent density
+        baseInfrastructureBonus = 2.0;
+      } else if (totalAmenities >= 25) {
+        densityMultiplier = 1.6; // Very good density
+        baseInfrastructureBonus = 1.5;
+      } else if (totalAmenities >= 15) {
+        densityMultiplier = 1.4; // Good density - areas like Halugunda with 16 amenities
+        baseInfrastructureBonus = 1.2;
+      } else if (totalAmenities >= 8) {
+        densityMultiplier = 1.2; // Adequate density
+        baseInfrastructureBonus = 0.8;
+      } else if (totalAmenities >= 3) {
+        densityMultiplier = 1.0; // Basic density
+        baseInfrastructureBonus = 0.3;
+      } else {
+        densityMultiplier = 0.8; // Very limited amenities
+        baseInfrastructureBonus = 0;
+      }
 
-      // 6. FINAL LOCATION SCORE CALCULATION (Much More Conservative)
+      // 6. ENHANCED LOCATION SCORE CALCULATION WITH AI INFRASTRUCTURE BONUS
       const baseInfrastructureScore = (
         healthcareScore * 0.22 +          // 22% - Healthcare (increased weight)
         educationScore * 0.18 +           // 18% - Education
@@ -1288,7 +1302,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         finalConnectivityScore * 0.12 +   // 12% - Connectivity
         safetyScore * 0.02 +              // 2% - Safety
         environmentScore * 0.01           // 1% - Environment
-      );
+      ) + baseInfrastructureBonus;        // Add density-based bonus for AI-detected areas
 
       // AI-ENHANCED LOCATION SCORING WITH METROPOLITAN RECOGNITION
       // ===========================================================
