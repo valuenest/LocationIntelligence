@@ -1300,13 +1300,14 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // Use AI intelligence to set proper baseline for metropolitan areas
       let baseViability = 30;
       
-      // AI-based baseline adjustment for location types
-      if (aiIntelligence.locationType === 'metropolitan') {
-        baseViability = 70; // Metropolitan areas like HSR Layout Bangalore start at 70%
+      // AI-based baseline adjustment for location types - Enhanced for metro areas
+      const metroAreaType = aiIntelligence.areaClassification || 'Urban Areas';
+      if (aiIntelligence.locationType === 'metropolitan' || metroAreaType === 'Metro city') {
+        baseViability = 85; // Metropolitan areas like HSR Layout Bangalore start at 85%
       } else if (aiIntelligence.locationType === 'city') {
-        baseViability = 55;
+        baseViability = 60;
       } else if (aiIntelligence.developmentStage === 'developed') {
-        baseViability = 45;
+        baseViability = 50;
       }
       
       // Add AI investment potential directly
@@ -1323,8 +1324,12 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       
       // TIER 1: Metropolitan Areas - Highest multiplier for HSR Layout type locations
       if (tierAreaType === 'Metro city' || tierAreaType === 'Metropolitan area' || tierAreaType === 'Megacity' || tierAreaType === 'Urban agglomeration') {
-        tierViabilityMultiplier = 1.5; // 50% boost for metro cities
-        priorityScoreBonus = Math.min(35, basePriorityScore * 0.4); // Higher bonus
+        tierViabilityMultiplier = 1.2; // 20% boost for metro cities (reduced to prevent over-multiplication)
+        priorityScoreBonus = Math.min(40, basePriorityScore * 0.45); // Higher bonus for 98+ priority scores
+        // Additional boost for premium metro areas like HSR Layout
+        if (basePriorityScore >= 95) {
+          priorityScoreBonus += 15; // Extra 15 points for premium locations
+        }
       }
       // TIER 4: Industrial/IT Zones - Second highest for tech corridors
       else if (tierAreaType === 'Industrial estate' || tierAreaType === 'SEZ (Special Economic Zone)' || tierAreaType === 'IT park' || tierAreaType === 'Tech hub') {
@@ -1387,7 +1392,22 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       if (isMetropolitan) viabilityMultiplier += 0.25;
 
       // Calculate final investment viability with tier multiplier enhancement (30-95% range)
-      const finalViability = (baseViability + viabilityBonus + aiViabilityBonus + priorityScoreBonus) * viabilityMultiplier * tierViabilityMultiplier;
+      const preMultiplierScore = baseViability + viabilityBonus + aiViabilityBonus + priorityScoreBonus;
+      const finalViability = preMultiplierScore * viabilityMultiplier * tierViabilityMultiplier;
+      
+      // Debug logging for HSR Layout and premium metro areas
+      if (location.address.toLowerCase().includes('hsr') || tierAreaType === 'Metro city') {
+        console.log(`METRO AREA CALCULATION DEBUG:
+          Base Viability: ${baseViability}
+          Viability Bonus: ${viabilityBonus}
+          AI Viability Bonus: ${aiViabilityBonus}
+          Priority Score Bonus: ${priorityScoreBonus}
+          Pre-Multiplier Total: ${preMultiplierScore}
+          Viability Multiplier: ${viabilityMultiplier}
+          Tier Multiplier: ${tierViabilityMultiplier}
+          Final Score: ${finalViability}`);
+      }
+      
       result.investmentViability = Math.min(95, Math.max(30, Math.round(finalViability)));
 
       // 5. BUSINESS GROWTH ANALYSIS (More Conservative)
