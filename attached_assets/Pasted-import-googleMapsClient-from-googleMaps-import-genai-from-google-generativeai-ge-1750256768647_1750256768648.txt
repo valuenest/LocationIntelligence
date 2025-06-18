@@ -1,0 +1,269 @@
+import { googleMapsClient } from './googleMaps';
+import { genai } from 'google-generativeai';
+
+genai.configure({ api_key: process.env.GOOGLE_API_KEY });
+
+interface InfrastructureScores {
+  healthcare: { total: number; close: number; premium: number };
+  education: { total: number; close: number; premium: number };
+  transport: { total: number; close: number; premium: number };
+  commercial: { total: number; close: number; premium: number };
+  lifestyle: { total: number; close: number; premium: number };
+  connectivity: number;
+  safety: { total: number };
+  environment: { total: number };
+  breakdown: { category: string; score: number; reason: string }[];
+}
+
+interface Place {
+  types: string[];
+  name: string;
+  rating: number;
+  user_ratings_total: number;
+  photos?: { photo_reference: string }[];
+  place_id: string;
+  distance: number; // In meters
+}
+
+// Initialize scores
+function initializeScores(): InfrastructureScores {
+  return {
+    healthcare: { total: 0, close: 0, premium: 0 },
+    education: { total: 0, close: 0, premium: 0 },
+    transport: { total: 0, close: 0, premium: 0 },
+    commercial: { total: 0, close: 0, premium: 0 },
+    lifestyle: { total: 0, close: 0, premium: 0 },
+    connectivity: 0,
+    safety: { total: 0 },
+    environment: { total: 0 },
+    breakdown: []
+  };
+}
+
+async function scoreInfrastructure(lat: number, lng: number, locationType: 'metropolitan' | 'city' | 'town' | 'village' | 'rural'): Promise<InfrastructureScores> {
+  const infrastructureScores = initializeScores();
+  const placeTypes = [
+    { category: 'healthcare', types: ['hospital', 'pharmacy', 'doctor'] },
+    { category: 'education', types: ['school', 'university', 'library'] },
+    { category: 'transport', types: ['bus_station', 'train_station', 'subway_station', 'airport'] },
+    { category: 'commercial', types: ['shopping_mall', 'supermarket', 'restaurant', 'bank'] },
+    { category: 'lifestyle', types: ['park', 'gym', 'movie_theater', 'cafe'] }
+  ];
+
+  // Step 1: Place Detection and Categorization
+  for (const { category, types } of placeTypes) {
+    const places = await fetchPlaces(lat, lng, types);
+    for (const place of places) {
+      const quality = await detectQuality(place);
+      const travelTime = await getTravelTime(lat, lng, place.place_id, locationType);
+      const baseScore = calculateBaseScore(category, place, quality);
+      const timeMultiplier = calculateTimeMultiplier(travelTime, locationType);
+
+      const score = baseScore * timeMultiplier;
+      infrastructureScores[category].total += score;
+      if (travelTime <= getCloseThreshold(locationType)) {
+        infrastructureScores[category].close += score;
+      }
+      if (quality.isPremium) {
+        infrastructureScores[category].premium += quality.confidence;
+      }
+
+      infrastructureScores.breakdown.push({
+        category,
+        score,
+        reason: `${place.name} (${quality.isPremium ? 'Premium' : quality.isGood ? 'Good' : 'Standard'}) contributes ${score.toFixed(2)} to ${category} score due to ${travelTime}min travel time and ${quality.reason}.`
+      });
+    }
+  }
+
+  // Step 2: Connectivity Analysis
+  infrastructureScores.connectivity = await calculateConnectivityScore(lat, lng, locationType);
+
+  // Step 3: Safety and Environment (Simplified for MVP)
+  infrastructureScores.safety.total = await estimateSafetyScore(lat, lng);
+  infrastructureScores.environment.total = await estimateEnvironmentScore(lat, lng);
+
+  return infrastructureScores;
+}
+
+// Fetch places with caching
+async function fetchPlaces(lat: number, lng: number, types: string[]): Promise<Place[]> {
+  const cacheKey = `places:${lat}:${lng}:${types.join(',')}`;
+  const cached = await redis.get(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  const places: Place[] = [];
+  for (const type of types) {
+    const response = await googleMapsClient.placesNearby({
+      location: [lat, lng],
+      radius: 5000,
+      type
+    });
+    places.push(...response.results.map(result => ({
+      types: result.types,
+      name: result.name,
+      rating: result.rating || 0,
+      user_ratings_total: result.user_ratings_total || 0,
+      photos: result.photos,
+      place_id: result.place_id,
+      distance: calculateDistance(lat, lng, result.geometry.location.lat, result.geometry.location.lng)
+    })));
+  }
+
+  await redis.set(cacheKey, JSON.stringify(places), 'EX', 86400); // Cache for 24 hours
+  return places;
+}
+
+// Quality detection using Gemini AI
+async function detectQuality(place: Place): Promise<{ isPremium: boolean; isGood: boolean; confidence: number; reason: string }> {
+  if (place.user_ratings_total < 50) {
+    return { isPremium: false, isGood: false, confidence: 0.5, reason: 'Insufficient reviews' };
+  }
+
+  const prompt = `Analyze this place for quality based on:
+  - Name: ${place.name}
+  - Rating: ${place.rating}/5 (${place.user_ratings_total} reviews)
+  - Types: ${place.types.join(', ')}
+  Return JSON: { isPremium: boolean, isGood: boolean, confidence: number, reason: string }`;
+  
+  try {
+    const response = await genai.generateContent({
+      model: 'gemini-2.5-pro',
+      prompt,
+      deepThink: true // Enable Deep Think mode for nuanced analysis
+    });
+    return JSON.parse(response.text);
+  } catch (error) {
+    console.error('Gemini quality detection failed:', error);
+    return {
+      isPremium: place.rating >= 4.5,
+      isGood: place.rating >= 4.0,
+      confidence: 0.7,
+      reason: 'Fallback: Based on rating due to AI error'
+    };
+  }
+}
+
+// Travel time calculation using Distance Matrix API
+async function getTravelTime(lat: number, lng: number, placeId: string, locationType: string): Promise<number> {
+  const mode = locationType === 'metropolitan' ? 'transit' : 'driving';
+  const response = await googleMapsClient.distanceMatrix({
+    origins: [{ lat, lng }],
+    destinations: [{ placeId }],
+    mode
+  });
+
+  const duration = response.rows[0].elements[0].duration?.value || 300; // Fallback: 5min
+  return Math.round(duration / 60); // Convert to minutes
+}
+
+// Time-based multiplier with exponential decay
+function calculateTimeMultiplier(travelTime: number, locationType: string): number {
+  const scale = locationType === 'rural' ? 20 : locationType === 'village' ? 15 : 10; // Longer scale for sparse areas
+  return Math.max(0.5, Math.exp(-travelTime / scale)); // Exponential decay, min 0.5
+}
+
+// Base score based on category and quality
+function calculateBaseScore(category: string, place: Place, quality: { isPremium: boolean; isGood: boolean }): number {
+  const baseScores = {
+    healthcare: 3,
+    education: 2.5,
+    transport: 2,
+    commercial: 1.5,
+    lifestyle: 1
+  };
+  let score = baseScores[category] || 1;
+  if (quality.isPremium) score *= 2;
+  else if (quality.isGood) score *= 1.5;
+  return score;
+}
+
+// Close threshold based on location type
+function getCloseThreshold(locationType: string): number {
+  return locationType === 'metropolitan' ? 5 : locationType === 'city' ? 7 : locationType === 'town' ? 10 : 15; // Minutes
+}
+
+// Connectivity score with dynamic weights
+async function calculateConnectivityScore(lat: number, lng: number, locationType: string): Promise<number> {
+  const connectivityTypes = ['airport', 'subway_station', 'train_station', 'bus_station'];
+  const places = await fetchPlaces(lat, lng, connectivityTypes);
+
+  const defaultWeights = {
+    airport: 0.25,
+    subway_station: 0.15,
+    train_station: 0.15,
+    bus_station: 0.05
+  };
+
+  // Adjust weights using Gemini AI
+  const prompt = `Suggest connectivity weights for a ${locationType} location. Return JSON: { airport: number, subway_station: number, train_station: number, bus_station: number }`;
+  let weights = defaultWeights;
+  try {
+    const response = await genai.generateContent({
+      model: 'gemini-2.5-pro',
+      prompt,
+      deepThink: true
+    });
+    weights = JSON.parse(response.text);
+  } catch (error) {
+    console.error('Gemini weight adjustment failed:', error);
+  }
+
+  let score = 0;
+  for (const place of places) {
+    const type = place.types.find(t => connectivityTypes.includes(t));
+    if (type) {
+      const travelTime = await getTravelTime(lat, lng, place.place_id, locationType);
+      const timeMultiplier = calculateTimeMultiplier(travelTime, locationType);
+      score += (weights[type] || 0.1) * timeMultiplier * 100;
+    }
+  }
+
+  return Math.min(120, score);
+}
+
+// Simplified safety score using Places API and Gemini
+async function estimateSafetyScore(lat: number, lng: number): Promise<number> {
+  const places = await fetchPlaces(lat, lng, ['police']);
+  const prompt = `Estimate safety (0-4) for a location with ${places.length} police stations within 5km.`;
+  try {
+    const response = await genai.generateContent({ model: 'gemini-2.5-pro', prompt });
+    return parseFloat(response.text) || 2; // Fallback: average safety
+  } catch (error) {
+    return 2;
+  }
+}
+
+// Simplified environment score using Gemini
+async function estimateEnvironmentScore(lat: number, lng: number): Promise<number> {
+  const places = await fetchPlaces(lat, lng, ['park']);
+  const prompt = `Estimate environmental quality (0-6) for a location with ${places.length} parks within 5km.`;
+  try {
+    const response = await genai.generateContent({ model: 'gemini-2.5-pro', prompt });
+    return parseFloat(response.text) || 3; // Fallback: average quality
+  } catch (error) {
+    return 3;
+  }
+}
+
+// Utility: Calculate straight-line distance (in meters)
+function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371e3; // Earth's radius in meters
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lng2 - lng1) * Math.PI / 180;
+
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+}
+
+// Simulated Redis client (replace with actual implementation)
+const redis = {
+  get: async (key: string) => null,
+  set: async (key: string, value: string, mode: string, ttl: number) => {}
+};
