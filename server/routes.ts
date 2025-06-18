@@ -1520,30 +1520,36 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // CRITICAL: Location Score Dependent Investment Viability
       // Investment viability must scale directly with location quality
       
-      if (result.locationScore < 1.0) {
-        // TIER 8: Very Poor Infrastructure (Score < 1.0) - Max 15%
-        baseViability = Math.max(5, locationBasedViability * 0.2);
+      if (result.locationScore < 0.5) {
+        // Score 0-0.5 = max 10%
+        baseViability = Math.min(8, locationBasedViability * 0.15);
+      } else if (result.locationScore < 1.0) {
+        // Score 0.5-1.0 = max 20%
+        baseViability = Math.min(15, locationBasedViability * 0.3);
       } else if (result.locationScore < 1.5) {
-        // TIER 7: Poor Infrastructure (Score 1.0-1.5) - Max 25%
-        baseViability = Math.max(8, locationBasedViability * 0.4);
+        // Score 1.0-1.5 = max 30%
+        baseViability = Math.min(22, locationBasedViability * 0.45);
       } else if (result.locationScore < 2.0) {
-        // TIER 6: Below Average Infrastructure (Score 1.5-2.0) - Max 35%
-        baseViability = Math.max(12, locationBasedViability * 0.6);
+        // Score 1.5-2.0 = max 40%
+        baseViability = Math.min(28, locationBasedViability * 0.55);
       } else if (result.locationScore < 2.5) {
-        // TIER 5: Average Infrastructure (Score 2.0-2.5) - Max 45%
-        baseViability = Math.max(18, locationBasedViability * 0.7);
+        // Score 2.0-2.5 = max 50%
+        baseViability = Math.min(35, locationBasedViability * 0.65);
       } else if (result.locationScore < 3.0) {
-        // TIER 4: Good Infrastructure (Score 2.5-3.0) - Max 60%
-        baseViability = Math.max(25, locationBasedViability * 0.8);
+        // Score 2.5-3.0 = max 60%
+        baseViability = Math.min(42, locationBasedViability * 0.75);
       } else if (result.locationScore < 3.5) {
-        // TIER 3: Very Good Infrastructure (Score 3.0-3.5) - Max 75%
-        baseViability = Math.max(35, locationBasedViability * 0.9);
+        // Score 3.0-3.5 = max 70%
+        baseViability = Math.min(48, locationBasedViability * 0.8);
       } else if (result.locationScore < 4.0) {
-        // TIER 2: Excellent Infrastructure (Score 3.5-4.0) - Max 85%
-        baseViability = Math.max(45, locationBasedViability * 1.0);
+        // Score 3.5-4.0 = max 80%
+        baseViability = Math.min(55, locationBasedViability * 0.85);
+      } else if (result.locationScore < 4.5) {
+        // Score 4.0-4.5 = max 90%
+        baseViability = Math.min(65, locationBasedViability * 0.9);
       } else {
-        // TIER 1: Outstanding Infrastructure (Score 4.0-5.0) - Max 95%
-        baseViability = Math.max(55, locationBasedViability * 1.1);
+        // Score 4.5+ = max 100%
+        baseViability = Math.min(75, locationBasedViability * 0.95);
       }
       
       // Area type modifiers - smaller impact than location score
@@ -1750,26 +1756,30 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         Total Penalty: ${totalPenalty}
         Infrastructure Multiplier: ${infrastructureAdequacyMultiplier.toFixed(2)}`);
       
-      // CRITICAL: LOCATION SCORE DEPENDENT CAPS WITH INFRASTRUCTURE ADEQUACY
-      // Investment viability MUST be capped based on location score quality AND infrastructure adequacy
+      // REALISTIC LOCATION SCORE DEPENDENT CAPS
+      // Investment viability based on actual location quality tiers
       let locationScoreCap = 100;
       
-      if (result.locationScore < 1.0) {
-        locationScoreCap = 20; // Very poor infrastructure - max 20%
+      if (result.locationScore < 0.5) {
+        locationScoreCap = 10; // 0-0.5 score = max 10%
+      } else if (result.locationScore < 1.0) {
+        locationScoreCap = 20; // 0.5-1.0 score = max 20%
       } else if (result.locationScore < 1.5) {
-        locationScoreCap = 35; // Poor infrastructure - max 35%
+        locationScoreCap = 30; // 1.0-1.5 score = max 30%
       } else if (result.locationScore < 2.0) {
-        locationScoreCap = 50; // Below average infrastructure - max 50%
+        locationScoreCap = 40; // 1.5-2.0 score = max 40%
       } else if (result.locationScore < 2.5) {
-        locationScoreCap = 65; // Average infrastructure - max 65%
+        locationScoreCap = 50; // 2.0-2.5 score = max 50%
       } else if (result.locationScore < 3.0) {
-        locationScoreCap = 75; // Good infrastructure - max 75%
+        locationScoreCap = 60; // 2.5-3.0 score = max 60%
       } else if (result.locationScore < 3.5) {
-        locationScoreCap = 85; // Very good infrastructure - max 85%
+        locationScoreCap = 70; // 3.0-3.5 score = max 70%
       } else if (result.locationScore < 4.0) {
-        locationScoreCap = 95; // Excellent infrastructure - max 95%
+        locationScoreCap = 80; // 3.5-4.0 score = max 80%
+      } else if (result.locationScore < 4.5) {
+        locationScoreCap = 90; // 4.0-4.5 score = max 90%
       }
-      // Outstanding infrastructure (4.0+) can reach 100%
+      // Only exceptional 4.5+ scores can reach 100%
       
       // Apply infrastructure adequacy penalty to caps
       if (avgAdequacyScore < 20) {
@@ -1790,7 +1800,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // Enhanced debug logging with infrastructure adequacy
       console.log(`INVESTMENT VIABILITY CALCULATION DEBUG:
         Location Score: ${result.locationScore.toFixed(2)}
-        Base Location Score Cap: ${result.locationScore < 1.0 ? 20 : result.locationScore < 1.5 ? 35 : result.locationScore < 2.0 ? 50 : result.locationScore < 2.5 ? 65 : result.locationScore < 3.0 ? 75 : result.locationScore < 3.5 ? 85 : result.locationScore < 4.0 ? 95 : 100}%
+        Base Location Score Cap: ${result.locationScore < 0.5 ? 10 : result.locationScore < 1.0 ? 20 : result.locationScore < 1.5 ? 30 : result.locationScore < 2.0 ? 40 : result.locationScore < 2.5 ? 50 : result.locationScore < 3.0 ? 60 : result.locationScore < 3.5 ? 70 : result.locationScore < 4.0 ? 80 : result.locationScore < 4.5 ? 90 : 100}%
         Infrastructure Adequacy Score: ${avgAdequacyScore.toFixed(1)}
         Infrastructure Multiplier: ${infrastructureAdequacyMultiplier.toFixed(2)}
         Final Location Score Cap: ${locationScoreCap}%
