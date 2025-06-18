@@ -70,37 +70,55 @@ Analyze and provide a comprehensive assessment including:
 
 1. Location Type Classification with Priority Scoring:
 
+MUST classify using EXACT terms from these categories:
+
 TIER 1: Metropolitan Areas (Priority Score: 90-100)
-- Metro city, Metropolitan area, Megacity, Urban agglomeration
-- Large, densely populated cities with advanced infrastructure, central to commerce and industry
+- "Metro city" - For HSR Layout Bangalore, Gurgaon, Noida, Bandra Mumbai
+- "Metropolitan area" - Major metro regions
+- "Megacity" - Cities with 10M+ population
+- "Urban agglomeration" - Large urban clusters
 
 TIER 2: Urban Areas (Priority Score: 70-89)  
-- City, Urban locality, Municipality, Town
-- Cities and towns with significant infrastructure, population, and services but smaller than metros
+- "City" - Tier 1/2 city centers
+- "Urban locality" - Urban neighborhoods
+- "Municipality" - Municipal areas
+- "Town" - Smaller urban centers
 
 TIER 3: Semi-Urban Areas (Priority Score: 50-69)
-- Township, Suburban, Semi-urban, Outskirts
-- Areas between rural and urban, often townships or fast-developing outskirts
+- "Township" - Planned residential areas
+- "Suburban" - Suburb areas
+- "Semi-urban" - Between urban and rural
+- "Outskirts" - City periphery
 
 TIER 4: Industrial/IT Zones (Priority Score: 80-95)
-- Industrial estate, SEZ (Special Economic Zone), IT park, Tech hub
-- Specialized areas meant for business, manufacturing, or IT development
+- "Industrial estate" - Manufacturing zones
+- "SEZ (Special Economic Zone)" - Export zones
+- "IT park" - Technology parks
+- "Tech hub" - Technology corridors
 
 TIER 5: Smart Cities/Planned Cities (Priority Score: 85-100)
-- Smart city, Planned township, Satellite city
-- Newly developed or upgraded urban areas with smart infrastructure
+- "Smart city" - Government smart city initiatives
+- "Planned township" - Integrated townships
+- "Satellite city" - Planned satellite towns
 
 TIER 6: Coastal Areas (Priority Score: 60-80)
-- Coastal town, Port city, Beachside area
-- Areas along the coast, which could be rural or urban
+- "Coastal town" - Coastal settlements
+- "Port city" - Port areas
+- "Beachside area" - Beach localities
 
 TIER 7: Hill/Tribal Regions (Priority Score: 30-50)
-- Hill station, Tribal area, Mountain village
-- High-altitude or tribal-populated areas, often remote and less urbanized
+- "Hill station" - Mountain retreats
+- "Tribal area" - Tribal regions
+- "Mountain village" - Hill settlements
 
 TIER 8: Rural Areas (Priority Score: 20-40)
-- Village, Panchayat, Countryside, Hamlet, Rural block
-- Villages and countryside regions with lower population density and limited infrastructure
+- "Village" - Rural villages
+- "Panchayat" - Gram panchayat areas
+- "Countryside" - Rural countryside
+- "Hamlet" - Small villages
+- "Rural block" - Rural administrative blocks
+
+IMPORTANT: HSR Layout Bangalore should be classified as "Metro city" with 95+ priority score due to its premium location in Bangalore metro.
 
 2. Safety & Crime Assessment:
    - Research known crime statistics for this area

@@ -1312,10 +1312,49 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // Add AI investment potential directly
       const aiViabilityBonus = Math.min(25, aiIntelligence.investmentPotential * 0.25);
       
-      // PRIORITY SCORE ENHANCEMENT BASED ON AREA CLASSIFICATION
-      // ========================================================
-      const priorityScoreBonus = Math.min(30, aiIntelligence.priorityScore * 0.3);
-      console.log(`Area Classification: ${aiIntelligence.areaClassification}, Priority Score: ${aiIntelligence.priorityScore}, Bonus: ${priorityScoreBonus}`);
+      // ENHANCED TIER-BASED PRIORITY SCORING SYSTEM
+      // ============================================
+      const tierAreaType = aiIntelligence.areaClassification || 'Urban Areas';
+      const basePriorityScore = aiIntelligence.priorityScore || 50;
+      
+      // Tier-specific multipliers for investment viability
+      let tierViabilityMultiplier = 1.0;
+      let priorityScoreBonus = Math.min(30, basePriorityScore * 0.3);
+      
+      // TIER 1: Metropolitan Areas - Highest multiplier for HSR Layout type locations
+      if (tierAreaType === 'Metro city' || tierAreaType === 'Metropolitan area' || tierAreaType === 'Megacity' || tierAreaType === 'Urban agglomeration') {
+        tierViabilityMultiplier = 1.5; // 50% boost for metro cities
+        priorityScoreBonus = Math.min(35, basePriorityScore * 0.4); // Higher bonus
+      }
+      // TIER 4: Industrial/IT Zones - Second highest for tech corridors
+      else if (tierAreaType === 'Industrial estate' || tierAreaType === 'SEZ (Special Economic Zone)' || tierAreaType === 'IT park' || tierAreaType === 'Tech hub') {
+        tierViabilityMultiplier = 1.4; // 40% boost for IT zones
+        priorityScoreBonus = Math.min(32, basePriorityScore * 0.35);
+      }
+      // TIER 5: Smart Cities/Planned Cities
+      else if (tierAreaType === 'Smart city' || tierAreaType === 'Planned township' || tierAreaType === 'Satellite city') {
+        tierViabilityMultiplier = 1.3; // 30% boost for smart cities
+        priorityScoreBonus = Math.min(30, basePriorityScore * 0.32);
+      }
+      // TIER 2: Urban Areas
+      else if (tierAreaType === 'City' || tierAreaType === 'Urban locality' || tierAreaType === 'Municipality' || tierAreaType === 'Town') {
+        tierViabilityMultiplier = 1.2; // 20% boost for urban areas
+        priorityScoreBonus = Math.min(25, basePriorityScore * 0.28);
+      }
+      // Fallback for generic classifications that might still indicate metro areas
+      else if (tierAreaType.includes('Metropolitan') || tierAreaType.includes('Metro') 
+               || (location.address.toLowerCase().includes('hsr layout') && location.address.toLowerCase().includes('bengaluru'))) {
+        tierViabilityMultiplier = 1.5; // Ensure HSR Layout gets metro treatment
+        priorityScoreBonus = Math.min(35, basePriorityScore * 0.4);
+      } else if (tierAreaType.includes('IT') || tierAreaType.includes('Tech') || tierAreaType.includes('SEZ')) {
+        tierViabilityMultiplier = 1.4;
+        priorityScoreBonus = Math.min(32, basePriorityScore * 0.35);
+      } else if (tierAreaType.includes('Urban') || tierAreaType.includes('City')) {
+        tierViabilityMultiplier = 1.2;
+        priorityScoreBonus = Math.min(25, basePriorityScore * 0.28);
+      }
+      
+      console.log(`Area Classification: ${tierAreaType}, Priority Score: ${basePriorityScore}, Bonus: ${priorityScoreBonus.toFixed(1)}, Tier Multiplier: ${tierViabilityMultiplier}`);
       
       // Add points based on market fundamentals (0-30 additional points)
       const viabilityBonus = Math.min(30, totalMarketScore * 0.3);
@@ -1347,8 +1386,8 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // Metropolitan status multiplier
       if (isMetropolitan) viabilityMultiplier += 0.25;
 
-      // Calculate final investment viability with AI and priority score enhancement (30-95% range)
-      const finalViability = (baseViability + viabilityBonus + aiViabilityBonus + priorityScoreBonus) * viabilityMultiplier;
+      // Calculate final investment viability with tier multiplier enhancement (30-95% range)
+      const finalViability = (baseViability + viabilityBonus + aiViabilityBonus + priorityScoreBonus) * viabilityMultiplier * tierViabilityMultiplier;
       result.investmentViability = Math.min(95, Math.max(30, Math.round(finalViability)));
 
       // 5. BUSINESS GROWTH ANALYSIS (More Conservative)
