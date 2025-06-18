@@ -555,6 +555,75 @@ Format as JSON array:
   }
 }
 
+export async function validateMajorTransportInfrastructure(
+  location: { lat: number; lng: number; address: string }
+): Promise<{ hasMajorInfrastructure: boolean; infrastructureFound: string[]; reasoning: string }> {
+  try {
+    const model = genai.getGenerativeModel({ model: "gemini-1.5-flash" });
+    
+    const prompt = `Analyze the major transport infrastructure within 5km radius of this location: ${location.address} (${location.lat}, ${location.lng}).
+
+MANDATORY INFRASTRUCTURE CHECK - For location scores above 4.5/5, check if ANY of these exist within 5km:
+
+MAJOR TRANSPORT INFRASTRUCTURE:
+1. National Highway (NH) or State Highway (SH)
+2. Airport (domestic/international)
+3. Railway station (major/minor)
+4. Harbor/Port facilities
+5. Helipad/Helicopter landing facilities
+6. Metro/Subway stations
+7. Major bus terminals/ISBT
+8. Expressway/Toll road access
+9. Industrial transport hubs
+10. Logistics/freight corridors
+
+ANALYSIS REQUIREMENTS:
+- Search within exactly 5km radius
+- Only count MAJOR infrastructure (not local roads)
+- Provide specific names and distances
+- Be strict - if no major infrastructure exists, return false
+
+Return JSON format:
+{
+  "hasMajorInfrastructure": true/false,
+  "infrastructureFound": ["specific names with distances"],
+  "reasoning": "detailed explanation of findings within 5km"
+}`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    
+    try {
+      let cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      
+      const startIdx = cleanedText.indexOf('{');
+      const endIdx = cleanedText.lastIndexOf('}');
+      
+      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+        cleanedText = cleanedText.substring(startIdx, endIdx + 1);
+      }
+      
+      const infrastructureData = JSON.parse(cleanedText);
+      return infrastructureData;
+    } catch (parseError) {
+      console.error('Failed to parse infrastructure validation:', parseError);
+      return {
+        hasMajorInfrastructure: false,
+        infrastructureFound: [],
+        reasoning: "Failed to analyze infrastructure data"
+      };
+    }
+  } catch (error) {
+    console.error('Error validating major transport infrastructure:', error);
+    return {
+      hasMajorInfrastructure: false,
+      infrastructureFound: [],
+      reasoning: "Error occurred during infrastructure analysis"
+    };
+  }
+}
+
 export async function analyzeInfrastructureWithAI(
   location: { lat: number; lng: number; address: string },
   locationIntelligence?: LocationIntelligence
