@@ -1328,6 +1328,34 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // Apply AI investment potential as additional multiplier
       const aiPotentialMultiplier = Math.max(0.8, Math.min(1.5, aiIntelligence.investmentPotential / 100 + 0.5));
       
+      // TOURISM INFRASTRUCTURE BONUS - Critical for Coorg areas like Bittangala
+      let tourismInfrastructureBonus = 0;
+      if (aiIntelligence.areaClassification === 'Tourism hub' || 
+          aiIntelligence.areaClassification === 'Tourist town' ||
+          aiIntelligence.areaClassification === 'Resort area' ||
+          aiIntelligence.areaClassification === 'Weekend getaway' ||
+          aiIntelligence.areaClassification === 'Scenic location') {
+        
+        // Base tourism bonus based on priority score
+        tourismInfrastructureBonus = Math.min(1.5, aiIntelligence.priorityScore / 100 * 1.5);
+        
+        // Additional bonus for high-potential tourism areas
+        if (aiIntelligence.investmentPotential >= 70) {
+          tourismInfrastructureBonus += 0.8;
+        } else if (aiIntelligence.investmentPotential >= 50) {
+          tourismInfrastructureBonus += 0.5;
+        }
+        
+        // Coorg-specific bonus
+        if (location.address.toLowerCase().includes('coorg') || 
+            location.address.toLowerCase().includes('kodagu') ||
+            location.address.toLowerCase().includes('bittangala') ||
+            location.address.toLowerCase().includes('virajpet') ||
+            location.address.toLowerCase().includes('madikeri')) {
+          tourismInfrastructureBonus += 0.7; // Additional Coorg tourism bonus
+        }
+      }
+      
       // Apply all multipliers and constraints with AI intelligence
       const rawLocationScore = baseInfrastructureScore * economicMultiplier * densityMultiplier * distanceQualityFactor * aiLocationMultiplier * aiPotentialMultiplier;
 
@@ -1446,6 +1474,16 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       else if (tierAreaType === 'Smart city' || tierAreaType === 'Planned township' || tierAreaType === 'Satellite city') {
         tierViabilityMultiplier = 1.3; // 30% boost for smart cities
         priorityScoreBonus = Math.min(30, basePriorityScore * 0.32);
+      }
+      // TIER 6: Tourism & Highway Corridors - High potential for investment
+      else if (tierAreaType === 'Tourism hub' || tierAreaType === 'Highway corridor' || tierAreaType === 'Tourist town' || 
+               tierAreaType === 'Resort area' || tierAreaType === 'Weekend getaway' || tierAreaType === 'Scenic location') {
+        tierViabilityMultiplier = 1.6; // 60% boost for tourism hubs like Coorg
+        priorityScoreBonus = Math.min(35, basePriorityScore * 0.4);
+        // Extra bonus for high-priority tourism areas
+        if (basePriorityScore >= 85) {
+          priorityScoreBonus += 10; // Additional 10 points for premium tourism locations
+        }
       }
       // TIER 2: Urban Areas
       else if (tierAreaType === 'City' || tierAreaType === 'Urban locality' || tierAreaType === 'Municipality' || tierAreaType === 'Town') {
@@ -1641,17 +1679,24 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
           areaCategory = 'Semi-Urban Development';
           tierRisk = 'Growth Corridor';
         }
-        // TIER 6: Coastal Areas
+        // TIER 6: Tourism & Highway Corridors (NEW - HIGH PRIORITY)
+        else if (areaClassification.includes('Tourism') || areaClassification.includes('Highway') || 
+                 areaClassification.includes('Tourist') || areaClassification.includes('Resort') ||
+                 areaClassification.includes('Weekend') || areaClassification.includes('Scenic')) {
+          areaCategory = 'Tourism Investment Hub';
+          tierRisk = 'High-Growth Tourism';
+        }
+        // TIER 7: Coastal Areas
         else if (areaClassification.includes('Coastal') || areaClassification.includes('Port')) {
           areaCategory = 'Coastal Zone';
           tierRisk = 'Maritime Hub';
         }
-        // TIER 7: Hill/Tribal Regions
+        // TIER 8: Hill/Tribal Regions
         else if (areaClassification.includes('Hill') || areaClassification.includes('Tribal')) {
           areaCategory = 'Hill Station/Tribal';
           tierRisk = 'Remote Eco-Zone';
         }
-        // TIER 4: Rural Areas
+        // TIER 9: Rural Areas
         else {
           areaCategory = 'Rural Development';
           tierRisk = locationScore >= 2.0 ? 'Accessible Rural' : 'Remote Rural';

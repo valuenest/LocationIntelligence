@@ -549,6 +549,16 @@ EDUCATION & TRANSPORT (within 5km):
 - Bus stops, bus stations, railway stations
 - Local transport hubs, auto-rickshaw stands
 
+TOURISM & HIGHWAY INFRASTRUCTURE (CRITICAL FOR COORG AREAS):
+- Tourist attractions, viewpoints, coffee plantations
+- Hotels, resorts, homestays, guest houses
+- Restaurants, cafes, local eateries
+- National/State highways (NH-275, SH-90, etc.)
+- Tourist information centers, travel agencies
+- Adventure sports facilities, trekking points
+- Religious sites, temples, churches
+- Shopping areas, souvenir shops, local crafts
+
 COMMERCIAL & LIFESTYLE (within 5km):
 - Shops, shopping areas, commercial complexes
 - Restaurants, cafes, food establishments
