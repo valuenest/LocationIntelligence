@@ -748,6 +748,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         addressLower.includes('monument valley')
       );
       
+      // Address-based urban/rural detection for area classification will be used later
+      
       if (isDesertOrRemote || isKnownDesertArea) {
         result.locationScore = 0.0;
         result.investmentViability = 0;
@@ -838,7 +840,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                name.includes('restaurant') || name.includes('store');
       });
       
-      // Address-based urban/rural detection
+      // Check if address indicates rural area
       const isRuralByAddress = addressLower.includes('village') || addressLower.includes('rural') || 
                               addressLower.includes('farm') || addressLower.includes('countryside');
       
@@ -943,7 +945,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (planType === "pro") {
         // Top investment locations for Pro tier only
         try {
-          const topLocations = await findTopInvestmentLocations(location, amount, propertyType);
+          const topLocations = await findTopInvestmentLocations(location, propertyType, amount);
           result.topInvestmentLocations = topLocations;
         } catch (error) {
           console.error("Top locations error:", error);
