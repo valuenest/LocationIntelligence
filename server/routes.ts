@@ -31,7 +31,7 @@ const LocationSchema = z.object({
 const AnalysisRequestSchema = z.object({
   location: LocationSchema,
   amount: z.number().min(1).max(1000000000),
-  propertyType: z.enum(['residential', 'commercial', 'industrial', 'agricultural', 'mixed']),
+  propertyType: z.enum(['residential', 'commercial', 'industrial', 'agricultural', 'mixed', 'land']),
   planType: z.enum(['free', 'basic', 'pro']).default('free'),
   propertyDetails: z.object({
     currency: z.string().optional(),

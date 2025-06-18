@@ -10,7 +10,7 @@ import AnalysisLoadingModal from "@/components/AnalysisLoadingModal";
 import UsageLimitModal from "@/components/UsageLimitModal";
 import ValidationModal from "@/components/ValidationModal";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, TrendingUp, Brain } from "lucide-react";
+import { MapPin, TrendingUp, Brain, Eye } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface LocationData {
@@ -389,48 +389,93 @@ export default function Home() {
 
       {/* Pricing Modal */}
       <Dialog open={pricingModalOpen} onOpenChange={setPricingModalOpen}>
-        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto p-0 bg-gradient-to-br from-gray-50 to-blue-50">
-          <DialogHeader className="px-8 pt-8 pb-4 text-center">
-            <DialogTitle className="text-3xl font-bold text-gray-900 mb-2">
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader className="text-center pb-4">
+            <DialogTitle className="text-2xl font-bold text-gray-900">
               Choose Your Analysis Plan
             </DialogTitle>
-            <p className="text-lg text-gray-600">
-              Get comprehensive insights for your property investment decision
-            </p>
           </DialogHeader>
           
-          <div className="px-6 pb-8">
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <PricingPlans
-                onPlanSelect={(plan) => {
-                  setSelectedPlan(plan);
-                  setPricingModalOpen(false);
-                  if (propertyData) {
-                    handleAnalysisWithPlan(propertyData, plan);
-                  }
-                }}
-                canUseFree={canUseFree}
-                freeUsageCount={freeUsageCount}
-                isFormValid={true}
-              />
-            </div>
-            
-            {/* Additional Trust Indicators */}
-            <div className="mt-6 text-center">
-              <div className="flex justify-center items-center space-x-8 text-sm text-gray-600">
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                  Secure Payment
-                </div>
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                  Instant Analysis
-                </div>
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                  AI-Powered Insights
-                </div>
+          <div className="grid md:grid-cols-3 gap-4">
+            {/* Free Plan */}
+            <div className="border rounded-lg p-4 text-center">
+              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
+                <span className="text-xl">👁️</span>
               </div>
+              <h3 className="font-bold text-lg mb-1">Free</h3>
+              <p className="text-2xl font-bold text-gray-600 mb-2">₹0</p>
+              <p className="text-sm text-gray-600 mb-4">Basic Location Info</p>
+              <ul className="text-sm text-left mb-4 space-y-1">
+                <li className="flex items-center"><span className="text-green-500 mr-2">✓</span>Location verification</li>
+                <li className="flex items-center"><span className="text-green-500 mr-2">✓</span>Address details</li>
+                <li className="flex items-center"><span className="text-green-500 mr-2">✓</span>Distance to landmarks</li>
+              </ul>
+              <Button 
+                onClick={() => {
+                  setSelectedPlan('free');
+                  setPricingModalOpen(false);
+                  if (propertyData) handleAnalysisWithPlan(propertyData, 'free');
+                }}
+                disabled={!canUseFree}
+                className="w-full bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                {canUseFree ? 'Get Free Report' : `Limit Reached (${freeUsageCount}/3)`}
+              </Button>
+            </div>
+
+            {/* Paid Plan */}
+            <div className="border-2 border-[#FF5A5F] rounded-lg p-4 text-center relative">
+              <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
+                <span className="bg-[#FF5A5F] text-white px-3 py-1 rounded-full text-xs font-bold">POPULAR</span>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
+                <TrendingUp size={20} className="text-[#FF5A5F]" />
+              </div>
+              <h3 className="font-bold text-lg mb-1">Paid</h3>
+              <p className="text-2xl font-bold text-[#FF5A5F] mb-2">₹99</p>
+              <p className="text-sm text-gray-600 mb-4">Complete Analysis</p>
+              <ul className="text-sm text-left mb-4 space-y-1">
+                <li className="flex items-center"><span className="text-green-500 mr-2">✓</span>Everything in Free</li>
+                <li className="flex items-center"><span className="text-green-500 mr-2">✓</span>Investment analysis</li>
+                <li className="flex items-center"><span className="text-green-500 mr-2">✓</span>Growth predictions</li>
+                <li className="flex items-center"><span className="text-green-500 mr-2">✓</span>Street View imagery</li>
+              </ul>
+              <Button 
+                onClick={() => {
+                  setSelectedPlan('paid');
+                  setPricingModalOpen(false);
+                  if (propertyData) handleAnalysisWithPlan(propertyData, 'paid');
+                }}
+                className="w-full bg-[#FF5A5F] text-white hover:bg-[#e54852]"
+              >
+                Unlock Full Report - ₹99
+              </Button>
+            </div>
+
+            {/* Pro Plan */}
+            <div className="border rounded-lg p-4 text-center">
+              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center mx-auto mb-3">
+                <Brain size={20} className="text-[#FC642D]" />
+              </div>
+              <h3 className="font-bold text-lg mb-1">Pro</h3>
+              <p className="text-2xl font-bold text-[#FC642D] mb-2">₹199</p>
+              <p className="text-sm text-gray-600 mb-4">AI-Powered Insights</p>
+              <ul className="text-sm text-left mb-4 space-y-1">
+                <li className="flex items-center"><span className="text-green-500 mr-2">✓</span>Everything in Paid</li>
+                <li className="flex items-center"><span className="text-green-500 mr-2">✓</span>AI recommendations</li>
+                <li className="flex items-center"><span className="text-green-500 mr-2">✓</span>Top opportunities</li>
+                <li className="flex items-center"><span className="text-green-500 mr-2">✓</span>PDF report</li>
+              </ul>
+              <Button 
+                onClick={() => {
+                  setSelectedPlan('pro');
+                  setPricingModalOpen(false);
+                  if (propertyData) handleAnalysisWithPlan(propertyData, 'pro');
+                }}
+                className="w-full bg-[#FC642D] text-white hover:bg-[#e55a29]"
+              >
+                Get AI Insights - ₹199
+              </Button>
             </div>
           </div>
         </DialogContent>
