@@ -879,6 +879,11 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // Using AI intelligence already obtained at function start
       console.log('AI Location Intelligence:', aiIntelligence);
 
+      // INFRASTRUCTURE SCORING CALCULATION
+      // ==================================
+      // Calculate infrastructure scores AFTER all amenities (API + AI) are processed
+      console.log(`Final amenity count for scoring: ${result.nearbyPlaces.length} places`);
+      
       // Enhanced infrastructure scoring with AI-weighted categories and quality metrics
       let infrastructureScores = {
         healthcare: { close: 0, total: 0, premium: 0 },
