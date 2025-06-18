@@ -447,12 +447,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (data.status === 'OK' && data.rows[0]) {
           data.rows[0].elements.forEach((element: any, index: number) => {
-            if (element.status === 'OK') {
-              const place = batch[index];
-              distances[place.name] = {
-                distance: element.distance,
-                duration: element.duration
-              };
+            if (element.status === 'OK' && element.distance) {
+              // Only include if within 5km (5000 meters)
+              if (element.distance.value <= 5000) {
+                const place = batch[index];
+                distances[place.name] = {
+                  distance: element.distance,
+                  duration: element.duration
+                };
+              }
             }
           });
         }
@@ -545,25 +548,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (result.nearbyPlaces.length > 0) {
         result.distances = await calculateDistances(location, result.nearbyPlaces);
         
-        // Filter out places beyond 5km from both nearbyPlaces and distances
-        const placesWithin5km = result.nearbyPlaces.filter(place => {
-          const distance = result.distances[place.name];
-          return distance && distance.distance.value <= 5000; // 5km = 5000 meters
-        });
-
-        console.log(`Filtered ${result.nearbyPlaces.length} places to ${placesWithin5km.length} within 5km`);
+        // Since distance calculation now filters to 5km, update nearbyPlaces to match
+        const placesWithDistances = result.nearbyPlaces.filter(place => 
+          result.distances[place.name] !== undefined
+        );
         
-        // Update nearbyPlaces to only include places within 5km
-        result.nearbyPlaces = placesWithin5km;
-        
-        // Update distances object to only include places within 5km
-        const filteredDistances: Record<string, any> = {};
-        placesWithin5km.forEach(place => {
-          if (result.distances[place.name]) {
-            filteredDistances[place.name] = result.distances[place.name];
-          }
-        });
-        result.distances = filteredDistances;
+        result.nearbyPlaces = placesWithDistances;
+        console.log(`Showing ${result.nearbyPlaces.length} places within 5km radius`);
       }
 
       // Advanced infrastructure scoring with categorized services
