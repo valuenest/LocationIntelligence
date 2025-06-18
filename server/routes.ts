@@ -1708,7 +1708,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         });
         
         const finalScore = Math.max(0, Math.min(100, categoryScore + distancePenalty));
-        const penalty = finalScore < 50 ? -15 : finalScore < 70 ? -8 : 0;
+        const penalty = finalScore < 30 ? -8 : finalScore < 50 ? -5 : finalScore < 70 ? -2 : 0;
         
         return { score: finalScore, penalty };
       };
@@ -1726,18 +1726,18 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       const avgAdequacyScore = Object.values(adequacyScores).reduce((sum, cat) => sum + cat.score, 0) / 5;
       const totalPenalty = Object.values(adequacyScores).reduce((sum, cat) => sum + cat.penalty, 0);
       
-      // Infrastructure adequacy multiplier for investment viability
+      // Infrastructure adequacy multiplier for investment viability (more balanced)
       let infrastructureAdequacyMultiplier = 1.0;
       if (avgAdequacyScore >= 80) {
-        infrastructureAdequacyMultiplier = 1.15; // Excellent infrastructure
+        infrastructureAdequacyMultiplier = 1.10; // Excellent infrastructure
       } else if (avgAdequacyScore >= 60) {
         infrastructureAdequacyMultiplier = 1.05; // Good infrastructure
       } else if (avgAdequacyScore >= 40) {
-        infrastructureAdequacyMultiplier = 0.90; // Adequate infrastructure
-      } else if (avgAdequacyScore >= 20) {
-        infrastructureAdequacyMultiplier = 0.75; // Poor infrastructure
+        infrastructureAdequacyMultiplier = 0.95; // Adequate infrastructure
+      } else if (avgAdequacyScore >= 25) {
+        infrastructureAdequacyMultiplier = 0.85; // Below average infrastructure
       } else {
-        infrastructureAdequacyMultiplier = 0.60; // Very poor infrastructure
+        infrastructureAdequacyMultiplier = 0.75; // Poor infrastructure
       }
       
       console.log(`INFRASTRUCTURE ADEQUACY ANALYSIS:
@@ -1780,9 +1780,9 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         locationScoreCap = Math.min(locationScoreCap, locationScoreCap * 0.95); // Adequate infrastructure - 5% cap reduction
       }
       
-      // Calculate base investment viability with infrastructure adequacy impact
-      const preMultiplierScore = baseViability + (viabilityBonus * 0.5) + (aiViabilityBonus * 0.5) + (priorityScoreBonus * 0.3) + totalPenalty;
-      const preliminaryViability = preMultiplierScore * Math.min(1.2, viabilityMultiplier) * Math.min(1.3, tierViabilityMultiplier) * infrastructureAdequacyMultiplier;
+      // Calculate base investment viability with infrastructure adequacy impact (balanced approach)
+      const preMultiplierScore = baseViability + (viabilityBonus * 0.5) + (aiViabilityBonus * 0.5) + (priorityScoreBonus * 0.3);
+      const preliminaryViability = (preMultiplierScore + Math.max(-15, totalPenalty * 0.3)) * Math.min(1.2, viabilityMultiplier) * Math.min(1.3, tierViabilityMultiplier) * infrastructureAdequacyMultiplier;
       
       // Apply strict location score and infrastructure adequacy caps
       const finalViability = Math.min(locationScoreCap, preliminaryViability);
@@ -1798,7 +1798,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         Viability Bonus (reduced): ${(viabilityBonus * 0.5).toFixed(1)}
         AI Viability Bonus (reduced): ${(aiViabilityBonus * 0.5).toFixed(1)}
         Priority Score Bonus (reduced): ${(priorityScoreBonus * 0.3).toFixed(1)}
-        Infrastructure Penalty: ${totalPenalty.toFixed(1)}
+        Infrastructure Penalty Applied: ${Math.max(-15, totalPenalty * 0.3).toFixed(1)}
         Pre-Multiplier Total: ${preMultiplierScore.toFixed(1)}
         Viability Multiplier (capped): ${Math.min(1.2, viabilityMultiplier).toFixed(2)}
         Tier Multiplier (capped): ${Math.min(1.3, tierViabilityMultiplier).toFixed(2)}
