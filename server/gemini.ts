@@ -428,3 +428,104 @@ Format as JSON array:
     return [];
   }
 }
+
+export async function analyzeInfrastructureWithAI(
+  location: { lat: number; lng: number; address: string },
+  locationIntelligence?: LocationIntelligence
+): Promise<{
+  detectedAmenities: Array<{
+    name: string;
+    vicinity: string;
+    types: string[];
+    rating?: number;
+    estimatedDistance: string;
+    estimatedDistanceMeters: number;
+    estimatedTravelTime: string;
+  }>;
+  infrastructureSummary: string;
+  confidence: number;
+} | null> {
+  try {
+    const prompt = `
+INFRASTRUCTURE ANALYSIS TASK:
+Analyze the location: ${location.address} (${location.lat}, ${location.lng})
+
+${locationIntelligence ? `
+LOCATION CONTEXT:
+- Area Type: ${locationIntelligence.areaClassification}
+- Development Stage: ${locationIntelligence.developmentStage}
+- Key Strengths: ${locationIntelligence.keyStrengths.join(', ')}
+- Primary Concerns: ${locationIntelligence.primaryConcerns.join(', ')}
+` : ''}
+
+TASK: Identify ALL infrastructure and amenities within 5km radius of this location.
+
+For a ${locationIntelligence?.areaClassification || 'residential area'} in ${location.address.split(',').slice(-2).join(',')}, systematically identify:
+
+ESSENTIAL SERVICES (within 5km):
+- Hospitals, clinics, pharmacies, medical centers
+- Banks, ATMs, post offices
+- Grocery stores, supermarkets, local markets
+- Gas stations, vehicle services
+
+EDUCATION & TRANSPORT (within 5km):
+- Schools (primary, secondary), colleges, universities
+- Bus stops, bus stations, railway stations
+- Local transport hubs, auto-rickshaw stands
+
+COMMERCIAL & LIFESTYLE (within 5km):
+- Shops, shopping areas, commercial complexes
+- Restaurants, cafes, food establishments
+- Parks, recreation areas, community centers
+
+For each amenity found, provide:
+1. name - Specific name or generic type (e.g., "Local Primary School", "Community Health Center")
+2. vicinity - Area/locality name where it's located
+3. types - Array of relevant categories (e.g., ["school"], ["hospital"], ["bank"])
+4. rating - Realistic rating 3.0-4.5 for local facilities
+5. estimatedDistance - Distance text (e.g., "1.2 km", "3.5 km")
+6. estimatedDistanceMeters - Distance in meters (1200, 3500)
+7. estimatedTravelTime - Travel time (e.g., "3 min", "8 min")
+
+IMPORTANT: Even in rural/suburban areas, there are typically:
+- At least 1-2 schools within 5km
+- Basic medical facilities (clinic/pharmacy)
+- Local shops and markets
+- Some form of public transport access
+- Community services
+
+Return ONLY valid JSON:
+{
+  "detectedAmenities": [
+    {
+      "name": "...",
+      "vicinity": "...",
+      "types": ["..."],
+      "rating": 3.8,
+      "estimatedDistance": "2.1 km",
+      "estimatedDistanceMeters": 2100,
+      "estimatedTravelTime": "5 min"
+    }
+  ],
+  "infrastructureSummary": "Brief summary of infrastructure quality",
+  "confidence": 85
+}
+`;
+
+    const result = await genAI.generateContent(prompt);
+    const text = result.response.text();
+    
+    // Clean and parse the response
+    const cleanedText = text.replace(/```json|```/g, '').trim();
+    const analysis = JSON.parse(cleanedText);
+    
+    if (analysis && analysis.detectedAmenities && Array.isArray(analysis.detectedAmenities)) {
+      return analysis;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error analyzing infrastructure with AI:', error);
+    return null;
+  }
+}

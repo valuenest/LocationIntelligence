@@ -1,7 +1,7 @@
 import { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateInvestmentRecommendations, findTopInvestmentLocations, analyzeLocationIntelligence, findNearbyTouristAttractions } from "./gemini";
+import { generateInvestmentRecommendations, findTopInvestmentLocations, analyzeLocationIntelligence, findNearbyTouristAttractions, analyzeInfrastructureWithAI } from "./gemini";
 import { performSmartValidation } from "./smartValidation";
 import DOMPurify from "isomorphic-dompurify";
 import { z } from "zod";
@@ -838,6 +838,40 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
 
         result.nearbyPlaces = placesWithDistances;
         console.log(`Showing ${result.nearbyPlaces.length} places within 5km radius`);
+      }
+
+      // AI-POWERED INFRASTRUCTURE DETECTION FOR LOW-AMENITY AREAS
+      // =========================================================
+      // If standard API search finds very few places, use Gemini AI for comprehensive analysis
+      if (result.nearbyPlaces.length < 5) {
+        console.log('Low amenity count detected, using AI-powered infrastructure analysis...');
+        const aiInfrastructure = await analyzeInfrastructureWithAI(location, aiIntelligence);
+        
+        if (aiInfrastructure && aiInfrastructure.detectedAmenities.length > 0) {
+          // Convert AI-detected amenities to PlaceDetails format
+          const aiPlaces: PlaceDetails[] = aiInfrastructure.detectedAmenities.map(place => ({
+            place_id: `ai_${place.name.toLowerCase().replace(/\s+/g, '_')}`,
+            name: place.name,
+            vicinity: place.vicinity,
+            rating: place.rating,
+            types: place.types
+          }));
+          
+          // Merge AI-detected amenities with existing places
+          result.nearbyPlaces = [...result.nearbyPlaces, ...aiPlaces];
+          
+          // Create distance estimates for AI-detected places
+          const aiDistances: Record<string, any> = {};
+          aiInfrastructure.detectedAmenities.forEach(place => {
+            aiDistances[place.name] = {
+              distance: { text: place.estimatedDistance, value: place.estimatedDistanceMeters },
+              duration: { text: place.estimatedTravelTime, value: 0 }
+            };
+          });
+          
+          result.distances = { ...result.distances, ...aiDistances };
+          console.log(`AI Infrastructure Analysis added ${aiInfrastructure.detectedAmenities.length} additional amenities`);
+        }
       }
 
       // AI-POWERED LOCATION INTELLIGENCE ASSESSMENT
