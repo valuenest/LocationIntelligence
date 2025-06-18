@@ -1,3 +1,6 @@
+tags.
+</tool_code>
+```replit_final_file
 import { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
@@ -179,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     <priority>0.8</priority>
   </url>
 </urlset>`;
-    
+
     res.set('Content-Type', 'text/xml');
     res.send(sitemap);
   });
@@ -192,7 +195,7 @@ Disallow: /api/
 Disallow: /admin/
 
 Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
-    
+
     res.set('Content-Type', 'text/plain');
     res.send(robots);
   });
@@ -488,7 +491,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
   app.post("/api/analyze", async (req: Request, res: Response) => {
     try {
       console.log("Received analyze request body:", JSON.stringify(req.body, null, 2));
-      
+
       // Validate input with Zod schema
       const validationResult = AnalysisRequestSchema.safeParse(req.body);
       if (!validationResult.success) {
@@ -824,7 +827,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
 
         // Commercial infrastructure with rating consideration (expanded for business districts)
         if (place.types.some(type => [
-          'store', 'supermarket', 'grocery_or_supermarket', 'shopping_mall', 'bank', 'atm',
+          'store', 'supermarket', 'grocery_or_supermarket', 'shopping_mall', 'bank, 'atm',
           'establishment', 'finance', 'insurance_agency', 'real_estate_agency', 'accounting',
           'lawyer', 'point_of_interest', 'business_center', 'office_building'
         ].includes(type))) {
@@ -1037,232 +1040,285 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         return result;
       }
 
-      // Advanced scoring with quality and density metrics
-      const healthcareScore = Math.min(
-        (infrastructureScores.healthcare.total / 3.0) + 
-        (infrastructureScores.healthcare.premium * 0.3), 1.5
+      // ADVANCED INVESTMENT ANALYSIS ALGORITHM
+      // ==============================================
+
+      // 1. INFRASTRUCTURE SCORING WITH STRINGENT THRESHOLDS
+      // Healthcare: Requires multiple quality facilities for high scores
+      const healthcareBaseScore = Math.min(infrastructureScores.healthcare.total / 8.0, 1.0); // Much stricter
+      const healthcarePremiumBonus = infrastructureScores.healthcare.premium * 0.15; // Reduced premium impact
+      const healthcareScore = Math.min(healthcareBaseScore + healthcarePremiumBonus, 1.2);
+
+      // Education: Needs diverse educational ecosystem
+      const educationBaseScore = Math.min(infrastructureScores.education.total / 10.0, 1.0); // Much stricter
+      const educationPremiumBonus = infrastructureScores.education.premium * 0.12;
+      const educationScore = Math.min(educationBaseScore + educationPremiumBonus, 1.1);
+
+      // Transport: Multi-modal connectivity requirement
+      const transportBaseScore = Math.min(infrastructureScores.transport.total / 8.0, 1.0); // Stricter
+      const transportPremiumBonus = infrastructureScores.transport.premium * 0.20;
+      const transportScore = Math.min(transportBaseScore + transportPremiumBonus, 1.3);
+
+      // Commercial: Business ecosystem density
+      const commercialBaseScore = Math.min(infrastructureScores.commercial.total / 12.0, 1.0); // Much stricter
+      const commercialPremiumBonus = infrastructureScores.commercial.premium * 0.10;
+      const commercialScore = Math.min(commercialBaseScore + commercialPremiumBonus, 1.1);
+
+      // Lifestyle: Quality of life indicators
+      const lifestyleBaseScore = Math.min(infrastructureScores.lifestyle.total / 9.0, 1.0); // Stricter
+      const lifestylePremiumBonus = infrastructureScores.lifestyle.premium * 0.15;
+      const lifestyleScore = Math.min(lifestyleBaseScore + lifestylePremiumBonus, 1.0);
+
+      // Safety & Environment: Conservative scoring
+      const safetyScore = Math.min(infrastructureScores.safety.total / 4.0, 0.8); // Much stricter
+      const environmentScore = Math.min(infrastructureScores.environment.total / 6.0, 0.7); // Stricter
+
+      // Connectivity: External linkages critical for investment
+      const connectivityBaseScore = Math.min(infrastructureScores.connectivity / 120, 1.0); // Much stricter
+      const finalConnectivityScore = connectivityBaseScore;
+
+      // 2. SOPHISTICATED PROXIMITY ANALYSIS
+      // Penalty for distant amenities, not just bonus for close ones
+      const distanceQualityFactor = (
+        Math.min((infrastructureScores.healthcare.close / Math.max(infrastructureScores.healthcare.total, 0.1)), 1) * 0.25 +
+        Math.min((infrastructureScores.education.close / Math.max(infrastructureScores.education.total, 0.1)), 1) * 0.20 +
+        Math.min((infrastructureScores.transport.close / Math.max(infrastructureScores.transport.total, 0.1)), 1) * 0.30 +
+        Math.min((infrastructureScores.lifestyle.close / Math.max(infrastructureScores.lifestyle.total, 0.1)), 1) * 0.15 +
+        Math.min((infrastructureScores.safety.close / Math.max(infrastructureScores.safety.total, 0.1)), 1) * 0.10
       );
 
-      const educationScore = Math.min(
-        (infrastructureScores.education.total / 4.0) + 
-        (infrastructureScores.education.premium * 0.25), 1.4
-      );
-
-      const transportScore = Math.min(
-        (infrastructureScores.transport.total / 3.5) + 
-        (infrastructureScores.transport.premium * 0.35), 1.6
-      );
-
-      const commercialScore = Math.min(
-        (infrastructureScores.commercial.total / 5.0) + 
-        (infrastructureScores.commercial.premium * 0.2), 1.5
-      );
-
-      const lifestyleScore = Math.min(
-        (infrastructureScores.lifestyle.total / 4.0) + 
-        (infrastructureScores.lifestyle.premium * 0.3), 1.3
-      );
-
-      const safetyScore = Math.min(infrastructureScores.safety.total / 2.0, 1.2);
-      const environmentScore = Math.min(infrastructureScores.environment.total / 3.0, 1.1);
-      const finalConnectivityScore = Math.min(infrastructureScores.connectivity / 70, 1.8);
-
-      // Enhanced proximity scoring with quality consideration
-      const proximityBonus = (
-        (infrastructureScores.healthcare.close / Math.max(infrastructureScores.healthcare.total, 1)) * 0.3 +
-        (infrastructureScores.education.close / Math.max(infrastructureScores.education.total, 1)) * 0.2 +
-        (infrastructureScores.transport.close / Math.max(infrastructureScores.transport.total, 1)) * 0.25 +
-        (infrastructureScores.lifestyle.close / Math.max(infrastructureScores.lifestyle.total, 1)) * 0.15 +
-        (infrastructureScores.safety.close / Math.max(infrastructureScores.safety.total, 1)) * 0.1
-      );
-
-      // Premium area detection bonuses
-      let premiumAreaBonus = 0;
-
-      // Check for luxury/premium indicators in nearby places
-      const luxuryIndicators = result.nearbyPlaces.filter(place => {
-        const name = place.name.toLowerCase();
-        const vicinity = place.vicinity?.toLowerCase() || '';
-        const isLuxury = name.includes('palace') || name.includes('luxury') || 
-                        name.includes('premium') || name.includes('resort') ||
-                        name.includes('five star') || name.includes('grand') ||
-                        name.includes('leela') || name.includes('keys select') ||
-                        name.includes('apollo') || vicinity.includes('hotel');
-        const isHighRated = place.rating && place.rating >= 4.2;
-        const isPremiumService = name.includes('apollo') || name.includes('vasan') ||
-                               name.includes('portico') || name.includes('lemon tree');
-        return isLuxury || isHighRated || isPremiumService;
-      });
-
-      if (luxuryIndicators.length >= 2) premiumAreaBonus += 1.0; // Significant premium area bonus
-      else if (luxuryIndicators.length >= 1) premiumAreaBonus += 0.5; // Moderate premium bonus
-
-      // Tech hub detection for IT corridors
+      // 3. MARKET SOPHISTICATION FACTORS
+      // Tech corridor detection with stricter criteria
       const techIndicators = result.nearbyPlaces.filter(place => {
         const name = place.name.toLowerCase();
         const vicinity = place.vicinity?.toLowerCase() || '';
-        return name.includes('tech') || name.includes('it ') || name.includes('software') ||
-               vicinity.includes('tech park') || vicinity.includes('it park') ||
-               place.types.includes('establishment');
+        return (name.includes('tech park') || name.includes('it park') || 
+                name.includes('software park') || name.includes('cyber') ||
+                vicinity.includes('tech park') || vicinity.includes('it corridor') ||
+                (name.includes('microsoft') || name.includes('google') || name.includes('amazon') ||
+                 name.includes('infosys') || name.includes('wipro') || name.includes('tcs')));
       });
 
-      if (techIndicators.length >= 4) premiumAreaBonus += 0.8; // Tech hub bonus
-
-      // Comprehensive location scoring with quality and accessibility metrics
-      result.locationScore = Math.min(5.0, (
-        healthcareScore * 0.18 +        // 18% - Healthcare infrastructure
-        educationScore * 0.14 +         // 14% - Educational infrastructure  
-        transportScore * 0.16 +         // 16% - Transport infrastructure
-        commercialScore * 0.20 +        // 20% - Commercial infrastructure
-        lifestyleScore * 0.12 +         // 12% - Lifestyle and amenities
-        finalConnectivityScore * 0.15 + // 15% - External connectivity
-        safetyScore * 0.03 +            // 3% - Safety infrastructure
-        environmentScore * 0.02         // 2% - Environmental quality
-      ) * 5 + proximityBonus + premiumAreaBonus); // Scale to 5-star + bonuses
-
-      // Street View URL for all tiers
-      result.streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${location.lat},${location.lng}&heading=0&pitch=0&key=${process.env.GOOGLE_MAPS_API_KEY}`;
-
-      // Area classification based on infrastructure and urban indicators
-      const totalPlaces = result.nearbyPlaces.length;
-      const totalInfrastructureForClassification = infrastructureScores.healthcare.total + infrastructureScores.education.total + 
-                                  infrastructureScores.transport.total + infrastructureScores.commercial.total;
-
-      let areaType = 'village'; // Default classification
-      let maxViability = 35; // Village max 35%
-
-      // More stringent metropolitan indicators
-      const realMetroIndicators = result.nearbyPlaces.filter(place => {
+      // Financial district detection
+      const financialIndicators = result.nearbyPlaces.filter(place => {
         const name = place.name.toLowerCase();
-        const vicinity = place.vicinity?.toLowerCase() || '';
-        return (name.includes('airport') || vicinity.includes('airport')) ||
-               (name.includes('metro') || vicinity.includes('metro')) ||
-               (name.includes('mall') && name.includes('shopping')) ||
-               (name.includes('hospital') && place.rating && place.rating >= 4.0) ||
-               (name.includes('university') || name.includes('college'));
+        return (name.includes('bank') && (name.includes('headquarters') || name.includes('corporate'))) ||
+               name.includes('stock exchange') || name.includes('financial district') ||
+               name.includes('business district');
       });
 
-      // Premium commercial indicators for cities
-      const commercialIndicators = result.nearbyPlaces.filter(place => {
+      // Premium residential detection
+      const premiumResidentialIndicators = result.nearbyPlaces.filter(place => {
         const name = place.name.toLowerCase();
-        return name.includes('bank') || name.includes('hotel') || 
-               name.includes('restaurant') || name.includes('store');
+        return name.includes('country club') || name.includes('golf course') ||
+               name.includes('five star') || name.includes('luxury') ||
+               (place.rating && place.rating >= 4.7);
       });
 
-      // Check if address indicates rural area
-      const isRuralByAddress = addressLower.includes('village') || addressLower.includes('rural') || 
-                              addressLower.includes('farm') || addressLower.includes('countryside');
+      // 4. ECONOMIC INDICATORS ASSESSMENT
+      let economicMultiplier = 1.0;
 
-      console.log(`Classification Debug: Places=${totalPlaces}, Infrastructure=${totalInfrastructureForClassification}, RealMetro=${realMetroIndicators.length}, Commercial=${commercialIndicators.length}, RuralAddress=${isRuralByAddress}`);
+      // Tech hub bonus (stricter criteria)
+      if (techIndicators.length >= 3) economicMultiplier += 0.25;
+      else if (techIndicators.length >= 1) economicMultiplier += 0.10;
 
-      // Use AI-powered location intelligence for classification
-      console.log(`AI Location Intelligence: Type=${locationIntelligence.locationType}, Safety=${locationIntelligence.safetyScore}/10, Crime=${locationIntelligence.crimeRate}, Investment=${locationIntelligence.investmentPotential}%, Confidence=${locationIntelligence.confidence}%`);
+      // Financial district bonus
+      if (financialIndicators.length >= 2) economicMultiplier += 0.20;
+      else if (financialIndicators.length >= 1) economicMultiplier += 0.08;
 
-      // Map AI classification to our system with investment viability caps
-      const aiClassificationMap = {
-        'metropolitan': { type: 'metropolitan', max: 95 },
-        'city': { type: 'city', max: 70 },
-        'town': { type: 'town', max: 50 },
-        'village': { type: 'village', max: 35 },
-        'rural': { type: 'village', max: 30 },
-        'uninhabitable': { type: 'village', max: 0 }
+      // Premium residential area bonus
+      if (premiumResidentialIndicators.length >= 2) economicMultiplier += 0.15;
+
+      // Metropolitan area detection
+      const isMetropolitan = result.nearbyPlaces.length >= 40 && 
+                             infrastructureScores.transport.total >= 4 &&
+                             infrastructureScores.commercial.total >= 8;
+
+      if (isMetropolitan) economicMultiplier += 0.15;
+
+      // 5. INFRASTRUCTURE DENSITY PENALTY/BONUS
+      // Locations with too few amenities get penalized heavily
+      const totalAmenities = result.nearbyPlaces.length;
+      let densityMultiplier = 1.0;
+
+      if (totalAmenities < 8) densityMultiplier = 0.3; // Severe penalty for sparse areas
+      else if (totalAmenities < 15) densityMultiplier = 0.6; // Moderate penalty
+      else if (totalAmenities < 25) densityMultiplier = 0.8; // Light penalty
+      else if (totalAmenities >= 40) densityMultiplier = 1.2; // Bonus for dense areas
+
+      // 6. FINAL LOCATION SCORE CALCULATION (Much More Conservative)
+      const baseInfrastructureScore = (
+        healthcareScore * 0.22 +          // 22% - Healthcare (increased weight)
+        educationScore * 0.18 +           // 18% - Education
+        transportScore * 0.20 +           // 20% - Transport
+        commercialScore * 0.15 +          // 15% - Commercial
+        lifestyleScore * 0.10 +           // 10% - Lifestyle
+        finalConnectivityScore * 0.12 +   // 12% - Connectivity
+        safetyScore * 0.02 +              // 2% - Safety
+        environmentScore * 0.01           // 1% - Environment
+      );
+
+      // Apply all multipliers and constraints
+      const rawLocationScore = baseInfrastructureScore * economicMultiplier * densityMultiplier * distanceQualityFactor;
+
+      // Apply realistic score distribution (most locations should score 2-4, not 4-5)
+      result.locationScore = Math.max(0.5, Math.min(5.0, rawLocationScore * 3.5)); // Scale more conservatively
+
+      // SOPHISTICATED INVESTMENT VIABILITY ANALYSIS
+      // =============================================
+
+      // 1. MARKET FUNDAMENTALS ASSESSMENT
+      const marketFundamentals = {
+        // Infrastructure maturity (0-25 points)
+        infrastructureMaturity: Math.min(25, (result.locationScore / 5.0) * 25),
+
+        // Economic activity density (0-20 points)
+        economicActivity: Math.min(20, (infrastructureScores.commercial.total / 15.0) * 20),
+
+        // Connectivity index (0-20 points) 
+        connectivityIndex: Math.min(20, (infrastructureScores.connectivity / 150.0) * 20),
+
+        // Demographics & lifestyle (0-15 points)
+        demographicsScore: Math.min(15, ((infrastructureScores.education.total + infrastructureScores.lifestyle.total) / 20.0) * 15),
+
+        // Transportation accessibility (0-20 points)
+        transportationScore: Math.min(20, (infrastructureScores.transport.total / 10.0) * 20)
       };
 
-      // Use AI classification as primary, fall back to infrastructure analysis
-      const aiMapping = aiClassificationMap[locationIntelligence.locationType] || { type: 'village', max: 35 };
-      areaType = aiMapping.type;
-      maxViability = aiMapping.max;
+      const totalMarketScore = Object.values(marketFundamentals).reduce((sum, score) => sum + score, 0);
 
-      // Override for uninhabitable areas
-      if (locationIntelligence.locationType === 'uninhabitable') {
-        result.locationScore = 0.0;
-        result.investmentViability = 0;
-        result.growthPrediction = -10;
-        result.businessGrowthRate = -5.0;
-        result.populationGrowthRate = -3.0;
-        result.investmentRecommendation = "Uninhabitable Location - Property Development Not Possible";
-        return result;
-      }
+      // 2. RISK ASSESSMENT FACTORS (Deductions)
+      let riskPenalties = 0;
 
-      // Apply safety score adjustments to investment viability
-      const safetyAdjustment = (locationIntelligence.safetyScore - 5) * 2; // -10 to +10 adjustment
-      maxViability = Math.max(0, Math.min(95, maxViability + safetyAdjustment));
+      // Low amenity density penalty
+      if (totalAmenities < 10) riskPenalties += 20;
+      else if (totalAmenities < 20) riskPenalties += 10;
 
-      // Cross-verify with infrastructure data for accuracy
-      if (areaType === 'metropolitan' && totalPlaces < 10) {
-        areaType = 'city';
-        maxViability = 70;
-        console.log("AI classified as metropolitan but low infrastructure - downgraded to city");
-      } else if (areaType === 'city' && totalPlaces < 8) {
-        areaType = 'town';
-        maxViability = 50;
-        console.log("AI classified as city but low infrastructure - downgraded to town");
-      }
+      // Poor connectivity penalty
+      if (infrastructureScores.connectivity < 30) riskPenalties += 15;
+      else if (infrastructureScores.connectivity < 60) riskPenalties += 8;
 
-      console.log(`Classified as: ${areaType} (max: ${maxViability}%)`);
+      // Limited healthcare penalty
+      if (infrastructureScores.healthcare.total < 2) riskPenalties += 12;
+      else if (infrastructureScores.healthcare.total < 4) riskPenalties += 6;
 
-      // Enhanced investment viability calculation with area-based caps
-      const scoreAsPercentage = Math.min((result.locationScore / 5) * 100, 120);
+      // Poor transport penalty
+      if (infrastructureScores.transport.total < 2) riskPenalties += 15;
+      else if (infrastructureScores.transport.total < 4) riskPenalties += 8;
 
-      // Premium area multipliers (only for cities and metros)
-      let viabilityMultiplier = 1.0;
-      if (areaType !== 'village') {
-        if (premiumAreaBonus >= 1.0) viabilityMultiplier = 1.4; // Luxury areas get 40% boost
-        else if (premiumAreaBonus >= 0.5) viabilityMultiplier = 1.2; // Premium areas get 20% boost
-      }
+      // 3. GROWTH POTENTIAL MULTIPLIERS
+      let growthMultiplier = 1.0;
 
-      result.investmentViability = Math.min(scoreAsPercentage * viabilityMultiplier, maxViability);
+      // Tech corridor multiplier
+      if (techIndicators.length >= 3) growthMultiplier += 0.4;
+      else if (techIndicators.length >= 1) growthMultiplier += 0.2;
 
-      // Enhanced business growth rate based on infrastructure, amenities & population indicators
+      // Financial district multiplier
+      if (financialIndicators.length >= 2) growthMultiplier += 0.3;
+      else if (financialIndicators.length >= 1) growthMultiplier += 0.15;
+
+      // Metropolitan status multiplier
+      if (isMetropolitan) growthMultiplier += 0.25;
+
+      // 4. FINAL INVESTMENT VIABILITY CALCULATION
+      const baseViability = Math.max(0, totalMarketScore - riskPenalties);
+      result.investmentViability = Math.min(95, Math.max(5, baseViability * growthMultiplier));
+
+      // 5. BUSINESS GROWTH ANALYSIS (More Conservative)
       const businessGrowthFactors = {
-        infrastructure: infrastructureScores.essential.total * 1.5, // Essential services drive business
-        commercial: infrastructureScores.commercial.total * 2.0, // Commercial density indicates business activity
-        connectivity: infrastructureScores.connectivity * 0.15, // Transport connectivity enables business
-        education: infrastructureScores.education.total * 1.2, // Education creates skilled workforce
-        population: Math.min(infrastructureScores.healthcare.total * 1.0, 15) // Healthcare indicates population density
+        commercialInfrastructure: Math.min(15, infrastructureScores.commercial.total * 0.8),
+        transportConnectivity: Math.min(12, infrastructureScores.transport.total * 0.7),
+        techEcosystem: Math.min(20, techIndicators.length * 3.5),
+        financialServices: Math.min(10, financialIndicators.length * 5),
+        externalConnectivity: Math.min(8, infrastructureScores.connectivity * 0.04),
+        talentAvailability: Math.min(10, infrastructureScores.education.total * 0.6)
       };
 
-      const totalBusinessScore = Object.values(businessGrowthFactors).reduce((sum, score) => sum + score, 0);
-      result.businessGrowthRate = Math.max(-8, Math.min(18, 
-        (totalBusinessScore / 15) + // Base growth from infrastructure
-        (result.locationScore / 8) - 1 // Location score adjustment
-      ));
+      const totalBusinessGrowthScore = Object.values(businessGrowthFactors).reduce((sum, score) => sum + score, 0);
 
-      // Population growth rate based on infrastructure capacity and amenities
+      // Business growth calculation (more realistic ranges)
+      let businessGrowthBase = (totalBusinessGrowthScore / 75) * 12 - 3; // Range: -3% to 9%
+
+      // Apply market condition modifiers
+      if (result.investmentViability < 30) businessGrowthBase -= 2;
+      else if (result.investmentViability > 70) businessGrowthBase += 1.5;
+
+      result.businessGrowthRate = Math.max(-5, Math.min(12, businessGrowthBase));
+
+      // 6. POPULATION GROWTH ANALYSIS (More Realistic)
       const populationGrowthFactors = {
-        housing: Math.min(infrastructureScores.essential.total * 0.8, 12), // Essential services support population
-        healthcare: infrastructureScores.healthcare.total * 1.2, // Healthcare capacity indicates population support
-        education: infrastructureScores.education.total * 1.0, // Schools indicate family-friendly areas
-        transport: infrastructureScores.transport.total * 0.9, // Transport enables population movement
-        connectivity: infrastructureScores.connectivity * 0.08 // External connectivity attracts migration
+        housingSupport: Math.min(10, infrastructureScores.essential.total * 0.5),
+        healthcareCapacity: Math.min(12, infrastructureScores.healthcare.total * 0.8),
+        educationQuality: Math.min(10, infrastructureScores.education.total * 0.6),
+        transportAccess: Math.min(8, infrastructureScores.transport.total * 0.5),
+        economicOpportunity: Math.min(10, infrastructureScores.commercial.total * 0.4),
+        connectivityAppeals: Math.min(5, infrastructureScores.connectivity * 0.025)
       };
 
       const totalPopulationScore = Object.values(populationGrowthFactors).reduce((sum, score) => sum + score, 0);
-      result.populationGrowthRate = Math.max(-5, Math.min(12, 
-        (totalPopulationScore / 12) + // Base growth from infrastructure capacity
-        (result.locationScore / 15) - 0.5 // Location score adjustment
-      ));
 
-      result.growthPrediction = Math.min(scoreAsPercentage * 0.2, 15); // Cap at 15%
+      // Population growth calculation (more conservative)
+      let populationGrowthBase = (totalPopulationScore / 55) * 8 - 2; // Range: -2% to 6%
 
-      // Enhanced investment recommendation incorporating AI intelligence
+      // Apply viability modifiers
+      if (result.investmentViability < 25) populationGrowthBase -= 1.5;
+      else if (result.investmentViability > 75) populationGrowthBase += 1;
+
+      result.populationGrowthRate = Math.max(-4, Math.min(8, populationGrowthBase));
+
+      // 7. PROPERTY GROWTH PREDICTION (Much More Conservative)
+      const viabilityFactor = result.investmentViability / 100;
+      const businessFactor = Math.max(0, result.businessGrowthRate + 3) / 15; // Normalize business growth
+      const populationFactor = Math.max(0, result.populationGrowthRate + 2) / 10; // Normalize population growth
+      const locationFactor = result.locationScore / 5;
+
+      // Combined growth prediction (much more conservative ranges)
+      const growthBase = (viabilityFactor * 0.4 + businessFactor * 0.3 + populationFactor * 0.2 + locationFactor * 0.1) * 15;
+
+      // Apply market reality constraints
+      let finalGrowthPrediction = growthBase - 5; // Shift down for realism
+
+      // Additional constraints based on infrastructure reality
+      if (totalAmenities < 8) finalGrowthPrediction -= 3;
+      else if (totalAmenities < 15) finalGrowthPrediction -= 1.5;
+
+      if (infrastructureScores.connectivity < 40) finalGrowthPrediction -= 2;
+
+      result.growthPrediction = Math.max(-8, Math.min(12, finalGrowthPrediction));
+
+      // SOPHISTICATED INVESTMENT RECOMMENDATION ENGINE
       const generateInvestmentRecommendation = () => {
         const viability = result.investmentViability;
+        const locationScore = result.locationScore;
+        const businessGrowth = result.businessGrowthRate;
         const safety = locationIntelligence.safetyScore;
         const crimeRate = locationIntelligence.crimeRate;
-        const concerns = locationIntelligence.primaryConcerns;
-        const strengths = locationIntelligence.keyStrengths;
+        const areaType = locationIntelligence.locationType || 'urban';
 
-        if (viability && viability >= 85) {
-          return `Excellent ${areaType.charAt(0).toUpperCase() + areaType.slice(1)} Investment - Premium Location (Safety: ${safety}/10, Crime: ${crimeRate})`;
-        } else if (viability && viability >= 70) {
-          return `Good ${areaType.charAt(0).toUpperCase() + areaType.slice(1)} Investment - Stable Growth (Safety: ${safety}/10, Crime: ${crimeRate})`;
-        } else if (viability && viability >= 50) {
-          return `Moderate ${areaType.charAt(0).toUpperCase() + areaType.slice(1)} Investment - Consider Risks (Safety: ${safety}/10, Crime: ${crimeRate})`;
-        } else if (viability && viability >= 35) {
-          return `Limited ${areaType.charAt(0).toUpperCase() + areaType.slice(1)} Investment - High Risk Area (Safety: ${safety}/10, Crime: ${crimeRate})`;
+        // Multi-factor assessment for more nuanced recommendations
+        const marketStrength = techIndicators.length >= 2 ? 'Tech Hub' : 
+                              financialIndicators.length >= 1 ? 'Business District' :
+                              isMetropolitan ? 'Metropolitan' : 'Developing';
+
+        const infrastructureGrade = locationScore >= 4.0 ? 'A-Grade' :
+                                   locationScore >= 3.0 ? 'B-Grade' :
+                                   locationScore >= 2.0 ? 'C-Grade' : 'D-Grade';
+
+        // Sophisticated recommendation matrix
+        if (viability >= 80 && locationScore >= 3.5 && businessGrowth >= 3) {
+          return `Outstanding ${marketStrength} Investment - ${infrastructureGrade} Infrastructure (Safety: ${safety}/10, Growth: +${businessGrowth.toFixed(1)}%)`;
+        } else if (viability >= 70 && locationScore >= 3.0 && businessGrowth >= 1) {
+          return `Excellent ${areaType.charAt(0).toUpperCase() + areaType.slice(1)} Investment - Strong Fundamentals (Safety: ${safety}/10, ${infrastructureGrade})`;
+        } else if (viability >= 55 && locationScore >= 2.5) {
+          return `Good Investment Opportunity - ${infrastructureGrade} Area (Safety: ${safety}/10, Consider Market Timing)`;
+        } else if (viability >= 40 && locationScore >= 2.0) {
+          return `Moderate Investment - ${infrastructureGrade} Infrastructure (Safety: ${safety}/10, Higher Risk-Reward)`;
+        } else if (viability >= 25 && locationScore >= 1.5) {
+          return `Speculative Investment - ${infrastructureGrade} Area (Safety: ${safety}/10, High Risk Zone)`;
+        } else if (viability >= 15) {
+          return `Poor Investment Viability - Infrastructure Deficient (Safety: ${safety}/10, Avoid Investment)`;
         } else {
-          return `Poor Investment Potential - Avoid This Location (Safety: ${safety}/10, Crime: ${crimeRate})`;
+          return `Uninhabitable Location - 0% Investment Potential (No Infrastructure/Safety Data)`;
         }
       };
 
