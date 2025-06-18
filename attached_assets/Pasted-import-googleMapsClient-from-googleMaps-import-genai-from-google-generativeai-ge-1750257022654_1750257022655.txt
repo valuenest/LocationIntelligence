@@ -1,0 +1,285 @@
+import { googleMapsClient } from './googleMaps';
+import { genai } from 'google-generativeai';
+
+genai.configure({ api_key: process.env.GOOGLE_API_KEY });
+
+interface InfrastructureScores {
+  healthcare: { total: number; close: number; premium: number };
+  education: { total: number; close: number; premium: number };
+  transport: { total: number; close: number; premium: number };
+  commercial: { total: number; close: number; premium: number };
+  lifestyle: { total: number; close: number; premium: number };
+  connectivity: number;
+  safety: { total: number };
+  environment: { total: number };
+  breakdown: { category: string; score: number; reason: string }[];
+}
+
+interface UserPreferences {
+  riskTolerance?: 'low' | 'medium' | 'high';
+  investmentHorizon?: 'short' | 'medium' | 'long';
+}
+
+interface InvestmentViabilityResult {
+  score: number;
+  breakdown: { component: string; score: number; weight: number; reason: string }[];
+  mapPreview: string;
+  scenarios: { optimistic: number; conservative: number; expected: number };
+}
+
+async function calculateInvestmentViability(
+  lat: number,
+  lng: number,
+  locationType: 'metropolitan' | 'city' | 'town' | 'village' | 'rural',
+  infrastructureScores: InfrastructureScores,
+  locationScore: number,
+  userPreferences: UserPreferences = {}
+): Promise<InvestmentViabilityResult> {
+  const result: InvestmentViabilityResult = {
+    score: 0,
+    breakdown: [],
+    mapPreview: `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=400x200&key=${process.env.GOOGLE_API_KEY}`,
+    scenarios: { optimistic: 0, conservative: 0, expected: 0 }
+  };
+
+  // Step 1: Market Fundamentals Assessment
+  const fundamentals = await calculateMarketFundamentals(lat, lng, locationType, infrastructureScores, locationScore);
+  let totalMarketScore = Object.entries(fundamentals).reduce((sum, [key, { score }]) => {
+    result.breakdown.push({
+      component: key,
+      score: score.score,
+      weight: score.weight,
+      reason: score.reason
+    });
+    return sum + score.score * score.weight;
+  }, 0);
+
+  // Step 2: Risk Penalties
+  const riskPenalties = await calculateRiskPenalties(lat, lng, locationType, infrastructureScores);
+  totalMarketScore -= riskPenalties.total;
+  result.breakdown.push({
+    component: 'riskPenalties',
+    score: -riskPenalties.total,
+    weight: 1,
+    reason: riskPenalties.reason
+  });
+
+  // Step 3: Growth Multipliers
+  const multipliers = await calculateGrowthMultipliers(lat, lng, locationType, userPreferences);
+  result.scenarios = {
+    optimistic: Math.min(100, totalMarketScore * multipliers.optimistic),
+    conservative: Math.min(100, totalMarketScore * multipliers.conservative),
+    expected: Math.min(100, totalMarketScore * multipliers.expected)
+  };
+
+  // Step 4: Final Investment Viability
+  const baseViability = Math.max(0, totalMarketScore * multipliers.expected);
+  result.score = Math.round(baseViability);
+
+  return result;
+}
+
+// Calculate Market Fundamentals
+async function calculateMarketFundamentals(
+  lat: number,
+  lng: number,
+  locationType: string,
+  infrastructureScores: InfrastructureScores,
+  locationScore: number
+): Promise<Record<string, { score: number; weight: number; reason: string }>> {
+  const defaultWeights = {
+    infrastructureMaturity: locationType === 'metropolitan' ? 0.3 : 0.25,
+    economicActivity: locationType === 'metropolitan' ? 0.25 : 0.2,
+    connectivityIndex: locationType === 'rural' ? 0.15 : 0.2,
+    demographicsScore: 0.15,
+    transportationScore: 0.2
+  };
+
+  // Adjust weights using Gemini AI
+  const prompt = `Suggest market fundamental weights for a ${locationType} location. Return JSON: { infrastructureMaturity: number, economicActivity: number, connectivityIndex: number, demographicsScore: number, transportationScore: number }`;
+  let weights = defaultWeights;
+  try {
+    const response = await genai.generateContent({
+      model: 'gemini-2.5-pro',
+      prompt,
+      deepThink: true
+    });
+    weights = JSON.parse(response.text);
+  } catch (error) {
+    console.error('Gemini weight adjustment failed:', error);
+  }
+
+  // Fetch AI summaries from Google Places
+  const places = await fetchPlaces(lat, lng, ['shopping_mall', 'school', 'park']);
+  const summaryPrompt = `Summarize the economic and lifestyle appeal of a ${locationType} area at (${lat}, ${lng}) with ${places.length} amenities (e.g., malls, schools, parks). Return JSON: { economicActivity: string, demographics: string }`;
+  let summaries = { economicActivity: 'Moderate commercial activity', demographics: 'Mixed demographic appeal' };
+  try {
+    const response = await genai.generateContent({
+      model: 'gemini-2.5-pro',
+      prompt: summaryPrompt,
+      grounding: 'google_search'
+    });
+    summaries = JSON.parse(response.text);
+  } catch (error) {
+    console.error('Gemini summary failed:', error);
+  }
+
+  return {
+    infrastructureMaturity: {
+      score: Math.min(25, (locationScore / 5.0) * 25),
+      weight: weights.infrastructureMaturity,
+      reason: `Infrastructure score based on location quality (${locationScore.toFixed(1)}/5).`
+    },
+    economicActivity: {
+      score: Math.min(20, (infrastructureScores.commercial.total / 15.0) * 20 + (summaries.economicActivity.includes('high') ? 5 : 0)),
+      weight: weights.economicActivity,
+      reason: `Economic activity reflects commercial density and ${summaries.economicActivity}.`
+    },
+    connectivityIndex: {
+      score: Math.min(20, (infrastructureScores.connectivity / 150.0) * 20),
+      weight: weights.connectivityIndex,
+      reason: `Connectivity based on transport hubs and network strength.`
+    },
+    demographicsScore: {
+      score: Math.min(15, ((infrastructureScores.education.total + infrastructureScores.lifestyle.total) / 20.0) * 15 + (summaries.demographics.includes('family-friendly') ? 3 : 0)),
+      weight: weights.demographicsScore,
+      reason: `Demographics driven by education, lifestyle, and ${summaries.demographics}.`
+    },
+    transportationScore: {
+      score: Math.min(20, (infrastructureScores.transport.total / 10.0) * 20),
+      weight: weights.transportationScore,
+      reason: `Transport score reflects accessibility to transit hubs.`
+    }
+  };
+}
+
+// Calculate Risk Penalties
+async function calculateRiskPenalties(
+  lat: number,
+  lng: number,
+  locationType: string,
+  infrastructureScores: InfrastructureScores
+): Promise<{ total: number; reason: string }> {
+  let total = 0;
+  let reasons: string[] = [];
+
+  // Environmental risk via Geocoding
+  const geocodingResponse = await googleMapsClient.reverseGeocode({ latlng: [lat, lng] });
+  const landUse = geocodingResponse.results[0]?.types || [];
+  if (landUse.includes('natural_feature')) {
+    total += 10;
+    reasons.push('Environmental risk due to proximity to natural features (e.g., river, coast).');
+  }
+
+  // AI-driven risk assessment
+  const prompt = `Assess investment risks for a ${locationType} location at (${lat}, ${lng}) with:
+  - Amenities: ${infrastructureScores.healthcare.total + infrastructureScores.commercial.total + infrastructureScores.lifestyle.total}
+  - Connectivity: ${infrastructureScores.connectivity}
+  - Healthcare: ${infrastructureScores.healthcare.total}
+  - Transport: ${infrastructureScores.transport.total}
+  Return JSON: { riskScore: number, reason: string, confidence: number }`;
+  try {
+    const response = await genai.generateContent({
+      model: 'gemini-2.5-pro',
+      prompt,
+      grounding: 'google_search',
+      deepThink: true
+    });
+    const { riskScore, reason, confidence } = JSON.parse(response.text);
+    if (confidence >= 0.8) {
+      total += riskScore;
+      reasons.push(reason);
+    } else {
+      total += 5;
+      reasons.push('Low-confidence AI risk assessment; applied moderate penalty.');
+    }
+  } catch (error) {
+    console.error('Gemini risk assessment failed:', error);
+    total += 5;
+    reasons.push('Fallback penalty due to AI error.');
+  }
+
+  // Contextual penalties
+  if (infrastructureScores.healthcare.total < 2 && locationType !== 'rural') {
+    total += 8;
+    reasons.push('Limited healthcare access.');
+  }
+  if (infrastructureScores.transport.total < 2 && locationType === 'metropolitan') {
+    total += 10;
+    reasons.push('Poor transport access for urban area.');
+  }
+
+  return { total, reason: reasons.join(' ') };
+}
+
+// Calculate Growth Multipliers
+async function calculateGrowthMultipliers(
+  lat: number,
+  lng: number,
+  locationType: string,
+  userPreferences: UserPreferences
+): Promise<{ optimistic: number; conservative: number; expected: number }> {
+  const baseMultipliers = { optimistic: 1.3, conservative: 0.8, expected: 1.0 };
+
+  // Adjust based on user preferences
+  if (userPreferences.riskTolerance === 'high') {
+    baseMultipliers.optimistic += 0.2;
+    baseMultipliers.expected += 0.1;
+  } else if (userPreferences.riskTolerance === 'low') {
+    baseMultipliers.conservative -= 0.1;
+    baseMultipliers.expected -= 0.05;
+  }
+
+  // AI-driven multiplier adjustments
+  const prompt = `Suggest growth multipliers for a ${locationType} location at (${lat}, ${lng}) based on recent market trends, tech hubs, and economic indicators. Return JSON: { optimistic: number, conservative: number, expected: number, reason: string }`;
+  try {
+    const response = await genai.generateContent({
+      model: 'gemini-2.5-pro',
+      prompt,
+      grounding: 'google_search',
+      deepThink: true
+    });
+    const { optimistic, conservative, expected, reason } = JSON.parse(response.text);
+    return { optimistic, conservative, expected, reason };
+  } catch (error) {
+    console.error('Gemini multiplier adjustment failed:', error);
+    return baseMultipliers;
+  }
+}
+
+// Fetch places with caching
+async function fetchPlaces(lat: number, lng: number, types: string[]): Promise<any[]> {
+  const cacheKey = `places:${lat}:${lng}:${types.join(',')}`;
+  const cached = await redis.get(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  const places: any[] = [];
+  for (const type of types) {
+    const response = await fetchWithRetry({
+      url: `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=5000&type=${type}&key=${process.env.GOOGLE_API_KEY}`
+    });
+    places.push(...response.results);
+  }
+
+  await redis.set(cacheKey, JSON.stringify(places), 'EX', 86400); // Cache for 24 hours
+  return places;
+}
+
+// Retry logic for API calls
+async function fetchWithRetry({ url, maxRetries = 3 }: { url: string; maxRetries?: number }): Promise<any> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url);
+      return await response.json();
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+    }
+  }
+}
+
+// Simulated Redis client (replace with actual implementation)
+const redis = {
+  get: async (key: string) => null,
+  set: async (key: string, value: string, mode: string, ttl: number) => {}
+};
