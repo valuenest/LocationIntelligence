@@ -169,14 +169,18 @@ export default function Home() {
           location: selectedLocation,
           amount: formData.amount,
           propertyType: formData.propertyType,
-          propertySize: formData.propertySize,
-          sizeUnit: formData.sizeUnit,
-          propertyAge: formData.propertyAge,
-          bedrooms: formData.bedrooms,
-          furnished: formData.furnished,
-          floor: formData.floor,
-          parkingSpaces: formData.parkingSpaces,
           planType: planType,
+          propertyDetails: {
+            currency: formData.currency,
+            country: formData.country,
+            propertySize: formData.propertySize,
+            sizeUnit: formData.sizeUnit,
+            propertyAge: formData.propertyAge,
+            bedrooms: formData.bedrooms,
+            furnished: formData.furnished,
+            floor: formData.floor,
+            parkingSpaces: formData.parkingSpaces,
+          }
         }),
       });
 
@@ -385,23 +389,49 @@ export default function Home() {
 
       {/* Pricing Modal */}
       <Dialog open={pricingModalOpen} onOpenChange={setPricingModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Select Your Analysis Plan</DialogTitle>
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto p-0 bg-gradient-to-br from-gray-50 to-blue-50">
+          <DialogHeader className="px-8 pt-8 pb-4 text-center">
+            <DialogTitle className="text-3xl font-bold text-gray-900 mb-2">
+              Choose Your Analysis Plan
+            </DialogTitle>
+            <p className="text-lg text-gray-600">
+              Get comprehensive insights for your property investment decision
+            </p>
           </DialogHeader>
-          <div className="py-4">
-            <PricingPlans
-              onPlanSelect={(plan) => {
-                setSelectedPlan(plan);
-                setPricingModalOpen(false);
-                if (propertyData) {
-                  handleAnalysisWithPlan(propertyData, plan);
-                }
-              }}
-              canUseFree={canUseFree}
-              freeUsageCount={freeUsageCount}
-              isFormValid={true}
-            />
+          
+          <div className="px-6 pb-8">
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <PricingPlans
+                onPlanSelect={(plan) => {
+                  setSelectedPlan(plan);
+                  setPricingModalOpen(false);
+                  if (propertyData) {
+                    handleAnalysisWithPlan(propertyData, plan);
+                  }
+                }}
+                canUseFree={canUseFree}
+                freeUsageCount={freeUsageCount}
+                isFormValid={true}
+              />
+            </div>
+            
+            {/* Additional Trust Indicators */}
+            <div className="mt-6 text-center">
+              <div className="flex justify-center items-center space-x-8 text-sm text-gray-600">
+                <div className="flex items-center">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                  Secure Payment
+                </div>
+                <div className="flex items-center">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                  Instant Analysis
+                </div>
+                <div className="flex items-center">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                  AI-Powered Insights
+                </div>
+              </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

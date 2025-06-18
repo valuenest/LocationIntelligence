@@ -479,9 +479,12 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
   // Frontend analysis endpoint
   app.post("/api/analyze", async (req: Request, res: Response) => {
     try {
+      console.log("Received analyze request body:", JSON.stringify(req.body, null, 2));
+      
       // Validate input with Zod schema
       const validationResult = AnalysisRequestSchema.safeParse(req.body);
       if (!validationResult.success) {
+        console.log("Validation failed:", validationResult.error.issues);
         return res.status(400).json({ 
           success: false, 
           error: "Invalid input data",

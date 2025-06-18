@@ -103,12 +103,8 @@ export default function PricingPlans({ onPlanSelect, canUseFree, freeUsageCount,
   };
 
   return (
-    <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50">
+    <section className="py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">Choose Your Analysis Plan</h2>
-          <p className="text-xl text-gray-600">Get the insights you need to make informed investment decisions</p>
-        </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {plans.map((plan) => {
