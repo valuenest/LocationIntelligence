@@ -1533,6 +1533,9 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       };
 
       result.investmentRecommendation = generateInvestmentRecommendation();
+      
+      // Debug log the recommendation generation
+      console.log(`Investment Recommendation Generated: "${result.investmentRecommendation}" for viability ${result.investmentViability}% and area "${aiIntelligence.areaClassification}"`);;
 
       // Enhanced market intelligence with infrastructure analysis
       const marketIntelligence = {
@@ -1626,42 +1629,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
                       infrastructureScores.commercial.total >= 3 && infrastructureScores.transport.total >= 2 ? 'urban' :
                       infrastructureScores.commercial.total >= 1 && infrastructureScores.transport.total >= 1 ? 'suburban' : 'rural';
 
-      // Investment recommendation text based on area type and viability
-      if (areaType === 'metropolitan') {
-        if (result.investmentViability >= 80) {
-          result.investmentRecommendation = "Excellent Metropolitan Investment - Premium Location";
-        } else if (result.investmentViability >= 60) {
-          result.investmentRecommendation = "Good Metropolitan Investment - Strong Growth Potential";
-        } else if (result.investmentViability >= 40) {
-          result.investmentRecommendation = "Fair Metropolitan Investment - Moderate Growth";
-        } else {
-          result.investmentRecommendation = "Limited Metropolitan Investment - Consider Alternatives";
-        }
-      } else if (areaType === 'city') {
-        if (result.investmentViability >= 50) {
-          result.investmentRecommendation = "Good City Investment - Stable Urban Growth";
-        } else if (result.investmentViability >= 30) {
-          result.investmentRecommendation = "Fair City Investment - Moderate Potential";
-        } else {
-          result.investmentRecommendation = "Limited City Investment - High Risk";
-        }
-      } else if (areaType === 'town') {
-        if (result.investmentViability >= 35) {
-          result.investmentRecommendation = "Fair Town Investment - Basic Infrastructure Available";
-        } else if (result.investmentViability >= 20) {
-          result.investmentRecommendation = "Limited Town Investment - Minimal Growth Expected";
-        } else {
-          result.investmentRecommendation = "Poor Town Investment - Not Recommended";
-        }
-      } else { // village
-        if (result.investmentViability >= 25) {
-          result.investmentRecommendation = "Limited Village Investment - Rural Development Potential";
-        } else if (result.investmentViability >= 15) {
-          result.investmentRecommendation = "Poor Village Investment - Minimal Infrastructure";
-        } else {
-          result.investmentRecommendation = "Not Suitable for Investment - Insufficient Infrastructure";
-        }
-      }
+      // Use AI-based investment recommendation - no override needed
 
     } catch (error) {
       console.error("Analysis error:", error);
