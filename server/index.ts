@@ -7,6 +7,9 @@ import rateLimit from "express-rate-limit";
 
 const app = express();
 
+// Trust proxy for rate limiting to work properly with X-Forwarded-For headers
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: {

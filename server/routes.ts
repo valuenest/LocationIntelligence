@@ -32,7 +32,18 @@ const AnalysisRequestSchema = z.object({
   location: LocationSchema,
   amount: z.number().min(1).max(1000000000),
   propertyType: z.enum(['residential', 'commercial', 'industrial', 'agricultural', 'mixed']),
-  planType: z.enum(['free', 'basic', 'pro']).default('free')
+  planType: z.enum(['free', 'basic', 'pro']).default('free'),
+  propertyDetails: z.object({
+    currency: z.string().optional(),
+    country: z.string().optional(),
+    propertySize: z.number().optional(),
+    sizeUnit: z.string().optional(),
+    propertyAge: z.string().optional(),
+    bedrooms: z.number().optional(),
+    furnished: z.string().optional(),
+    floor: z.string().optional(),
+    parkingSpaces: z.number().optional()
+  }).optional()
 });
 
 const ValidationRequestSchema = z.object({

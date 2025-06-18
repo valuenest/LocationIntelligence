@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import LocationInput from "@/components/LocationInput";
-import { PropertyFormCompact } from "../components/PropertyFormCompact";
-import { SampleAnalysis } from "../components/SampleAnalysis";
-import { PricingPlans } from "../components/PricingPlans";
+import PropertyFormCompact from "../components/PropertyFormCompact";
+import SampleAnalysis from "../components/SampleAnalysis";
+import PricingPlans from "../components/PricingPlans";
 import { SEOContent } from "../components/SEOContent";
 import PaymentModal from "@/components/PaymentModal";
 import AnalysisLoadingModal from "@/components/AnalysisLoadingModal";
