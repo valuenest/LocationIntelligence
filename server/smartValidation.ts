@@ -43,10 +43,31 @@ export async function performSmartValidation(data: ValidationRequest): Promise<V
       };
     }
     
-    // If basic validation passes, use Gemini AI for intelligent validation
-    const aiValidation = await performAILocationValidation(data.location, data.propertyData);
+    // If basic validation passes, check if location needs AI validation
+    // Only use AI for potentially problematic locations (institutional keywords)
+    const needsAIValidation = data.location.address.toLowerCase().includes('school') ||
+                             data.location.address.toLowerCase().includes('college') ||
+                             data.location.address.toLowerCase().includes('hospital') ||
+                             data.location.address.toLowerCase().includes('university') ||
+                             data.location.address.toLowerCase().includes('campus') ||
+                             data.location.address.toLowerCase().includes('playground') ||
+                             data.location.address.toLowerCase().includes('stadium') ||
+                             data.location.address.toLowerCase().includes('park') ||
+                             data.location.address.toLowerCase().includes('government');
     
-    return aiValidation;
+    if (needsAIValidation) {
+      const aiValidation = await performAILocationValidation(data.location, data.propertyData);
+      return aiValidation;
+    }
+    
+    // For regular locations (roads, residential areas), allow through
+    return {
+      isValid: true,
+      issues: [],
+      recommendations: [],
+      riskLevel: 'low',
+      confidence: 95
+    };
   } catch (error) {
     console.error('Smart validation error:', error);
     return {

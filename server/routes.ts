@@ -557,8 +557,11 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
           issue.includes('campus') ||
           issue.includes('institutional') ||
           issue.includes('public facility') ||
+          issue.includes('PUBLIC FACILITIES') ||
           issue.includes('illegal') ||
-          issue.includes('not suitable for private development')
+          issue.includes('not suitable for private development') ||
+          issue.includes('development on a public playground') ||
+          issue.includes('highly unlikely to be permitted')
         );
         
         if (hasBlockedIssues) {
