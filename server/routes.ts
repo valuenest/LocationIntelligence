@@ -1924,31 +1924,31 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // 4. LOCATION TYPE BONUS/PENALTY based on area classification
       let locationBonus = 0;
       
-      console.log(`LOCATION BONUS DEBUG: locationType="${locationType}", areaClassification="${areaClassification}"`);
+      console.log(`LOCATION BONUS DEBUG: locationType="${locationType}", areaClassification="${areaType}"`);
       
       // Premium location types get bonuses
-      if (locationType === 'metropolitan' || areaClassification.includes('Metro city') || areaClassification.includes('Metropolitan')) {
+      if (locationType === 'metropolitan' || areaType.includes('Metro city') || areaType.includes('Metropolitan')) {
         locationBonus += 5; // +5% for metropolitan areas
         console.log('Applied Metropolitan bonus: +5%');
-      } else if (areaClassification.includes('Smart city') || areaClassification.includes('IT park') || areaClassification.includes('Tech hub')) {
+      } else if (areaType.includes('Smart city') || areaType.includes('IT park') || areaType.includes('Tech hub')) {
         locationBonus += 8; // +8% for tech/smart cities
         console.log('Applied Tech/Smart city bonus: +8%');
-      } else if (areaClassification.includes('Tourism hub') || areaClassification.includes('Tourist town')) {
+      } else if (areaType.includes('Tourism hub') || areaType.includes('Tourist town')) {
         locationBonus += 6; // +6% for tourism hubs
         console.log('Applied Tourism hub bonus: +6%');
-      } else if (locationType === 'city' || areaClassification.includes('Urban')) {
+      } else if (locationType === 'city' || areaType.includes('Urban')) {
         locationBonus += 3; // +3% for urban cities
         console.log('Applied Urban city bonus: +3%');
-      } else if (areaClassification.includes('Industrial') || areaClassification.includes('SEZ')) {
+      } else if (areaType.includes('Industrial') || areaType.includes('SEZ')) {
         locationBonus += 4; // +4% for industrial zones
         console.log('Applied Industrial zone bonus: +4%');
-      } else if (locationType === 'town' || areaClassification.includes('Township')) {
+      } else if (locationType === 'town' || areaType.includes('Township')) {
         locationBonus += 1; // +1% for towns
         console.log('Applied Town bonus: +1%');
-      } else if (locationType === 'village' || areaClassification.includes('Village')) {
+      } else if (locationType === 'village' || areaType.includes('Village')) {
         locationBonus -= 3; // -3% for villages
         console.log('Applied Village penalty: -3%');
-      } else if (locationType === 'rural' || areaClassification.includes('Rural')) {
+      } else if (locationType === 'rural' || areaType.includes('Rural')) {
         locationBonus -= 5; // -5% for rural areas
         console.log('Applied Rural penalty: -5%');
       } else {
@@ -1986,7 +1986,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         Missing Services Penalty: -${missingServices * 2}% (${missingServices} missing × 2%)
         All Services Missing: ${serviceCount === 0 ? 'YES (-20%)' : 'NO (0%)'}
         Education + Transport Both Missing: ${essentialServices.education.length === 0 && essentialServices.transport.length === 0 && serviceCount > 0 ? 'YES (-20%)' : 'NO (0%)'}
-        LOCATION TYPE BONUS: ${locationBonus >= 0 ? '+' : ''}${locationBonus}% (${locationType} - ${areaClassification})
+        LOCATION TYPE BONUS: ${locationBonus >= 0 ? '+' : ''}${locationBonus}% (${locationType} - ${areaType})
         Quality Penalty: -${qualityPenalty.toFixed(1)}% (${result.nearbyPlaces.filter(p => p.rating && p.rating < 3.0).length} low-rated facilities)
         Final Investment Viability: ${finalViability.toFixed(1)}%`);
       
