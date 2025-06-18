@@ -66,11 +66,20 @@ export default function ValidationModal({
               <div className="flex items-start gap-3">
                 <AlertTriangle className="h-6 w-6 text-red-500 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h4 className="font-semibold text-red-800 mb-2">Location Not Suitable</h4>
+                  <h4 className="font-semibold text-red-800 mb-2">
+                    {validation.issues.some(issue => issue.includes('uninhabitable') || issue.includes('remote area')) 
+                      ? 'Uninhabitable Location Detected' 
+                      : 'Location Not Suitable'}
+                  </h4>
                   <div className="space-y-2">
                     {validation.issues.map((issue, index) => (
                       <p key={index} className="text-sm text-red-700">{issue}</p>
                     ))}
+                  </div>
+                  <div className="mt-3 p-3 bg-red-100 border border-red-300 rounded-lg">
+                    <p className="text-sm text-red-800 font-medium">
+                      💡 <strong>Recommendation:</strong> Please select a location with basic infrastructure like schools, hospitals, shops, or transportation within a reasonable distance for accurate property analysis.
+                    </p>
                   </div>
                   <p className="text-sm text-red-600 mt-3 font-medium">
                     Please select a different location for property analysis.

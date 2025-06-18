@@ -80,6 +80,14 @@ async function checkLocationViability(location: { lat: number; lng: number; addr
       'embassy compound', 'consulate general', 'high security zone',
       'ministry complex', 'parliament house', 'capitol building', 'government secretariat'
     ];
+
+    // Desert/uninhabitable areas - check before analysis
+    const desertKeywords = [
+      'sahara desert', 'grand canyon national park', 'death valley national park',
+      'mojave desert', 'badlands national park', 'monument valley tribal park',
+      'antarctica', 'middle of ocean', 'arctic circle', 'uninhabited island',
+      'desert wasteland', 'barren land'
+    ];
     
     // Check for water bodies
     const foundWater = waterKeywords.find(keyword => addressLower.includes(keyword));
@@ -97,6 +105,50 @@ async function checkLocationViability(location: { lat: number; lng: number; addr
     const foundGovernment = governmentKeywords.find(keyword => addressLower.includes(keyword));
     if (foundGovernment) {
       issues.push(`This location is in a government/military area (${foundGovernment}). Property development is restricted here.`);
+    }
+
+    // Check for desert/uninhabitable areas
+    const foundDesert = desertKeywords.find(keyword => addressLower.includes(keyword));
+    if (foundDesert) {
+      issues.push(`This location appears to be in an uninhabitable area (${foundDesert}). No infrastructure or amenities available for property development.`);
+    }
+
+    // Advanced infrastructure check via Google Places API
+    if (process.env.GOOGLE_MAPS_API_KEY && !foundDesert) {
+      try {
+        // Quick check for nearby places to detect truly remote locations
+        const nearbyUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=5000&type=establishment&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+        
+        const response = await fetch(nearbyUrl);
+        const data = await response.json();
+        
+        if (data.status === 'OK') {
+          const nearbyPlaces = data.results || [];
+          
+          // If less than 3 establishments within 5km, it's likely uninhabitable
+          if (nearbyPlaces.length < 3) {
+            // Check if it's in India (allow rural Indian locations)
+            const isInIndia = addressLower.includes('india') || 
+                             addressLower.includes('karnataka') || 
+                             addressLower.includes('kerala') || 
+                             addressLower.includes('tamil nadu') ||
+                             addressLower.includes('maharashtra') ||
+                             addressLower.includes('gujarat') ||
+                             addressLower.includes('rajasthan');
+            
+            if (!isInIndia) {
+              issues.push(`This location appears to be in a remote area with no nearby infrastructure. Found only ${nearbyPlaces.length} establishments within 5km radius. Property development may not be viable due to lack of essential services.`);
+            }
+          }
+        }
+        
+        // Rate limiting to avoid quota issues
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+      } catch (error) {
+        console.error('Infrastructure check error:', error);
+        // Don't add issues if API check fails
+      }
     }
     
     return issues;

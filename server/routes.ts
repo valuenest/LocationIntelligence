@@ -1017,33 +1017,8 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         (infrastructureScores.connectivity < 5 && infrastructureScores.commercial.total < 1 && infrastructureScores.essential.total < 1)
       ) : false; // Don't flag as desert if API has errors
 
-      // Check for actual desert/uninhabitable areas - more specific
-      const isKnownDesertArea = (
-        addressLower.includes('sahara desert') ||
-        addressLower.includes('grand canyon national park') ||
-        addressLower.includes('death valley national park') ||
-        addressLower.includes('mojave desert') ||
-        addressLower.includes('badlands national park') ||
-        addressLower.includes('monument valley tribal park') ||
-        addressLower.includes('antarctica') ||
-        addressLower.includes('middle of ocean') ||
-        addressLower.includes('arctic circle')
-      );
-
-      // Only flag as uninhabitable if it's truly a desert/restricted area AND has no nearby places
-      const hasInfrastructure = result.nearbyPlaces.length > 0;
-      const isInIndia = addressLower.includes('india') || addressLower.includes('karnataka') || addressLower.includes('kerala') || addressLower.includes('tamil nadu');
-      
-      // Don't flag Indian locations as uninhabitable unless they're truly remote
-      if ((isDesertOrRemote || isKnownDesertArea) && !hasInfrastructure && !isInIndia) {
-        result.locationScore = 0.0;
-        result.investmentViability = 0;
-        result.growthPrediction = -10;
-        result.businessGrowthRate = -5.0;
-        result.populationGrowthRate = -3.0;
-        result.investmentRecommendation = "Uninhabitable Location - 0% Investment Potential";
-        return result;
-      }
+      // Note: Uninhabitable locations are now caught in the validation phase
+      // If we reach here, the location has passed validation checks
 
       // ADVANCED INVESTMENT ANALYSIS ALGORITHM
       // ==============================================
