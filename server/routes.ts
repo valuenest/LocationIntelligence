@@ -764,9 +764,16 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       throw new Error("Google Maps API key not configured");
     }
 
-    // Get AI-powered location intelligence first
+    // MANDATORY: Get AI-powered location intelligence first - NO SCORING WITHOUT AI TAGGING
     console.log("Analyzing location intelligence with Gemini AI...");
     const aiIntelligence = await analyzeLocationIntelligence(location.address, location.lat, location.lng);
+    
+    // Validate that AI intelligence was successfully obtained
+    if (!aiIntelligence || !aiIntelligence.areaClassification) {
+      throw new Error("Location intelligence analysis failed - cannot proceed without AI tagging");
+    }
+    
+    console.log(`AI Location Intelligence Complete: ${aiIntelligence.areaClassification} (Priority: ${aiIntelligence.priorityScore})`)
 
     try {
       // Enhanced place search with infrastructure-focused types
@@ -1386,10 +1393,10 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         environmentScore * 0.01           // 1% - Environment
       ) * qualityMultiplier * densityMultiplier + baseInfrastructureBonus;
 
-      // AI-ENHANCED LOCATION SCORING WITH METROPOLITAN RECOGNITION
-      // ===========================================================
+      // AI-BASED LOCATION SCORING - ALL SCORING NOW USES MANDATORY AI TAGGING
+      // ====================================================================
       
-      // Apply AI intelligence multipliers based on location type
+      // Base location scoring is now entirely dependent on AI classification
       let aiLocationMultiplier = 1.0;
       let aiBaselineBonus = 0;
       
