@@ -74,30 +74,23 @@ const sanitizeInput = (req: Request, res: Response, next: NextFunction) => {
 // IP address validation middleware
 const validateClientIP = (req: Request, res: Response, next: NextFunction) => {
   const clientIP = req.ip || req.connection.remoteAddress || "127.0.0.1";
-  
+
   // Block known malicious IP patterns (basic example)
   const suspiciousPatterns = [
     /^10\.0\.0\.1$/, // Example: block specific internal IPs if needed
     /^192\.168\.1\.1$/ // Example: block router IPs
   ];
-  
+
   const isSuspicious = suspiciousPatterns.some(pattern => pattern.test(clientIP));
-  
+
   if (isSuspicious) {
     console.warn(`Blocked suspicious IP: ${clientIP}`);
     return res.status(403).json({ error: 'Access denied' });
   }
-  
+
   next();
 };
 
-interface PlaceDetails {
-  place_id: string;
-  name: string;
-  vicinity: string;
-  rating?: number;
-  types: string[];
-}
 
 interface DistanceData {
   distance: { text: string; value: number };
@@ -148,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const ipAddress = req.ip || req.connection.remoteAddress || "127.0.0.1";
       let usageLimit = await storage.getUsageLimit(ipAddress);
-      
+
       if (!usageLimit) {
         usageLimit = await storage.createUsageLimit({
           ipAddress,
@@ -178,7 +171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/razorpay/webhook", async (req: Request, res: Response) => {
     try {
       const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
-      
+
       if (!razorpay_payment_id || !razorpay_order_id) {
         return res.status(400).json({ error: "Missing payment details" });
       }
@@ -239,7 +232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { sessionId } = req.params;
       const analysisRequest = await storage.getAnalysisRequestBySessionId(sessionId);
-      
+
       if (!analysisRequest) {
         return res.status(404).json({ error: "Analysis not found" });
       }
@@ -273,7 +266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? JSON.parse(analysisRequest.location) 
         : analysisRequest.location;
       const propertyDetails = analysisRequest.propertyDetails ? JSON.parse(analysisRequest.propertyDetails) : null;
-      
+
       const result = await performAnalysis(
         location,
         analysisRequest.amount,
@@ -313,7 +306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { sessionId } = req.params;
       const analysisRequest = await storage.getAnalysisRequestBySessionId(sessionId);
-      
+
       if (!analysisRequest) {
         return res.status(404).json({ error: "Analysis not found" });
       }
@@ -347,7 +340,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? JSON.parse(analysisRequest.location) 
         : analysisRequest.location;
       const propertyDetails = analysisRequest.propertyDetails ? JSON.parse(analysisRequest.propertyDetails) : null;
-      
+
       const result = await performAnalysis(
         location,
         analysisRequest.amount,
@@ -386,7 +379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/validate", async (req: Request, res: Response) => {
     try {
       const { location, propertyData } = req.body;
-      
+
       if (!location || !propertyData) {
         return res.status(400).json({ error: "Missing location or property data" });
       }
@@ -439,11 +432,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get client IP for usage tracking
       const ipAddress = req.ip || req.connection.remoteAddress || "127.0.0.1";
-      
+
       // Check usage limits for free tier
       if (planType === "free") {
         let usageLimit = await storage.getUsageLimit(ipAddress);
-        
+
         if (!usageLimit) {
           usageLimit = await storage.createUsageLimit({
             ipAddress,
@@ -489,7 +482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { ipAddress } = req.params;
       let usageLimit = await storage.getUsageLimit(ipAddress);
-      
+
       if (!usageLimit) {
         usageLimit = await storage.createUsageLimit({
           ipAddress,
@@ -535,19 +528,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     const distances: Record<string, DistanceData> = {};
-    
+
     try {
       // Process destinations in batches to avoid API limits
       const batchSize = 10;
       for (let i = 0; i < destinations.length; i += batchSize) {
         const batch = destinations.slice(i, i + batchSize);
-        
+
         const destinationString = batch.map(place => `${place.vicinity}`).join('|');
         const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origin.lat},${origin.lng}&destinations=${encodeURIComponent(destinationString)}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
-        
+
         const response = await fetch(url);
         const data = await response.json();
-        
+
         if (data.status === 'OK' && data.rows[0]) {
           data.rows[0].elements.forEach((element: any, index: number) => {
             if (element.status === 'OK' && element.distance) {
@@ -562,14 +555,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           });
         }
-        
+
         // Add delay between batches to respect rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
       }
     } catch (error) {
       console.error("Distance calculation error:", error);
     }
-    
+
     return distances;
   };
 
@@ -609,7 +602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ];
 
       const allPlaces: PlaceDetails[] = [];
-      
+
       // Search for places in optimized batches to avoid API timeouts
       const priorityTypes = [
         'restaurant', 'hospital', 'school', 'bank', 'store', 'gas_station', 
@@ -618,13 +611,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'gym', 'spa', 'cafe', 'bar'
       ];
       const searchTypes = priorityTypes.slice(0, 16); // Expanded to capture lifestyle amenities
-      
+
       for (const type of searchTypes) {
         try {
           const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=5000&type=${type}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
           const response = await fetch(url);
           const data = await response.json();
-          
+
           if (data.status === 'OK' && data.results) {
             const places = data.results.slice(0, 3).map((place: any) => ({
               place_id: place.place_id,
@@ -633,10 +626,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               rating: place.rating,
               types: place.types || []
             }));
-            
+
             allPlaces.push(...places);
           }
-          
+
           // Reduced rate limiting for faster processing
           await new Promise(resolve => setTimeout(resolve, 100));
         } catch (error) {
@@ -654,12 +647,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate distances for all places and filter to 5km
       if (result.nearbyPlaces.length > 0) {
         result.distances = await calculateDistances(location, result.nearbyPlaces);
-        
+
         // Since distance calculation now filters to 5km, update nearbyPlaces to match
         const placesWithDistances = result.nearbyPlaces.filter(place => 
           result.distances[place.name] !== undefined
         );
-        
+
         result.nearbyPlaces = placesWithDistances;
         console.log(`Showing ${result.nearbyPlaces.length} places within 5km radius`);
       }
@@ -693,14 +686,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Enhanced rating system with quality detection
         const rating = place.rating || 0;
         const ratingMultiplier = rating > 0 ? Math.min(rating / 5, 1.2) : 0.5;
-        
+
         // Quality tier detection
         const isPremium = rating >= 4.5 || 
           place.name.toLowerCase().includes('apollo') ||
           place.name.toLowerCase().includes('premium') ||
           place.name.toLowerCase().includes('luxury') ||
           place.name.toLowerCase().includes('five star');
-        
+
         const isGood = rating >= 4.0 || 
           place.name.toLowerCase().includes('central') ||
           place.name.toLowerCase().includes('super') ||
@@ -720,7 +713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let healthScore = baseScore;
           if (isPremium) healthScore *= 2.5; // Premium hospitals (Apollo, etc.)
           else if (isGood) healthScore *= 1.8;
-          
+
           infrastructureScores.healthcare.total += healthScore;
           if (within3km) infrastructureScores.healthcare.close += healthScore;
           if (isPremium) infrastructureScores.healthcare.premium += 1;
@@ -731,12 +724,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let eduScore = baseScore;
           const isUniversity = place.types.includes('university') || place.name.toLowerCase().includes('university');
           const isCollege = place.types.includes('college') || place.name.toLowerCase().includes('college');
-          
+
           if (isUniversity) eduScore *= 2.2; // Universities have higher impact
           else if (isCollege) eduScore *= 1.8;
           else if (isPremium) eduScore *= 2.0; // Premium schools
           else if (isGood) eduScore *= 1.5;
-          
+
           infrastructureScores.education.total += eduScore;
           if (within3km) infrastructureScores.education.close += eduScore;
           if (isPremium || isUniversity) infrastructureScores.education.premium += 1;
@@ -747,11 +740,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let transportScore = baseScore;
           const isMetro = place.types.includes('subway_station') || place.name.toLowerCase().includes('metro');
           const isRailway = place.types.includes('train_station') || place.name.toLowerCase().includes('railway');
-          
+
           if (isMetro) transportScore *= 2.5; // Metro has highest connectivity value
           else if (isRailway) transportScore *= 2.0;
           else if (place.types.includes('bus_station')) transportScore *= 1.5;
-          
+
           infrastructureScores.transport.total += transportScore;
           if (within3km) infrastructureScores.transport.close += transportScore;
           if (isMetro || isRailway) infrastructureScores.transport.premium += 1;
@@ -775,7 +768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Lifestyle and recreational amenities (indicates quality of life)
         if (place.types.some(type => ['lodging', 'spa', 'gym', 'cafe', 'bar', 'restaurant', 'park', 'movie_theater', 'shopping_mall'].includes(type))) {
           let lifestyleScore = baseScore;
-          
+
           // Luxury establishments indicate upscale areas
           if (place.types.includes('lodging') && isPremium) {
             lifestyleScore *= 3.0; // Luxury hotels indicate premium areas
@@ -788,7 +781,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else if (isGood) {
             lifestyleScore *= 1.5;
           }
-          
+
           infrastructureScores.lifestyle.total += lifestyleScore;
           if (within3km) infrastructureScores.lifestyle.close += lifestyleScore;
           if (isPremium) infrastructureScores.lifestyle.premium += 1;
@@ -814,7 +807,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (within1km) essentialScore *= 1.8; // 80% bonus for very close
           else if (within3km) essentialScore *= 1.4; // 40% bonus for close
           else essentialScore *= 1.1; // 10% bonus for within 5km
-          
+
           infrastructureScores.essential.total += essentialScore;
           if (within3km) infrastructureScores.essential.close += essentialScore;
         }
@@ -832,76 +825,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
         localRoads: 0,        // Local road network
         techCorridors: 0      // IT/Tech infrastructure
       };
-      
+
       // Enhanced connectivity analysis within 10km radius
       result.nearbyPlaces.forEach(place => {
         const distance = result.distances[place.name];
         if (!distance || distance.distance.value > 10000) return; // Extend to 10km for connectivity
-        
+
         const placeName = place.name.toLowerCase();
         const placeVicinity = place.vicinity?.toLowerCase() || '';
         const placeTypes = place.types || [];
         const distanceKm = distance.distance.value / 1000;
-        
+
         // Distance-based connectivity scoring (closer = higher impact)
         const connectivityMultiplier = Math.max(0.3, 1.0 - (distanceKm / 10));
-        
+
         // Airports (highest priority - 50km impact range)
         if (placeTypes.includes('airport') || placeName.includes('airport') || 
             placeName.includes('international airport') || placeName.includes('aerodrome')) {
           const airportScore = placeName.includes('international') ? 100 : 70;
           connectivityAnalysis.airports += airportScore * connectivityMultiplier;
         }
-        
+
         // Major highways and expressways
         if (placeName.includes('national highway') || placeName.includes('nh-') || 
             placeName.includes('expressway') || placeName.includes('outer ring road') ||
             placeVicinity.includes('highway') || placeVicinity.includes('expressway')) {
           connectivityAnalysis.majorHighways += 60 * connectivityMultiplier;
         }
-        
+
         // Metro and railway stations
         if (placeName.includes('metro') || placeName.includes('subway') || 
             placeTypes.includes('subway_station')) {
           connectivityAnalysis.metroStations += 50 * connectivityMultiplier;
         }
-        
+
         if (placeTypes.includes('train_station') || placeName.includes('railway') || 
             placeName.includes('junction') || placeName.includes('central station')) {
           connectivityAnalysis.railwayStations += 45 * connectivityMultiplier;
         }
-        
+
         // Ports and harbors
         if (placeName.includes('port') || placeName.includes('harbor') || 
             placeName.includes('harbour') || placeTypes.includes('marina')) {
           connectivityAnalysis.ports += 55 * connectivityMultiplier;
         }
-        
+
         // Tech corridors and IT infrastructure
         if (placeName.includes('tech park') || placeName.includes('it park') || 
             placeName.includes('software') || placeName.includes('cyber') ||
             placeName.includes('electronic city') || placeName.includes('tech corridor')) {
           connectivityAnalysis.techCorridors += 40 * connectivityMultiplier;
         }
-        
+
         // Bus terminals and major transport hubs
         if (placeName.includes('bus terminal') || placeName.includes('bus stand') || 
             placeName.includes('transport hub') || placeTypes.includes('bus_station')) {
           connectivityAnalysis.busTerminals += 25 * connectivityMultiplier;
         }
-        
+
         // Gas stations and service roads (local connectivity)
         if (placeTypes.includes('gas_station')) {
           connectivityAnalysis.localRoads += 10 * connectivityMultiplier;
         }
-        
+
         // Helipads (premium connectivity)
         if (placeName.includes('helipad') || placeName.includes('helicopter') ||
             placeTypes.includes('heliport')) {
           connectivityAnalysis.helipads += 35 * connectivityMultiplier;
         }
       });
-      
+
       // Advanced connectivity scoring with weighted importance
       const connectivityWeights = {
         airports: 0.25,      // 25% - International connectivity
@@ -913,7 +906,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         busTerminals: 0.05,  // 5% - Local transport
         helipads: 0.02       // 2% - Premium connectivity
       };
-      
+
       const totalConnectivityScore = Math.min(
         connectivityAnalysis.airports * connectivityWeights.airports +
         connectivityAnalysis.majorHighways * connectivityWeights.majorHighways +
@@ -926,26 +919,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         connectivityAnalysis.localRoads * 0.01, // Local roads minimal weight
         100
       );
-      
+
       infrastructureScores.connectivity = totalConnectivityScore;
-      
+
       // DESERT/REMOTE LOCATION DETECTION: Enhanced criteria with error handling
       const addressLower = location.address.toLowerCase();
       const totalInfrastructure = infrastructureScores.healthcare.total + infrastructureScores.education.total + 
                                   infrastructureScores.transport.total + infrastructureScores.commercial.total;
-      
+
       // Check for API errors in distance calculations
       const hasDistanceErrors = Object.values(result.distances).some(dist => 
         dist.distance.value > 500000 // More than 500km indicates API error
       );
-      
+
       // Enhanced desert detection - more lenient for business districts
       const isDesertOrRemote = !hasDistanceErrors ? (
         result.nearbyPlaces.length < 3 || 
         (totalInfrastructure < 2 && infrastructureScores.essential.total < 1) ||
         (infrastructureScores.connectivity < 5 && infrastructureScores.commercial.total < 1 && infrastructureScores.essential.total < 1)
       ) : false; // Don't flag as desert if API has errors
-      
+
       // Always check address-based desert detection
       const isKnownDesertArea = (
         addressLower.includes('desert') ||
@@ -959,9 +952,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         addressLower.includes('badlands') ||
         addressLower.includes('monument valley')
       );
-      
+
       // Address-based urban/rural detection for area classification will be used later
-      
+
       if (isDesertOrRemote || isKnownDesertArea) {
         result.locationScore = 0.0;
         result.investmentViability = 0;
@@ -977,31 +970,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (infrastructureScores.healthcare.total / 3.0) + 
         (infrastructureScores.healthcare.premium * 0.3), 1.5
       );
-      
+
       const educationScore = Math.min(
         (infrastructureScores.education.total / 4.0) + 
         (infrastructureScores.education.premium * 0.25), 1.4
       );
-      
+
       const transportScore = Math.min(
         (infrastructureScores.transport.total / 3.5) + 
         (infrastructureScores.transport.premium * 0.35), 1.6
       );
-      
+
       const commercialScore = Math.min(
         (infrastructureScores.commercial.total / 5.0) + 
         (infrastructureScores.commercial.premium * 0.2), 1.5
       );
-      
+
       const lifestyleScore = Math.min(
         (infrastructureScores.lifestyle.total / 4.0) + 
         (infrastructureScores.lifestyle.premium * 0.3), 1.3
       );
-      
+
       const safetyScore = Math.min(infrastructureScores.safety.total / 2.0, 1.2);
       const environmentScore = Math.min(infrastructureScores.environment.total / 3.0, 1.1);
       const finalConnectivityScore = Math.min(infrastructureScores.connectivity / 70, 1.8);
-      
+
       // Enhanced proximity scoring with quality consideration
       const proximityBonus = (
         (infrastructureScores.healthcare.close / Math.max(infrastructureScores.healthcare.total, 1)) * 0.3 +
@@ -1010,10 +1003,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (infrastructureScores.lifestyle.close / Math.max(infrastructureScores.lifestyle.total, 1)) * 0.15 +
         (infrastructureScores.safety.close / Math.max(infrastructureScores.safety.total, 1)) * 0.1
       );
-      
+
       // Premium area detection bonuses
       let premiumAreaBonus = 0;
-      
+
       // Check for luxury/premium indicators in nearby places
       const luxuryIndicators = result.nearbyPlaces.filter(place => {
         const name = place.name.toLowerCase();
@@ -1028,10 +1021,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                                name.includes('portico') || name.includes('lemon tree');
         return isLuxury || isHighRated || isPremiumService;
       });
-      
+
       if (luxuryIndicators.length >= 2) premiumAreaBonus += 1.0; // Significant premium area bonus
       else if (luxuryIndicators.length >= 1) premiumAreaBonus += 0.5; // Moderate premium bonus
-      
+
       // Tech hub detection for IT corridors
       const techIndicators = result.nearbyPlaces.filter(place => {
         const name = place.name.toLowerCase();
@@ -1040,9 +1033,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                vicinity.includes('tech park') || vicinity.includes('it park') ||
                place.types.includes('establishment');
       });
-      
+
       if (techIndicators.length >= 4) premiumAreaBonus += 0.8; // Tech hub bonus
-      
+
       // Comprehensive location scoring with quality and accessibility metrics
       result.locationScore = Math.min(5.0, (
         healthcareScore * 0.18 +        // 18% - Healthcare infrastructure
@@ -1062,10 +1055,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const totalPlaces = result.nearbyPlaces.length;
       const totalInfrastructureForClassification = infrastructureScores.healthcare.total + infrastructureScores.education.total + 
                                   infrastructureScores.transport.total + infrastructureScores.commercial.total;
-      
+
       let areaType = 'village'; // Default classification
       let maxViability = 35; // Village max 35%
-      
+
       // More stringent metropolitan indicators
       const realMetroIndicators = result.nearbyPlaces.filter(place => {
         const name = place.name.toLowerCase();
@@ -1076,23 +1069,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
                (name.includes('hospital') && place.rating && place.rating >= 4.0) ||
                (name.includes('university') || name.includes('college'));
       });
-      
+
       // Premium commercial indicators for cities
       const commercialIndicators = result.nearbyPlaces.filter(place => {
         const name = place.name.toLowerCase();
         return name.includes('bank') || name.includes('hotel') || 
                name.includes('restaurant') || name.includes('store');
       });
-      
+
       // Check if address indicates rural area
       const isRuralByAddress = addressLower.includes('village') || addressLower.includes('rural') || 
                               addressLower.includes('farm') || addressLower.includes('countryside');
-      
+
       console.log(`Classification Debug: Places=${totalPlaces}, Infrastructure=${totalInfrastructureForClassification}, RealMetro=${realMetroIndicators.length}, Commercial=${commercialIndicators.length}, RuralAddress=${isRuralByAddress}`);
-      
+
       // Use AI-powered location intelligence for classification
       console.log(`AI Location Intelligence: Type=${locationIntelligence.locationType}, Safety=${locationIntelligence.safetyScore}/10, Crime=${locationIntelligence.crimeRate}, Investment=${locationIntelligence.investmentPotential}%, Confidence=${locationIntelligence.confidence}%`);
-      
+
       // Map AI classification to our system with investment viability caps
       const aiClassificationMap = {
         'metropolitan': { type: 'metropolitan', max: 95 },
@@ -1102,12 +1095,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'rural': { type: 'village', max: 30 },
         'uninhabitable': { type: 'village', max: 0 }
       };
-      
+
       // Use AI classification as primary, fall back to infrastructure analysis
       const aiMapping = aiClassificationMap[locationIntelligence.locationType] || { type: 'village', max: 35 };
       areaType = aiMapping.type;
       maxViability = aiMapping.max;
-      
+
       // Override for uninhabitable areas
       if (locationIntelligence.locationType === 'uninhabitable') {
         result.locationScore = 0.0;
@@ -1118,11 +1111,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         result.investmentRecommendation = "Uninhabitable Location - Property Development Not Possible";
         return result;
       }
-      
+
       // Apply safety score adjustments to investment viability
       const safetyAdjustment = (locationIntelligence.safetyScore - 5) * 2; // -10 to +10 adjustment
       maxViability = Math.max(0, Math.min(95, maxViability + safetyAdjustment));
-      
+
       // Cross-verify with infrastructure data for accuracy
       if (areaType === 'metropolitan' && totalPlaces < 10) {
         areaType = 'city';
@@ -1133,21 +1126,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maxViability = 50;
         console.log("AI classified as city but low infrastructure - downgraded to town");
       }
-      
+
       console.log(`Classified as: ${areaType} (max: ${maxViability}%)`);
-      
+
       // Enhanced investment viability calculation with area-based caps
       const scoreAsPercentage = Math.min((result.locationScore / 5) * 100, 120);
-      
+
       // Premium area multipliers (only for cities and metros)
       let viabilityMultiplier = 1.0;
       if (areaType !== 'village') {
         if (premiumAreaBonus >= 1.0) viabilityMultiplier = 1.4; // Luxury areas get 40% boost
         else if (premiumAreaBonus >= 0.5) viabilityMultiplier = 1.2; // Premium areas get 20% boost
       }
-      
+
       result.investmentViability = Math.min(scoreAsPercentage * viabilityMultiplier, maxViability);
-      
+
       // Enhanced business growth rate based on infrastructure, amenities & population indicators
       const businessGrowthFactors = {
         infrastructure: infrastructureScores.essential.total * 1.5, // Essential services drive business
@@ -1156,13 +1149,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         education: infrastructureScores.education.total * 1.2, // Education creates skilled workforce
         population: Math.min(infrastructureScores.healthcare.total * 1.0, 15) // Healthcare indicates population density
       };
-      
+
       const totalBusinessScore = Object.values(businessGrowthFactors).reduce((sum, score) => sum + score, 0);
       result.businessGrowthRate = Math.max(-8, Math.min(18, 
         (totalBusinessScore / 15) + // Base growth from infrastructure
         (result.locationScore / 8) - 1 // Location score adjustment
       ));
-      
+
       // Population growth rate based on infrastructure capacity and amenities
       const populationGrowthFactors = {
         housing: Math.min(infrastructureScores.essential.total * 0.8, 12), // Essential services support population
@@ -1171,13 +1164,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         transport: infrastructureScores.transport.total * 0.9, // Transport enables population movement
         connectivity: infrastructureScores.connectivity * 0.08 // External connectivity attracts migration
       };
-      
+
       const totalPopulationScore = Object.values(populationGrowthFactors).reduce((sum, score) => sum + score, 0);
       result.populationGrowthRate = Math.max(-5, Math.min(12, 
         (totalPopulationScore / 12) + // Base growth from infrastructure capacity
         (result.locationScore / 15) - 0.5 // Location score adjustment
       ));
-      
+
       result.growthPrediction = Math.min(scoreAsPercentage * 0.2, 15); // Cap at 15%
 
       // Enhanced investment recommendation incorporating AI intelligence
@@ -1209,26 +1202,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         populationDensity: Math.min(100, (infrastructureScores.healthcare.total + infrastructureScores.education.total) * 10),
         economicActivity: Math.min(100, (infrastructureScores.commercial.total + infrastructureScores.techCorridors) * 8),
         infrastructureDensity: Math.min(100, (result.locationScore / 5) * 100),
-        
+
         // Market indicators
         investmentGrade: result.investmentViability >= 85 ? 'A+' : 
                         result.investmentViability >= 75 ? 'A' :
                         result.investmentViability >= 65 ? 'B+' :
                         result.investmentViability >= 50 ? 'B' : 'C',
-        
+
         liquidityScore: Math.min(100, infrastructureScores.transport.total * 20 + infrastructureScores.commercial.total * 15),
         appreciationPotential: Math.min(100, finalConnectivityScore * 50 + infrastructureScores.lifestyle.total * 10),
-        
+
         // Risk factors
         riskFactors: [],
         opportunities: []
       };
-      
+
       // Add risk factors based on analysis
       if (infrastructureScores.safety.total < 1) marketIntelligence.riskFactors.push('Limited safety infrastructure');
       if (infrastructureScores.connectivity < 20) marketIntelligence.riskFactors.push('Poor external connectivity');
       if (infrastructureScores.healthcare.total < 2) marketIntelligence.riskFactors.push('Insufficient healthcare facilities');
-      
+
       // Add opportunities
       if (connectivityAnalysis.airports > 0) marketIntelligence.opportunities.push('Airport connectivity advantage');
       if (connectivityAnalysis.metroStations > 0) marketIntelligence.opportunities.push('Metro connectivity boost');
@@ -1246,7 +1239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         reasoning: locationIntelligence.reasoning,
         confidence: locationIntelligence.confidence
       };
-      
+
       (result as any).marketIntelligence = marketIntelligence;
 
       // Tier-specific enhancements
