@@ -293,14 +293,22 @@ LOCATION CHARACTERISTICS:
 - Primary Concerns: ${locationIntelligence.primaryConcerns?.join(', ')}
 ` : ''}
 
-CRITICAL INSTRUCTIONS:
-1. Base recommendations ONLY on the actual amenities and data provided above
-2. Do NOT mention metro, major highways, or commercial developments unless specifically found in the amenities
-3. Focus on the REAL infrastructure available (schools, shops, banks, transport that were actually detected)
-4. Be honest about limitations while highlighting genuine strengths
-5. Provide 3 specific, realistic recommendations based on actual location data
+CRITICAL REQUIREMENTS FOR RECOMMENDATIONS:
+1. MUST mention the specific location name (${analysisData.location.address.split(',')[0]}) in each recommendation
+2. MUST reference the area's unique characteristics (e.g., if it's Madikeri, mention Coorg tourism; if it's HSR Layout, mention IT hub)
+3. Base recommendations ONLY on actual amenities and data detected
+4. Be specific about what infrastructure is actually present vs missing
+5. Connect the location's known reputation/importance to investment potential
+6. Mention specific nearby amenities that were actually found
+7. Address the property type (${analysisData.propertyType}) specifically
 
-Return exactly 3 recommendations as plain text lines without numbers or bullets.`;
+LOCATION-SPECIFIC CONTEXT:
+- If this is in Coorg/Kodagu (Madikeri, Bittangala, etc.), emphasize coffee plantations, tourism, weekend getaways from Bangalore/Mysore
+- If this is a tech corridor, mention IT companies and professionals
+- If this is a hill station, mention scenic beauty and tourism potential
+- If this is highway-adjacent, mention connectivity benefits
+
+Return exactly 3 detailed, location-specific recommendations as plain text lines without numbers or bullets. Each recommendation should be 25-40 words and mention the specific place name.`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -319,22 +327,28 @@ Return exactly 3 recommendations as plain text lines without numbers or bullets.
 
     // Generate location-specific fallback based on actual data
     const fallbackRecommendations = [];
+    const locationName = analysisData.location.address.split(',')[0];
+    const isCoorgArea = analysisData.location.address.toLowerCase().includes('madikeri') || 
+                       analysisData.location.address.toLowerCase().includes('coorg') || 
+                       analysisData.location.address.toLowerCase().includes('kodagu');
     
     if (actualAmenities.includes('school') || actualAmenities.includes('School')) {
-      fallbackRecommendations.push('Presence of local schools ensures steady demand from families seeking educational proximity');
+      fallbackRecommendations.push(`${locationName}'s local educational facilities create stable demand from families, particularly beneficial for ${analysisData.propertyType} investments targeting residential buyers`);
     }
     
     if (actualAmenities.includes('bank') || actualAmenities.includes('ATM') || actualAmenities.includes('Bank')) {
-      fallbackRecommendations.push('Banking facilities in the area indicate established financial infrastructure supporting property transactions');
+      fallbackRecommendations.push(`Banking infrastructure in ${locationName} indicates established financial ecosystem, crucial for smooth property transactions and mortgage accessibility for future buyers`);
     }
     
     if (actualAmenities.includes('market') || actualAmenities.includes('store') || actualAmenities.includes('grocery')) {
-      fallbackRecommendations.push('Local shopping facilities provide convenience for residents, enhancing rental appeal');
+      fallbackRecommendations.push(`${locationName}'s local commercial facilities enhance daily convenience, making ${analysisData.propertyType} properties more attractive to potential renters and buyers`);
     }
     
-    // Add default based on area type
-    if (locationIntelligence?.areaClassification) {
-      fallbackRecommendations.push(`As an ${locationIntelligence.areaClassification}, the location offers ${locationIntelligence.developmentStage} infrastructure with moderate investment potential`);
+    // Add location-specific context based on area characteristics
+    if (isCoorgArea) {
+      fallbackRecommendations.push(`${locationName} benefits from Coorg's established tourism industry, creating strong potential for ${analysisData.propertyType} investments targeting weekend rental and homestay markets`);
+    } else if (locationIntelligence?.areaClassification) {
+      fallbackRecommendations.push(`${locationName} as a ${locationIntelligence.areaClassification} offers ${locationIntelligence.developmentStage} infrastructure with investment potential suited for patient ${analysisData.propertyType} investors`);
     }
 
     return fallbackRecommendations.slice(0, 3);
@@ -344,20 +358,32 @@ Return exactly 3 recommendations as plain text lines without numbers or bullets.
     // Generate realistic fallback based on available data
     const safeRecommendations = [];
     const amenityText = analysisData.nearbyPlaces.map(p => p.name).join(', ');
+    const locationName = analysisData.location.address.split(',')[0];
+    const isCoorgArea = analysisData.location.address.toLowerCase().includes('madikeri') || 
+                       analysisData.location.address.toLowerCase().includes('coorg') || 
+                       analysisData.location.address.toLowerCase().includes('kodagu');
     
     if (amenityText.includes('school') || amenityText.includes('School')) {
-      safeRecommendations.push('Local educational facilities provide stability for long-term residential demand');
+      safeRecommendations.push(`${locationName}'s educational facilities provide stability for long-term residential demand, essential for ${analysisData.propertyType} investment success`);
+    } else if (isCoorgArea) {
+      safeRecommendations.push(`${locationName} offers scenic Coorg location with tourism potential, ideal for ${analysisData.propertyType} targeting vacation rental markets`);
     } else {
-      safeRecommendations.push('Rural location offers affordability with potential for future development');
+      safeRecommendations.push(`${locationName} presents affordable ${analysisData.propertyType} opportunity with potential for future infrastructure development`);
     }
     
     if (amenityText.includes('bank') || amenityText.includes('market') || amenityText.includes('store')) {
-      safeRecommendations.push('Basic commercial infrastructure supports daily living needs for residents');
+      safeRecommendations.push(`${locationName}'s basic commercial infrastructure supports daily living needs, enhancing ${analysisData.propertyType} rental viability`);
+    } else if (isCoorgArea) {
+      safeRecommendations.push(`${locationName} in Coorg benefits from regional tourism economy despite limited local amenities, suitable for nature-focused ${analysisData.propertyType} investments`);
     } else {
-      safeRecommendations.push('Emerging area with opportunity for early investment before infrastructure development');
+      safeRecommendations.push(`${locationName} represents emerging area with early ${analysisData.propertyType} investment opportunity before major infrastructure development`);
     }
     
-    safeRecommendations.push('Location requires careful consideration of infrastructure development timeline for investment returns');
+    if (isCoorgArea) {
+      safeRecommendations.push(`${locationName}'s position in renowned Coorg tourism belt offers long-term ${analysisData.propertyType} appreciation despite current infrastructure limitations`);
+    } else {
+      safeRecommendations.push(`${locationName} requires careful consideration of infrastructure development timeline for optimal ${analysisData.propertyType} investment returns`);
+    }
     
     return safeRecommendations.slice(0, 3);
   }
