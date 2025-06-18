@@ -50,7 +50,16 @@ const ValidationRequestSchema = z.object({
   location: LocationSchema,
   propertyData: z.object({
     propertyType: z.string().min(1).max(50),
-    amount: z.number().min(1).max(1000000000)
+    amount: z.number().min(1).max(1000000000),
+    currency: z.string().optional(),
+    country: z.string().optional(),
+    propertySize: z.number().optional(),
+    sizeUnit: z.string().optional(),
+    propertyAge: z.string().optional(),
+    bedrooms: z.number().optional(),
+    furnished: z.string().optional(),
+    floor: z.string().optional(),
+    parkingSpaces: z.number().optional()
   })
 });
 
@@ -264,7 +273,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       const analysisRequest = await storage.createAnalysisRequest({
         sessionId: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         location: JSON.stringify(location),
-        amount: parseFloat(amount),
+        amount: Math.round(amount),
         propertyType,
         planType,
         propertyDetails: propertyDetails ? JSON.stringify(propertyDetails) : null,
@@ -514,7 +523,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       const analysisRequest = await storage.createAnalysisRequest({
         sessionId: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         location: JSON.stringify(location),
-        amount: parseFloat(amount),
+        amount: Math.round(amount),
         propertyType,
         planType,
         propertyDetails: JSON.stringify(propertyDetails),
