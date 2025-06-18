@@ -1,0 +1,263 @@
+import { googleMapsClient } from './googleMaps';
+import { genai } from 'google-generativeai';
+
+genai.configure({ api_key: process.env.GOOGLE_API_KEY });
+
+interface InfrastructureScores {
+  healthcare: { total: number; close: number; premium: number };
+  education: { total: number; close: number; premium: number };
+  transport: { total: number; close: number; premium: number };
+  commercial: { total: number; close: number; premium: number };
+  lifestyle: { total: number; close: number; premium: number };
+  connectivity: number;
+  safety: { total: number };
+  environment: { total: number };
+  breakdown: { category: string; score: number; reason: string }[];
+}
+
+interface UserPreferences {
+  riskTolerance?: 'low' | 'medium' | 'high';
+  investmentHorizon?: 'short' | 'medium' | 'long';
+}
+
+interface GrowthPredictionResult {
+  growthPrediction: number; // Expected annual growth percentage
+  scenarios: { optimistic: number; conservative: number; expected: number };
+  breakdown: { factor: string; contribution: number; reason: string }[];
+  mapPreview: string; // Static map URL
+}
+
+async function calculateGrowthPrediction(
+  lat: number,
+  lng: number,
+  locationType: 'metropolitan' | 'city' | 'town' | 'village' | 'rural',
+  investmentViability: number,
+  businessGrowthRate: number,
+  populationGrowthRate: number,
+  locationScore: number,
+  infrastructureScores: InfrastructureScores,
+  userPreferences: UserPreferences = {}
+): Promise<GrowthPredictionResult> {
+  const result: GrowthPredictionResult = {
+    growthPrediction: 0,
+    scenarios: { optimistic: 0, conservative: 0, expected: 0 },
+    breakdown: [],
+    mapPreview: `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=400x200&key=${process.env.GOOGLE_API_KEY}`
+  };
+
+  // Step 1: Calculate Component Factors
+  const factors = await calculateComponentFactors(
+    lat, lng, locationType, investmentViability, businessGrowthRate, populationGrowthRate, locationScore, userPreferences
+  );
+
+  // Step 2: Growth Calculation
+  const { baseGrowth, constraints } = await calculateGrowth(
+    lat, lng, locationType, factors, infrastructureScores, userPreferences
+  );
+
+  // Combine base growth and constraints
+  result.growthPrediction = baseGrowth.expected;
+  result.scenarios = baseGrowth;
+  result.breakdown.push(...factors.breakdown, ...constraints.breakdown);
+
+  return result;
+}
+
+// Calculate Component Factors
+async function calculateComponentFactors(
+  lat: number,
+  lng: number,
+  locationType: string,
+  investmentViability: number,
+  businessGrowthRate: number,
+  populationGrowthRate: number,
+  locationScore: number,
+  userPreferences: UserPreferences
+): Promise<{
+  viabilityFactor: number;
+  businessFactor: number;
+  populationFactor: number;
+  locationFactor: number;
+  weights: { viability: number; business: number; population: number; location: number };
+  breakdown: { factor: string; contribution: number; reason: string }[]
+}> {
+  const defaultWeights = {
+    viability: locationType === 'metropolitan' ? 0.35 : 0.4,
+    business: locationType === 'metropolitan' ? 0.35 : 0.3,
+    population: locationType === 'rural' ? 0.25 : 0.2,
+    location: 0.1
+  };
+
+  // Adjust weights using Gemini AI
+  const weightPrompt = `Suggest growth factor weights for a ${locationType} location at (${lat}, ${lng}) based on market trends and user preferences (risk: ${userPreferences.riskTolerance || 'medium'}, horizon: ${userPreferences.investmentHorizon || 'medium'}). Return JSON: { viability: number, business: number, population: number, location: number }`;
+  let weights = defaultWeights;
+  try {
+    const response = await genai.generateContent({
+      model: 'gemini-2.5-pro',
+      prompt: weightPrompt,
+      deepThink: true
+    });
+    weights = JSON.parse(response.text);
+  } catch (error) {
+    console.error('Gemini weight adjustment failed:', error);
+  }
+
+  // Normalize factors using Gemini AI
+  const factorPrompt = `Normalize growth factors for a ${locationType} location:
+  - Investment Viability: ${investmentViability}/100
+  - Business Growth Rate: ${businessGrowthRate}%
+  - Population Growth Rate: ${populationGrowthRate}%
+  - Location Score: ${locationScore}/5
+  Return JSON: { viabilityFactor: number, businessFactor: number, populationFactor: number, locationFactor: number, reason: string }`;
+  let factors = {
+    viabilityFactor: investmentViability / 100,
+    businessFactor: Math.max(0, (businessGrowthRate + 3) / 15),
+    populationFactor: Math.max(0, (populationGrowthRate + 2) / 10),
+    locationFactor: locationScore / 5,
+    reason: 'Default normalization applied.'
+  };
+  try {
+    const response = await genai.generateContent({
+      model: 'gemini-2.5-pro',
+      prompt: factorPrompt,
+      grounding: 'google_search',
+      deepThink: true
+    });
+    factors = JSON.parse(response.text);
+  } catch (error) {
+    console.error('Gemini factor normalization failed:', error);
+  }
+
+  const breakdown = [
+    { factor: 'viability', contribution: factors.viabilityFactor * weights.viability, reason: `Viability (${investmentViability}/100) contributes due to market potential.` },
+    { factor: 'business', contribution: factors.businessFactor * weights.business, reason: `Business growth (${businessGrowthRate}%) reflects economic activity.` },
+    { factor: 'population', contribution: factors.populationFactor * weights.population, reason: `Population growth (${populationGrowthRate}%) indicates demand.` },
+    { factor: 'location', contribution: factors.locationFactor * weights.location, reason: `Location score (${locationScore}/5) drives baseline appeal.` }
+  ];
+
+  return { ...factors, weights, breakdown };
+}
+
+// Calculate Growth with Constraints
+async function calculateGrowth(
+  lat: number,
+  lng: number,
+  locationType: string,
+  factors: { viabilityFactor: number; businessFactor: number; populationFactor: number; locationFactor: number; weights: any },
+  infrastructureScores: InfrastructureScores,
+  userPreferences: UserPreferences
+): Promise<{
+  baseGrowth: { optimistic: number; conservative: number; expected: number };
+  constraints: { total: number; breakdown: { factor: string; contribution: number; reason: string }[] }
+}> {
+  // Fetch market trends via Gemini
+  const marketPrompt = `Analyze real estate market trends for a ${locationType} location at (${lat}, ${lng}). Return JSON: { growthTrend: number, reason: string }`;
+  let marketAdjustment = 0;
+  let marketReason = 'No market trend adjustment applied.';
+  try {
+    const response = await genai.generateContent({
+      model: 'gemini-2.5-pro',
+      prompt: marketPrompt,
+      grounding: 'google_search',
+      deepThink: true
+    });
+    const { growthTrend, reason } = JSON.parse(response.text);
+    marketAdjustment = growthTrend;
+    marketReason = reason;
+  } catch (error) {
+    console.error('Gemini market trend analysis failed:', error);
+  }
+
+  // Calculate base growth
+  const maxGrowth = locationType === 'metropolitan' ? 20 : locationType === 'city' ? 18 : 15;
+  const minGrowth = locationType === 'rural' ? -10 : -8;
+  let growthBase = (
+    factors.viabilityFactor * factors.weights.viability +
+    factors.businessFactor * factors.weights.business +
+    factors.populationFactor * factors.weights.population +
+    factors.locationFactor * factors.weights.location
+  ) * maxGrowth + marketAdjustment;
+
+  const baseGrowth = {
+    optimistic: growthBase * (userPreferences.riskTolerance === 'high' ? 1.2 : 1.1),
+    conservative: growthBase * (userPreferences.riskTolerance === 'low' ? 0.8 : 0.9),
+    expected: growthBase
+  };
+
+  // Apply constraints
+  let totalConstraints = 0;
+  const constraintBreakdown: { factor: string; contribution: number; reason: string }[] = [];
+  const minAmenities = locationType === 'rural' ? 5 : locationType === 'village' ? 7 : 10;
+  const totalAmenities = infrastructureScores.healthcare.total + infrastructureScores.commercial.total + infrastructureScores.lifestyle.total;
+
+  if (totalAmenities < minAmenities) {
+    const penalty = locationType === 'metropolitan' ? 4 : 2;
+    totalConstraints += penalty;
+    constraintBreakdown.push({
+      factor: 'amenities',
+      contribution: -penalty,
+      reason: `Low amenities (${totalAmenities} < ${minAmenities}) reduce growth by ${penalty}%.`
+    });
+  }
+
+  if (infrastructureScores.connectivity < 40 && locationType !== 'rural') {
+    totalConstraints += 2;
+    constraintBreakdown.push({
+      factor: 'connectivity',
+      contribution: -2,
+      reason: 'Limited connectivity reduces growth by 2%.'
+    });
+  }
+
+  // Adjust for market reality
+  totalConstraints += 2; // Conservative shift
+  constraintBreakdown.push({
+    factor: 'marketReality',
+    contribution: -2,
+    reason: marketReason
+  });
+
+  // Apply constraints to scenarios
+  baseGrowth.optimistic = Math.max(minGrowth, Math.min(maxGrowth * 1.2, baseGrowth.optimistic - totalConstraints));
+  baseGrowth.conservative = Math.max(minGrowth, Math.min(maxGrowth * 0.8, baseGrowth.conservative - totalConstraints));
+  baseGrowth.expected = Math.max(minGrowth, Math.min(maxGrowth, baseGrowth.expected - totalConstraints));
+
+  return { baseGrowth, constraints: { total: totalConstraints, breakdown: constraintBreakdown } };
+}
+
+// Fetch places with caching (simplified for context)
+async function fetchPlaces(lat: number, lng: number, types: string[]): Promise<any[]> {
+  const cacheKey = `places:${lat}:${lng}:${types.join(',')}`;
+  const cached = await redis.get(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  const places: any[] = [];
+  for (const type of types) {
+    const response = await fetchWithRetry({
+      url: `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=5000&type=${type}&key=${process.env.GOOGLE_API_KEY}`
+    });
+    places.push(...response.results);
+  }
+
+  await redis.set(cacheKey, JSON.stringify(places), 'EX', 86400); // Cache for 24 hours
+  return places;
+}
+
+// Retry logic for API calls
+async function fetchWithRetry({ url, maxRetries = 3 }: { url: string; maxRetries?: number }): Promise<any> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url);
+      return await response.json();
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+    }
+  }
+}
+
+// Simulated Redis client (replace with actual implementation)
+const redis = {
+  get: async (key: string) => null,
+  set: async (key: string, value: string, mode: string, ttl: number) => {}
+};
