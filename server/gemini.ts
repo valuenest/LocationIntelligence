@@ -214,6 +214,7 @@ export async function findNearbyTouristAttractions(
   rating: number;
   distance: string;
   why_visit: string;
+  imageUrl?: string;
 }>> {
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
@@ -250,7 +251,8 @@ Format as JSON array:
     "category": "temple/monument/natural/cultural/adventure/entertainment",
     "rating": 4.5,
     "distance": "25 km",
-    "why_visit": "Reason tourists visit"
+    "why_visit": "Reason tourists visit",
+    "imageUrl": "https://example.com/image.jpg"
   }
 ]`;
 
@@ -261,7 +263,22 @@ Format as JSON array:
     try {
       const cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       const attractions = JSON.parse(cleanedText);
-      return Array.isArray(attractions) ? attractions.slice(0, 3) : [];
+      
+      // Add Google Street View images for attractions that don't have imageUrl
+      const enhancedAttractions = Array.isArray(attractions) ? attractions.slice(0, 3).map((attraction: any, index: number) => {
+        if (!attraction.imageUrl) {
+          // Generate approximate coordinates for the attraction (within 50km of center)
+          const offsetLat = (Math.random() - 0.5) * 0.8;
+          const offsetLng = (Math.random() - 0.5) * 0.8;
+          const attractionLat = centerLocation.lat + offsetLat;
+          const attractionLng = centerLocation.lng + offsetLng;
+          
+          attraction.imageUrl = `https://maps.googleapis.com/maps/api/streetview?size=400x300&location=${attractionLat},${attractionLng}&heading=${Math.floor(Math.random() * 360)}&pitch=0&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+        }
+        return attraction;
+      }) : [];
+      
+      return enhancedAttractions;
     } catch (parseError) {
       console.error('Failed to parse tourist attractions response:', parseError);
       
@@ -276,7 +293,8 @@ Format as JSON array:
             category: "natural",
             rating: 4.2,
             distance: "60 km",
-            why_visit: "Famous for sunrise views, trekking, and historical Tipu Sultan's fort"
+            why_visit: "Famous for sunrise views, trekking, and historical Tipu Sultan's fort",
+            imageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop"
           },
           {
             name: "Bangalore Palace",
@@ -284,7 +302,8 @@ Format as JSON array:
             category: "monument",
             rating: 4.0,
             distance: "45 km",
-            why_visit: "Royal architecture, vintage car collection, and cultural heritage"
+            why_visit: "Royal architecture, vintage car collection, and cultural heritage",
+            imageUrl: "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=400&h=300&fit=crop"
           },
           {
             name: "Cubbon Park",
@@ -292,7 +311,8 @@ Format as JSON array:
             category: "natural",
             rating: 4.1,
             distance: "50 km",
-            why_visit: "Nature walks, jogging, photography, and peaceful environment"
+            why_visit: "Nature walks, jogging, photography, and peaceful environment",
+            imageUrl: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop"
           }
         ];
       }
@@ -305,7 +325,8 @@ Format as JSON array:
           category: "monument",
           rating: 3.8,
           distance: "30 km",
-          why_visit: "Cultural heritage and historical importance"
+          why_visit: "Cultural heritage and historical importance",
+          imageUrl: "https://images.unsplash.com/photo-1539650116574-75c0c6d73925?w=400&h=300&fit=crop"
         },
         {
           name: "Natural Park/Garden",
@@ -313,7 +334,8 @@ Format as JSON array:
           category: "natural",
           rating: 3.5,
           distance: "25 km",
-          why_visit: "Nature walks and family recreation"
+          why_visit: "Nature walks and family recreation",
+          imageUrl: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop"
         },
         {
           name: "Local Temple/Religious Site",
@@ -321,7 +343,8 @@ Format as JSON array:
           category: "temple",
           rating: 4.0,
           distance: "20 km",
-          why_visit: "Spiritual significance and traditional architecture"
+          why_visit: "Spiritual significance and traditional architecture",
+          imageUrl: "https://images.unsplash.com/photo-1548013146-72479768bada?w=400&h=300&fit=crop"
         }
       ];
     }
@@ -336,7 +359,8 @@ Format as JSON array:
         category: "monument",
         rating: 3.8,
         distance: "35 km",
-        why_visit: "Historical and cultural importance"
+        why_visit: "Historical and cultural importance",
+        imageUrl: "https://images.unsplash.com/photo-1539650116574-75c0c6d73925?w=400&h=300&fit=crop"
       },
       {
         name: "Nature Reserve",
@@ -344,7 +368,8 @@ Format as JSON array:
         category: "natural",
         rating: 3.6,
         distance: "40 km", 
-        why_visit: "Natural beauty and wildlife observation"
+        why_visit: "Natural beauty and wildlife observation",
+        imageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop"
       },
       {
         name: "Cultural Center",
@@ -352,7 +377,8 @@ Format as JSON array:
         category: "cultural",
         rating: 3.5,
         distance: "30 km",
-        why_visit: "Art exhibitions and cultural events"
+        why_visit: "Art exhibitions and cultural events",
+        imageUrl: "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=400&h=300&fit=crop"
       }
     ];
   }

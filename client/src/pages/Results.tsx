@@ -68,6 +68,7 @@ interface AnalysisResult {
     rating: number;
     distance: string;
     why_visit: string;
+    imageUrl?: string;
   }>;
 }
 
@@ -340,7 +341,7 @@ export default function Results() {
                 </div>
               </div>
             </div>
-            
+
             {/* Selected Location Details */}
             <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <h5 className="font-medium text-gray-900 mb-2 flex items-center">
@@ -512,7 +513,7 @@ export default function Results() {
               <div className="text-center">
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Your Free Report is Ready!</h3>
                 <p className="text-gray-600 mb-6">You're seeing the basic analysis. Unlock detailed insights with our paid plans.</p>
-                
+
                 <div className="grid md:grid-cols-3 gap-4 text-sm">
                   <div className="bg-white rounded-lg p-4 border">
                     <div className="font-semibold text-green-600 mb-2">✓ Free Report</div>
@@ -522,7 +523,7 @@ export default function Results() {
                       • Distance Information
                     </div>
                   </div>
-                  
+
                   <div className="bg-white rounded-lg p-4 border border-orange-200">
                     <div className="font-semibold text-orange-600 mb-2 flex items-center">
                       <Lock className="h-4 w-4 mr-1" />
@@ -535,7 +536,7 @@ export default function Results() {
                       • PDF Download
                     </div>
                   </div>
-                  
+
                   <div className="bg-white rounded-lg p-4 border border-purple-200">
                     <div className="font-semibold text-purple-600 mb-2 flex items-center">
                       <Crown className="h-4 w-4 mr-1" />
@@ -556,7 +557,7 @@ export default function Results() {
 
         <div className="w-full space-y-6">
             {/* MAIN CONTENT SECTION */}
-            
+
             {/* Investment Overview - Enhanced with Recommendations */}
             <Card className="border-l-4 border-l-blue-500">
               <CardHeader>
@@ -606,7 +607,7 @@ export default function Results() {
                     </div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Location Score</h3>
                     <p className="text-sm text-gray-600 mb-3">Infrastructure & accessibility rating</p>
-                    
+
 
                   </div>
 
@@ -645,7 +646,7 @@ export default function Results() {
                        (analysisResult.investmentViability || 0) >= 50 ? 'Moderate investment potential' :
                        'High risk - consider alternatives'}
                     </p>
-                    
+
                     {/* Area Name Display */}
                     <div className="text-center bg-gray-50 rounded-lg p-2 mt-2">
                       <div className="text-sm font-medium text-gray-800 truncate">{analysis.location.address.split(',')[0]}</div>
@@ -834,7 +835,7 @@ export default function Results() {
             </Card>
 
             {/* PAID CONTENT SECTION */}
-            
+
             {/* Market Analysis & Growth Potential */}
             <Card className="border-l-4 border-l-green-500">
               <CardHeader>
@@ -867,7 +868,7 @@ export default function Results() {
                         <div className="text-sm text-gray-700 font-medium">Property Appreciation</div>
                         <div className="text-xs text-gray-600">3-Year Projection</div>
                       </div>
-                      
+
                       {/* Business Growth */}
                       <div className={`text-center p-4 bg-gradient-to-br rounded-lg ${
                         analysisResult.investmentViability === 0 ? 'from-red-50 to-orange-100' : 
@@ -883,7 +884,7 @@ export default function Results() {
                         <div className="text-sm text-gray-700 font-medium">Business Growth</div>
                         <div className="text-xs text-gray-600">Annual Rate</div>
                       </div>
-                      
+
                       {/* Population Growth */}
                       <div className={`text-center p-4 bg-gradient-to-br rounded-lg ${
                         analysisResult.investmentViability === 0 ? 'from-red-50 to-orange-100' : 
@@ -967,7 +968,7 @@ export default function Results() {
                           </span>
                         </div>
                       </div>
-                      
+
                       <div className="p-4 border border-gray-200 rounded-lg">
                         <h5 className="font-medium text-gray-900 mb-2">Connectivity Score</h5>
                         <div className="flex items-center">
@@ -1299,11 +1300,11 @@ export default function Results() {
                           </div>
                         </div>
 
-                        
+
                         <div className="p-6">
                           <h3 className="text-lg font-bold text-gray-900 mb-2">{location.address}</h3>
                           <p className="text-sm text-gray-600 mb-4">{location.distance.replace(/\*+/g, '').replace(/\(Hypothetical\).*$/, '').replace(/\*?Note:.*$/, '').trim()}</p>
-                          
+
                           <div className="grid grid-cols-2 gap-4 mb-4">
                             <div className="text-center bg-indigo-50 rounded-lg p-3">
                               <div className="text-lg font-bold text-indigo-600">{location.score.toFixed(0)}%</div>
@@ -1341,7 +1342,7 @@ export default function Results() {
                       </div>
                     ))}
                   </div>
-                  
+
                   {/* AI Methodology */}
                   <div className="mt-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200">
                     <h5 className="font-medium text-gray-900 mb-2 flex items-center">
@@ -1401,33 +1402,60 @@ export default function Results() {
 
                   return (
                     <div key={index} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
-                      {/* Category-based header */}
-                      <div className={`h-48 bg-gradient-to-br ${getCategoryColor(attraction.category)} relative overflow-hidden`}>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-center text-gray-700">
-                            <div className="text-6xl mb-2">{getCategoryIcon(attraction.category)}</div>
-                            <p className="text-sm font-semibold bg-white/80 rounded px-2 py-1 backdrop-blur-sm">
-                              {attraction.category.charAt(0).toUpperCase() + attraction.category.slice(1)} Attraction
-                            </p>
+                      {/* Image or Category-based header */}
+                        <div className={`h-48 bg-gradient-to-br ${getCategoryColor(attraction.category)} relative overflow-hidden`}>
+                          {attraction.imageUrl ? (
+                            <>
+                              <img 
+                                src={attraction.imageUrl} 
+                                alt={`${attraction.name} - ${attraction.category} attraction`}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  const fallback = e.currentTarget.parentElement?.querySelector('.fallback-content') as HTMLElement;
+                                  if (fallback) fallback.style.display = 'flex';
+                                }}
+                              />
+                              <div className="fallback-content absolute inset-0 hidden items-center justify-center">
+                                <div className="text-center text-gray-700">
+                                  <div className="text-6xl mb-2">{getCategoryIcon(attraction.category)}</div>
+                                  <p className="text-sm font-semibold bg-white/80 rounded px-2 py-1 backdrop-blur-sm">
+                                    {attraction.category.charAt(0).toUpperCase() + attraction.category.slice(1)} Attraction
+                                  </p>
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="text-center text-gray-700">
+                                <div className="text-6xl mb-2">{getCategoryIcon(attraction.category)}</div>
+                                <p className="text-sm font-semibold bg-white/80 rounded px-2 py-1 backdrop-blur-sm">
+                                  {attraction.category.charAt(0).toUpperCase() + attraction.category.slice(1)} Attraction
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Overlay gradient for better text readability */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
+
+                          <div className="absolute top-4 left-4">
+                            <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 shadow-md">
+                              <span className="text-sm font-bold text-emerald-600">#{index + 1}</span>
+                            </div>
+                          </div>
+                          <div className="absolute top-4 right-4">
+                            <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 shadow-md flex items-center">
+                              <Star className="h-4 w-4 text-yellow-500 mr-1" />
+                              <span className="text-sm font-bold text-gray-700">{attraction.rating}</span>
+                            </div>
                           </div>
                         </div>
-                        <div className="absolute top-4 left-4">
-                          <div className="bg-white rounded-full px-3 py-1 shadow-md">
-                            <span className="text-sm font-bold text-emerald-600">#{index + 1}</span>
-                          </div>
-                        </div>
-                        <div className="absolute top-4 right-4">
-                          <div className="bg-white rounded-full px-3 py-1 shadow-md flex items-center">
-                            <Star className="h-4 w-4 text-yellow-500 mr-1" />
-                            <span className="text-sm font-bold text-gray-700">{attraction.rating}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
+
                       <div className="p-6">
                         <h3 className="text-lg font-bold text-gray-900 mb-2">{attraction.name}</h3>
                         <p className="text-sm text-gray-600 mb-4 leading-relaxed">{attraction.description}</p>
-                        
+
                         <div className="grid grid-cols-2 gap-4 mb-4">
                           <div className="text-center bg-emerald-50 rounded-lg p-3">
                             <div className="text-lg font-bold text-emerald-600">{attraction.distance}</div>
