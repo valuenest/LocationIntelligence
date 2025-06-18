@@ -92,6 +92,14 @@ export default function PricingPlans({ onPlanSelect, canUseFree, freeUsageCount,
         setPricing(convertedPricing);
       } catch (error) {
         console.log('Failed to load pricing, using default INR');
+        // Set default pricing if currency detection fails
+        const defaultCurrency = { code: 'INR', name: 'Indian Rupee', symbol: '₹', rate: 1.0 };
+        setPricing({
+          free: { amount: 0, currency: defaultCurrency, formatted: '₹0' },
+          paid: { amount: 99, currency: defaultCurrency, formatted: '₹99' },
+          pro: { amount: 199, currency: defaultCurrency, formatted: '₹199' },
+          currencyCode: 'INR'
+        });
       }
     };
 

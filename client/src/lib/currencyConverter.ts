@@ -140,11 +140,46 @@ export function getConvertedPrices(userCountryCode: string) {
 
 export async function detectUserCountry(): Promise<string> {
   try {
-    const response = await fetch('https://ipapi.co/json/');
-    const data = await response.json();
-    return data.country_code || 'IN';
+    // Try multiple fallback methods for country detection
+    
+    // Method 1: Try timezone-based detection first (works offline)
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (timezone) {
+      if (timezone.includes('Kolkata') || timezone.includes('Mumbai')) return 'IN';
+      if (timezone.includes('New_York') || timezone.includes('Chicago')) return 'US';
+      if (timezone.includes('London')) return 'GB';
+      if (timezone.includes('Dubai')) return 'AE';
+      if (timezone.includes('Singapore')) return 'SG';
+    }
+
+    // Method 2: Try locale-based detection
+    const locale = navigator.language || navigator.languages?.[0];
+    if (locale) {
+      if (locale.includes('en-IN') || locale.includes('hi')) return 'IN';
+      if (locale.includes('en-US')) return 'US';
+      if (locale.includes('en-GB')) return 'GB';
+    }
+
+    // Method 3: Try external API with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+    
+    const response = await fetch('https://ipapi.co/json/', {
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
+    clearTimeout(timeoutId);
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.country_code || 'IN';
+    }
+    
+    throw new Error('API response not ok');
   } catch (error) {
     console.log('Country detection failed, using default (India)');
-    return 'IN';
+    return 'IN'; // Default to India
   }
 }
