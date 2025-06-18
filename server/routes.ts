@@ -3,6 +3,9 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { generateInvestmentRecommendations, findTopInvestmentLocations, analyzeLocationIntelligence } from "./gemini";
 import { performSmartValidation } from "./smartValidation";
+import DOMPurify from "isomorphic-dompurify";
+import { z } from "zod";
+import { securityLogger } from "./middleware/auth";
 
 interface LocationData {
   lat: number;
@@ -15,6 +18,78 @@ interface PlaceDetails {
   name: string;
   vicinity: string;
   rating?: number;
+
+// Input validation schemas
+const LocationSchema = z.object({
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  address: z.string().min(1).max(500)
+});
+
+const AnalysisRequestSchema = z.object({
+  location: LocationSchema,
+  amount: z.number().min(1).max(1000000000),
+  propertyType: z.enum(['residential', 'commercial', 'industrial', 'agricultural', 'mixed']),
+  planType: z.enum(['free', 'basic', 'pro']).default('free')
+});
+
+const ValidationRequestSchema = z.object({
+  location: LocationSchema,
+  propertyData: z.object({
+    propertyType: z.string().min(1).max(50),
+    amount: z.number().min(1).max(1000000000)
+  })
+});
+
+// Security middleware for input sanitization
+const sanitizeInput = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const sanitizeObject = (obj: any): any => {
+      if (typeof obj === 'string') {
+        return DOMPurify.sanitize(obj);
+      }
+      if (typeof obj === 'object' && obj !== null) {
+        const sanitized: any = {};
+        for (const [key, value] of Object.entries(obj)) {
+          sanitized[key] = sanitizeObject(value);
+        }
+        return sanitized;
+      }
+      return obj;
+    };
+
+    if (req.body && typeof req.body === 'object') {
+      req.body = sanitizeObject(req.body);
+    }
+
+    next();
+  } catch (error) {
+    console.error('Input sanitization error:', error);
+    res.status(400).json({ error: 'Invalid input data' });
+  }
+};
+
+// IP address validation middleware
+const validateClientIP = (req: Request, res: Response, next: NextFunction) => {
+  const clientIP = req.ip || req.connection.remoteAddress || "127.0.0.1";
+  
+  // Block known malicious IP patterns (basic example)
+  const suspiciousPatterns = [
+    /^10\.0\.0\.1$/, // Example: block specific internal IPs if needed
+    /^192\.168\.1\.1$/ // Example: block router IPs
+  ];
+  
+  const isSuspicious = suspiciousPatterns.some(pattern => pattern.test(clientIP));
+  
+  if (isSuspicious) {
+    console.warn(`Blocked suspicious IP: ${clientIP}`);
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  
+  next();
+};
+
+
   types: string[];
 }
 
@@ -48,6 +123,11 @@ interface AnalysisResult {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const server = createServer(app);
+
+  // Apply security middleware to all routes
+  app.use(securityLogger);
+  app.use(sanitizeInput);
+  app.use(validateClientIP);
 
   // Google Maps configuration endpoint
   app.get("/api/maps-config", (req: Request, res: Response) => {
@@ -119,11 +199,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create analysis request
   app.post("/api/analysis/create", async (req: Request, res: Response) => {
     try {
-      const { location, amount, propertyType, planType, propertyDetails } = req.body;
-      
-      if (!location || !amount || !propertyType || !planType) {
-        return res.status(400).json({ error: "Missing required fields" });
+      // Validate input with Zod schema
+      const validationResult = AnalysisRequestSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid input data",
+          details: validationResult.error.issues 
+        });
       }
+
+      const { location, amount, propertyType, planType, propertyDetails } = validationResult.data;
 
       const analysisRequest = await storage.createAnalysisRequest({
         sessionId: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -311,11 +396,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Frontend validation endpoint
   app.post("/api/validate-inputs", async (req: Request, res: Response) => {
     try {
-      const { location, propertyData } = req.body;
-      
-      if (!location || !propertyData) {
-        return res.status(400).json({ error: "Missing location or property data" });
+      // Validate input with Zod schema
+      const validationResult = ValidationRequestSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid input data",
+          details: validationResult.error.issues 
+        });
       }
+
+      const { location, propertyData } = validationResult.data;
 
       const validation = await performSmartValidation({ location, propertyData });
       res.json({ success: true, validation });
@@ -328,11 +419,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Frontend analysis endpoint
   app.post("/api/analyze", async (req: Request, res: Response) => {
     try {
-      const { location, amount, propertyType, planType = "free", ...propertyDetails } = req.body;
-      
-      if (!location || !amount || !propertyType) {
-        return res.status(400).json({ success: false, error: "Missing required fields" });
+      // Validate input with Zod schema
+      const validationResult = AnalysisRequestSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid input data",
+          details: validationResult.error.issues 
+        });
       }
+
+      const { location, amount, propertyType, planType = "free", ...propertyDetails } = validationResult.data;
 
       // Get client IP for usage tracking
       const ipAddress = req.ip || req.connection.remoteAddress || "127.0.0.1";
