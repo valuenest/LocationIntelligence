@@ -1265,34 +1265,116 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
 
       if (isMetropolitan) economicMultiplier += 0.15;
 
-      // 5. INFRASTRUCTURE DENSITY SCORING (Realistic Approach for AI-Detected Areas)
-      // Give proper credit for AI-detected amenities
+      // 5. QUALITY-BASED INFRASTRUCTURE SCORING SYSTEM
+      // ===============================================
+      
       const totalAmenities = result.nearbyPlaces.length;
-      let densityMultiplier = 1.0;
-      let baseInfrastructureBonus = 0;
-
-      // AI-detected amenities should get proper scoring credit
-      if (totalAmenities >= 50) {
-        densityMultiplier = 1.8; // Excellent density
-        baseInfrastructureBonus = 2.0;
-      } else if (totalAmenities >= 25) {
-        densityMultiplier = 1.6; // Very good density
-        baseInfrastructureBonus = 1.5;
-      } else if (totalAmenities >= 15) {
-        densityMultiplier = 1.4; // Good density - areas like Halugunda with 16 amenities
-        baseInfrastructureBonus = 1.2;
-      } else if (totalAmenities >= 8) {
-        densityMultiplier = 1.2; // Adequate density
-        baseInfrastructureBonus = 0.8;
-      } else if (totalAmenities >= 3) {
-        densityMultiplier = 1.0; // Basic density
-        baseInfrastructureBonus = 0.3;
+      
+      // INFRASTRUCTURE QUALITY ASSESSMENT
+      let qualityScore = 0;
+      let premiumAmenityCount = 0;
+      let averageRating = 0;
+      let ratedAmenityCount = 0;
+      
+      // Calculate quality metrics for each amenity
+      result.nearbyPlaces.forEach(place => {
+        // Rating quality assessment
+        if (place.rating) {
+          averageRating += place.rating;
+          ratedAmenityCount++;
+          
+          // High-quality amenities (rating >= 4.0) get bonus points
+          if (place.rating >= 4.5) {
+            qualityScore += 0.8; // Excellent quality
+            premiumAmenityCount++;
+          } else if (place.rating >= 4.0) {
+            qualityScore += 0.6; // Good quality
+          } else if (place.rating >= 3.5) {
+            qualityScore += 0.4; // Average quality
+          } else if (place.rating >= 3.0) {
+            qualityScore += 0.2; // Below average
+          }
+          // Poor rated amenities (< 3.0) get no bonus or penalty
+        } else {
+          // AI-detected amenities without ratings get base score
+          qualityScore += 0.3;
+        }
+        
+        // Premium amenity type bonuses
+        const amenityTypes = place.types || [];
+        if (amenityTypes.includes('hospital') || amenityTypes.includes('university')) {
+          qualityScore += 0.5; // Major institutions
+          premiumAmenityCount++;
+        } else if (amenityTypes.includes('bank') || amenityTypes.includes('school')) {
+          qualityScore += 0.3; // Important services
+        }
+      });
+      
+      // Calculate average rating
+      if (ratedAmenityCount > 0) {
+        averageRating = averageRating / ratedAmenityCount;
       } else {
-        densityMultiplier = 0.8; // Very limited amenities
-        baseInfrastructureBonus = 0;
+        averageRating = 3.0; // Default for AI-detected amenities
       }
+      
+      // QUALITY-BASED MULTIPLIERS
+      let qualityMultiplier = 1.0;
+      let infrastructureQualityBonus = 0;
+      
+      // Rating-based multipliers
+      if (averageRating >= 4.5) {
+        qualityMultiplier = 1.5; // Excellent rated amenities
+        infrastructureQualityBonus = 1.0;
+      } else if (averageRating >= 4.0) {
+        qualityMultiplier = 1.3; // Good rated amenities
+        infrastructureQualityBonus = 0.7;
+      } else if (averageRating >= 3.5) {
+        qualityMultiplier = 1.1; // Average rated amenities
+        infrastructureQualityBonus = 0.4;
+      } else if (averageRating >= 3.0) {
+        qualityMultiplier = 0.9; // Below average amenities
+        infrastructureQualityBonus = 0.2;
+      } else {
+        qualityMultiplier = 0.7; // Poor quality amenities
+        infrastructureQualityBonus = 0;
+      }
+      
+      // Premium amenity bonus
+      const premiumRatio = premiumAmenityCount / Math.max(1, totalAmenities);
+      if (premiumRatio >= 0.5) {
+        qualityMultiplier += 0.3; // 50%+ premium amenities
+      } else if (premiumRatio >= 0.3) {
+        qualityMultiplier += 0.2; // 30%+ premium amenities
+      } else if (premiumRatio >= 0.1) {
+        qualityMultiplier += 0.1; // 10%+ premium amenities
+      }
+      
+      // QUANTITY vs QUALITY BALANCE
+      // Fewer high-quality amenities can score better than many poor ones
+      let densityMultiplier = 1.0;
+      
+      if (totalAmenities >= 50 && averageRating >= 4.0) {
+        densityMultiplier = 1.8; // Excellent density + quality
+      } else if (totalAmenities >= 25 && averageRating >= 3.8) {
+        densityMultiplier = 1.6; // Very good density + quality
+      } else if (totalAmenities >= 15 && averageRating >= 3.5) {
+        densityMultiplier = 1.4; // Good density + quality
+      } else if (totalAmenities >= 8 && averageRating >= 3.0) {
+        densityMultiplier = 1.2; // Adequate density + quality
+      } else if (totalAmenities >= 3) {
+        densityMultiplier = 1.0; // Basic infrastructure
+      } else {
+        densityMultiplier = 0.6; // Very limited amenities
+      }
+      
+      // PENALTY for quantity without quality
+      if (totalAmenities >= 10 && averageRating < 3.0) {
+        densityMultiplier *= 0.7; // Many poor-quality amenities penalty
+      }
+      
+      const baseInfrastructureBonus = infrastructureQualityBonus;
 
-      // 6. ENHANCED LOCATION SCORE CALCULATION WITH AI INFRASTRUCTURE BONUS
+      // 6. QUALITY-BASED LOCATION SCORE CALCULATION
       const baseInfrastructureScore = (
         healthcareScore * 0.22 +          // 22% - Healthcare (increased weight)
         educationScore * 0.18 +           // 18% - Education
@@ -1302,7 +1384,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         finalConnectivityScore * 0.12 +   // 12% - Connectivity
         safetyScore * 0.02 +              // 2% - Safety
         environmentScore * 0.01           // 1% - Environment
-      ) + baseInfrastructureBonus;        // Add density-based bonus for AI-detected areas
+      ) * qualityMultiplier * densityMultiplier + baseInfrastructureBonus;
 
       // AI-ENHANCED LOCATION SCORING WITH METROPOLITAN RECOGNITION
       // ===========================================================
@@ -1378,6 +1460,28 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       
       // Allow scores from 0.1 to 5.0 (no artificial 1.0 minimum)
       result.locationScore = Math.max(0.1, Math.min(5.0, finalLocationScore));
+      
+      // QUALITY ASSESSMENT DEBUG LOGGING
+      console.log(`QUALITY-BASED SCORING DEBUG:
+        Total Amenities: ${totalAmenities}
+        Average Rating: ${averageRating.toFixed(2)}
+        Quality Score: ${qualityScore.toFixed(2)}
+        Premium Amenities: ${premiumAmenityCount}
+        Quality Multiplier: ${qualityMultiplier.toFixed(2)}
+        Density Multiplier: ${densityMultiplier.toFixed(2)}
+        Infrastructure Quality Bonus: ${infrastructureQualityBonus.toFixed(2)}
+        Final Location Score: ${result.locationScore.toFixed(2)}`);
+      
+      // INVESTMENT VIABILITY TIER DEBUG
+      console.log(`INVESTMENT VIABILITY TIER:
+        Location Score: ${result.locationScore.toFixed(2)}
+        Tier: ${result.locationScore < 1.0 ? 'TIER 8 (Very Poor)' : 
+                result.locationScore < 1.5 ? 'TIER 7 (Poor)' : 
+                result.locationScore < 2.0 ? 'TIER 6 (Below Average)' : 
+                result.locationScore < 2.5 ? 'TIER 5 (Average)' : 
+                result.locationScore < 3.0 ? 'TIER 4 (Good)' : 
+                result.locationScore < 3.5 ? 'TIER 3 (Very Good)' : 
+                result.locationScore < 4.0 ? 'TIER 2 (Excellent)' : 'TIER 1 (Outstanding)'}`);
 
       // SOPHISTICATED INVESTMENT VIABILITY ANALYSIS
       // =============================================
@@ -1413,40 +1517,44 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // ENHANCED 8-TIER CLASSIFICATION SYSTEM BASED ON USER'S LIST
       const metroAreaType = aiIntelligence.areaClassification || 'Urban Areas';
       
-      if (result.locationScore < 1.5) {
-        // TIER 8: Very Poor Rural/Remote Areas (Score < 1.5)
-        baseViability = Math.max(5, locationBasedViability * 0.3); // Severely reduce viability
+      // CRITICAL: Location Score Dependent Investment Viability
+      // Investment viability must scale directly with location quality
+      
+      if (result.locationScore < 1.0) {
+        // TIER 8: Very Poor Infrastructure (Score < 1.0) - Max 15%
+        baseViability = Math.max(5, locationBasedViability * 0.2);
+      } else if (result.locationScore < 1.5) {
+        // TIER 7: Poor Infrastructure (Score 1.0-1.5) - Max 25%
+        baseViability = Math.max(8, locationBasedViability * 0.4);
       } else if (result.locationScore < 2.0) {
-        // TIER 7: Poor Rural Areas (Score 1.5-2.0) 
-        baseViability = Math.max(10, locationBasedViability * 0.5); // Major penalty for poor infrastructure
-      } else if (aiIntelligence.locationType === 'metropolitan' || metroAreaType === 'Metro city') {
-        // TIER 1: Metropolitan Areas - only for locations with good infrastructure (score >= 2.0)
-        baseViability = Math.max(60, locationBasedViability);
-      } else if (metroAreaType.includes('Smart city') || metroAreaType.includes('Planned township')) {
-        // TIER 8: Smart Cities/Planned Cities
-        baseViability = Math.max(50, locationBasedViability * 1.1);
-      } else if (metroAreaType.includes('Industrial estate') || metroAreaType.includes('SEZ') || metroAreaType.includes('IT park')) {
-        // TIER 5: Industrial/IT Zones
-        baseViability = Math.max(45, locationBasedViability * 1.0);
-      } else if (aiIntelligence.locationType === 'city' || metroAreaType === 'Urban locality') {
-        // TIER 2: Urban Areas
-        baseViability = Math.max(25, locationBasedViability * 0.8);
-      } else if (metroAreaType.includes('Township') || metroAreaType.includes('Suburban')) {
-        // TIER 3: Semi-Urban Areas  
-        baseViability = Math.max(20, locationBasedViability * 0.7);
-      } else if (metroAreaType.includes('Coastal') || metroAreaType.includes('Port')) {
-        // TIER 6: Coastal Areas
-        baseViability = Math.max(30, locationBasedViability * 0.8);
-      } else if (metroAreaType === 'Tourism hub' || metroAreaType === 'Tourist town' || metroAreaType === 'Resort area' || metroAreaType === 'Weekend getaway') {
-        // TIER 6: Tourism & Highway Corridors - CRITICAL FIX for Coorg areas
-        // Tourism viability should be location score dependent, not artificially high
-        baseViability = Math.max(15, locationBasedViability * 0.9); // Moderate boost for tourism areas
-      } else if (metroAreaType.includes('Hill') || metroAreaType.includes('Tribal')) {
-        // TIER 8: Hill/Tribal Regions
-        baseViability = Math.max(15, locationBasedViability * 0.6);
-      } else {
-        // TIER 9: Rural Areas (default)
+        // TIER 6: Below Average Infrastructure (Score 1.5-2.0) - Max 35%
         baseViability = Math.max(12, locationBasedViability * 0.6);
+      } else if (result.locationScore < 2.5) {
+        // TIER 5: Average Infrastructure (Score 2.0-2.5) - Max 45%
+        baseViability = Math.max(18, locationBasedViability * 0.7);
+      } else if (result.locationScore < 3.0) {
+        // TIER 4: Good Infrastructure (Score 2.5-3.0) - Max 60%
+        baseViability = Math.max(25, locationBasedViability * 0.8);
+      } else if (result.locationScore < 3.5) {
+        // TIER 3: Very Good Infrastructure (Score 3.0-3.5) - Max 75%
+        baseViability = Math.max(35, locationBasedViability * 0.9);
+      } else if (result.locationScore < 4.0) {
+        // TIER 2: Excellent Infrastructure (Score 3.5-4.0) - Max 85%
+        baseViability = Math.max(45, locationBasedViability * 1.0);
+      } else {
+        // TIER 1: Outstanding Infrastructure (Score 4.0-5.0) - Max 95%
+        baseViability = Math.max(55, locationBasedViability * 1.1);
+      }
+      
+      // Area type modifiers - smaller impact than location score
+      if (aiIntelligence.locationType === 'metropolitan' || metroAreaType === 'Metro city') {
+        baseViability *= 1.15; // 15% boost for metro areas
+      } else if (metroAreaType === 'Tourism hub' || metroAreaType === 'Tourist town') {
+        baseViability *= 1.10; // 10% boost for tourism areas
+      } else if (metroAreaType.includes('Smart city') || metroAreaType.includes('IT park')) {
+        baseViability *= 1.12; // 12% boost for tech areas
+      } else if (aiIntelligence.locationType === 'rural' || metroAreaType.includes('Rural')) {
+        baseViability *= 0.85; // 15% penalty for rural areas
       }
       
       // Add AI investment potential directly
