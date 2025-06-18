@@ -754,7 +754,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
 
     // Get AI-powered location intelligence first
     console.log("Analyzing location intelligence with Gemini AI...");
-    const locationIntelligence = await analyzeLocationIntelligence(location.address, location.lat, location.lng);
+    const aiIntelligence = await analyzeLocationIntelligence(location.address, location.lat, location.lng);
 
     try {
       // Enhanced place search with infrastructure-focused types
@@ -830,29 +830,8 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
 
       // AI-POWERED LOCATION INTELLIGENCE ASSESSMENT
       // ============================================
-      
-      // Get AI assessment of the location first to properly identify metropolitan areas
-      let aiIntelligence = {
-        locationType: 'town',
-        areaClassification: 'Town',
-        priorityScore: 50,
-        safetyScore: 5,
-        crimeRate: 'moderate',
-        developmentStage: 'developing',
-        investmentPotential: 50,
-        primaryConcerns: ['Limited data available'],
-        keyStrengths: ['Basic infrastructure present'],
-        reasoning: 'AI analysis temporarily unavailable',
-        confidence: 70
-      };
-      
-      try {
-        aiIntelligence = await analyzeLocationIntelligence(location.address, location.lat, location.lng);
-        console.log('AI Location Intelligence:', aiIntelligence);
-      } catch (error) {
-        console.error('AI Intelligence error:', error);
-        // Keep the fallback intelligence already set above
-      }
+      // Using AI intelligence already obtained at function start
+      console.log('AI Location Intelligence:', aiIntelligence);
 
       // Enhanced infrastructure scoring with AI-weighted categories and quality metrics
       let infrastructureScores = {
@@ -1452,9 +1431,9 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         const viability = result.investmentViability;
         const locationScore = result.locationScore;
         const businessGrowth = result.businessGrowthRate;
-        const safety = locationIntelligence.safetyScore;
-        const crimeRate = locationIntelligence.crimeRate;
-        const areaType = locationIntelligence.locationType || 'urban';
+        const safety = aiIntelligence.safetyScore;
+        const crimeRate = aiIntelligence.crimeRate;
+        const areaType = aiIntelligence.locationType || 'urban';
 
         // Multi-factor assessment for more nuanced recommendations
         const marketStrength = techIndicators.length >= 2 ? 'Tech Hub' : 
@@ -1519,14 +1498,14 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
 
       // Add AI and market intelligence to result
       (result as any).aiIntelligence = {
-        locationType: locationIntelligence.locationType,
-        safetyScore: locationIntelligence.safetyScore,
-        crimeRate: locationIntelligence.crimeRate,
-        developmentStage: locationIntelligence.developmentStage,
-        primaryConcerns: locationIntelligence.primaryConcerns,
-        keyStrengths: locationIntelligence.keyStrengths,
-        reasoning: locationIntelligence.reasoning,
-        confidence: locationIntelligence.confidence
+        locationType: aiIntelligence.locationType,
+        safetyScore: aiIntelligence.safetyScore,
+        crimeRate: aiIntelligence.crimeRate,
+        developmentStage: aiIntelligence.developmentStage,
+        primaryConcerns: aiIntelligence.primaryConcerns,
+        keyStrengths: aiIntelligence.keyStrengths,
+        reasoning: aiIntelligence.reasoning,
+        confidence: aiIntelligence.confidence
       };
 
       (result as any).marketIntelligence = marketIntelligence;
