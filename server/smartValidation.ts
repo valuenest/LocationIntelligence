@@ -65,37 +65,46 @@ async function checkLocationViability(location: { lat: number; lng: number; addr
       'dam reservoir', 'estuary mouth', 'lagoon center'
     ];
     
-    // Forests and protected areas - more specific
+    // Enhanced forest and protected area detection
     const forestKeywords = [
-      'dense forest', 'deep jungle', 'national park entrance', 'wildlife sanctuary',
-      'forest reserve', 'tiger reserve', 'nature reserve area', 'protected forest',
-      'conservation area', 'biodiversity hotspot', 'ecological reserve', 'wetland area',
-      'mangrove forest', 'rainforest area', 'woodland reserve'
+      'national park', 'national forest', 'wildlife sanctuary', 'nature reserve', 
+      'forest reserve', 'tiger reserve', 'protected forest', 'conservation area',
+      'biodiversity park', 'ecological reserve', 'wetland', 'mangrove',
+      'rainforest', 'woodland', 'jungle', 'safari park', 'game reserve',
+      'biosphere reserve', 'world heritage site', 'unesco site'
     ];
     
-    // Government and military areas - more specific keywords
+    // Government and military areas
     const governmentKeywords = [
-      'military base', 'army cantonment', 'naval base', 'air force station', 'defense facility',
-      'restricted area', 'prohibited zone', 'military headquarters',
-      'embassy compound', 'consulate general', 'high security zone',
-      'ministry complex', 'parliament house', 'capitol building', 'government secretariat'
+      'military', 'army', 'naval', 'air force', 'defense', 'cantonment',
+      'restricted area', 'prohibited zone', 'security zone', 'base',
+      'embassy', 'consulate', 'parliament', 'capitol', 'secretariat',
+      'ministry', 'government complex'
     ];
 
-    // Desert/uninhabitable areas - check before analysis
-    const desertKeywords = [
-      'sahara desert', 'grand canyon national park', 'death valley national park',
-      'mojave desert', 'badlands national park', 'monument valley tribal park',
-      'antarctica', 'middle of ocean', 'arctic circle', 'uninhabited island',
-      'desert wasteland', 'barren land'
+    // Enhanced desert and uninhabitable area detection
+    const uninhabitableKeywords = [
+      'desert', 'canyon', 'valley national', 'death valley', 'badlands',
+      'monument valley', 'antarctica', 'arctic', 'sahara', 'mojave',
+      'uninhabited', 'barren', 'wasteland', 'glacier', 'iceberg',
+      'mountain peak', 'volcano', 'crater', 'polar', 'tundra'
+    ];
+
+    // Water body detection
+    const waterBodyKeywords = [
+      'ocean', 'sea', 'lake', 'river', 'bay', 'harbor', 'marina',
+      'reservoir', 'dam', 'waterfall', 'rapids', 'estuary', 'lagoon',
+      'creek', 'stream', 'pond', 'marsh', 'swamp'
     ];
     
-    // Check for water bodies
-    const foundWater = waterKeywords.find(keyword => addressLower.includes(keyword));
+    // Check for all water bodies (original + enhanced)
+    const allWaterKeywords = [...waterKeywords, ...waterBodyKeywords];
+    const foundWater = allWaterKeywords.find(keyword => addressLower.includes(keyword));
     if (foundWater) {
       issues.push(`This location is in/near a water body (${foundWater}). Property development is not possible here.`);
     }
     
-    // Check for forests/protected areas
+    // Check for forests/protected areas with enhanced detection
     const foundForest = forestKeywords.find(keyword => addressLower.includes(keyword));
     if (foundForest) {
       issues.push(`This location is in a protected/forest area (${foundForest}). Property development is restricted here.`);
@@ -107,14 +116,14 @@ async function checkLocationViability(location: { lat: number; lng: number; addr
       issues.push(`This location is in a government/military area (${foundGovernment}). Property development is restricted here.`);
     }
 
-    // Check for desert/uninhabitable areas
-    const foundDesert = desertKeywords.find(keyword => addressLower.includes(keyword));
-    if (foundDesert) {
-      issues.push(`This location appears to be in an uninhabitable area (${foundDesert}). No infrastructure or amenities available for property development.`);
+    // Check for desert/uninhabitable areas with enhanced detection
+    const foundUninhabitable = uninhabitableKeywords.find(keyword => addressLower.includes(keyword));
+    if (foundUninhabitable) {
+      issues.push(`This location appears to be in an uninhabitable area (${foundUninhabitable}). No infrastructure or amenities available for property development.`);
     }
 
     // Advanced infrastructure check via Google Places API
-    if (process.env.GOOGLE_MAPS_API_KEY && !foundDesert) {
+    if (process.env.GOOGLE_MAPS_API_KEY && !foundUninhabitable) {
       try {
         // Quick check for nearby places to detect truly remote locations
         const nearbyUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=5000&type=establishment&key=${process.env.GOOGLE_MAPS_API_KEY}`;
