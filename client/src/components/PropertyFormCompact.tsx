@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import React, { useState, useEffect } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { currencyRates, countryToCurrency, detectUserCountry } from "@/lib/currencyConverter";
 
 interface PropertyFormData {
   amount: number;
@@ -36,14 +37,63 @@ interface Country {
   symbol: string;
 }
 
-const countries: Country[] = [
-  { code: 'IN', name: 'India', currency: 'INR', symbol: '₹' },
-  { code: 'US', name: 'United States', currency: 'USD', symbol: '$' },
-  { code: 'GB', name: 'United Kingdom', currency: 'GBP', symbol: '£' },
-  { code: 'AE', name: 'UAE', currency: 'AED', symbol: 'د.إ' },
-  { code: 'AU', name: 'Australia', currency: 'AUD', symbol: 'A$' },
-  { code: 'CA', name: 'Canada', currency: 'CAD', symbol: 'C$' },
-];
+// Generate countries list from currency data
+const countries: Country[] = Object.entries(countryToCurrency).map(([countryCode, currencyCode]) => {
+  const currency = currencyRates[currencyCode];
+  return {
+    code: countryCode,
+    name: countryCode === 'US' ? 'United States' : 
+          countryCode === 'GB' ? 'United Kingdom' :
+          countryCode === 'AE' ? 'UAE' :
+          countryCode === 'DE' ? 'Germany' :
+          countryCode === 'FR' ? 'France' :
+          countryCode === 'IN' ? 'India' :
+          countryCode === 'CA' ? 'Canada' :
+          countryCode === 'AU' ? 'Australia' :
+          countryCode === 'SG' ? 'Singapore' :
+          countryCode === 'JP' ? 'Japan' :
+          countryCode === 'CN' ? 'China' :
+          countryCode === 'KR' ? 'South Korea' :
+          countryCode === 'TH' ? 'Thailand' :
+          countryCode === 'MY' ? 'Malaysia' :
+          countryCode === 'ID' ? 'Indonesia' :
+          countryCode === 'PH' ? 'Philippines' :
+          countryCode === 'VN' ? 'Vietnam' :
+          countryCode === 'BD' ? 'Bangladesh' :
+          countryCode === 'PK' ? 'Pakistan' :
+          countryCode === 'LK' ? 'Sri Lanka' :
+          countryCode === 'NP' ? 'Nepal' :
+          countryCode === 'ZA' ? 'South Africa' :
+          countryCode === 'EG' ? 'Egypt' :
+          countryCode === 'NG' ? 'Nigeria' :
+          countryCode === 'KE' ? 'Kenya' :
+          countryCode === 'BR' ? 'Brazil' :
+          countryCode === 'MX' ? 'Mexico' :
+          countryCode === 'CL' ? 'Chile' :
+          countryCode === 'CO' ? 'Colombia' :
+          countryCode === 'PE' ? 'Peru' :
+          countryCode === 'RU' ? 'Russia' :
+          countryCode === 'TR' ? 'Turkey' :
+          countryCode === 'IL' ? 'Israel' :
+          countryCode === 'SA' ? 'Saudi Arabia' :
+          countryCode,
+    currency: currencyCode,
+    symbol: currency.symbol
+  };
+}).filter((country, index, self) => 
+  // Remove duplicates and prioritize common countries
+  index === self.findIndex(c => c.code === country.code)
+).sort((a, b) => {
+  // Prioritize common countries
+  const priority = ['IN', 'US', 'GB', 'CA', 'AU', 'SG', 'AE', 'DE', 'FR', 'JP'];
+  const aPriority = priority.indexOf(a.code);
+  const bPriority = priority.indexOf(b.code);
+
+  if (aPriority !== -1 && bPriority !== -1) return aPriority - bPriority;
+  if (aPriority !== -1) return -1;
+  if (bPriority !== -1) return 1;
+  return a.name.localeCompare(b.name);
+}).slice(0, 30); // Limit to top 30 countries
 
 export default function PropertyFormCompact({ onSubmit, selectedLocation }: PropertyFormProps) {
   const [amount, setAmount] = useState('');
@@ -66,7 +116,7 @@ export default function PropertyFormCompact({ onSubmit, selectedLocation }: Prop
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedLocation) {
       alert('Please select a location first');
       return;
@@ -99,6 +149,24 @@ export default function PropertyFormCompact({ onSubmit, selectedLocation }: Prop
 
     onSubmit(formData);
   };
+
+  // Auto-detect country based on user's location
+  useEffect(() => {
+    const detectCountry = async () => {
+      try {
+        const countryCode = await detectUserCountry();
+        const detectedCountry = countries.find(c => c.code === countryCode);
+        if (detectedCountry) {
+          setSelectedCountry(detectedCountry);
+        }
+      } catch (error) {
+        // Fallback to India if detection fails
+        console.log('Country detection failed, using default');
+      }
+    };
+
+    detectCountry();
+  }, []);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -239,3 +307,4 @@ export default function PropertyFormCompact({ onSubmit, selectedLocation }: Prop
     </form>
   );
 }
+// Added currency conversion and auto-detection of country based on user location.

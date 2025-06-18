@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Eye, TrendingUp, Brain, Check, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { getConvertedPrices, detectUserCountry, type ConvertedPrice } from "@/lib/currencyConverter";
 
 interface PricingPlansProps {
   onPlanSelect: (plan: string) => void;
@@ -10,11 +12,19 @@ interface PricingPlansProps {
   isFormValid: boolean;
 }
 
-const plans = [
+interface PlanPricing {
+  free: ConvertedPrice;
+  paid: ConvertedPrice;
+  pro: ConvertedPrice;
+  currencyCode: string;
+}
+
+const getPlansWithPricing = (pricing: PlanPricing) => [
   {
     id: 'free',
     name: 'Free',
-    price: 0,
+    price: pricing.free.amount,
+    priceFormatted: pricing.free.formatted,
     description: 'Basic Location Info',
     icon: Eye,
     color: 'gray',
@@ -31,7 +41,8 @@ const plans = [
   {
     id: 'paid',
     name: 'Paid',
-    price: 99,
+    price: pricing.paid.amount,
+    priceFormatted: pricing.paid.formatted,
     description: 'Complete Analysis',
     icon: TrendingUp,
     color: 'red',
@@ -49,7 +60,8 @@ const plans = [
   {
     id: 'pro',
     name: 'Pro',
-    price: 199,
+    price: pricing.pro.amount,
+    priceFormatted: pricing.pro.formatted,
     description: 'AI-Powered Insights',
     icon: Brain,
     color: 'orange',
@@ -65,11 +77,33 @@ const plans = [
 ];
 
 export default function PricingPlans({ onPlanSelect, canUseFree, freeUsageCount, isFormValid }: PricingPlansProps) {
+  const [pricing, setPricing] = useState<PlanPricing>({
+    free: { amount: 0, currency: { code: 'INR', name: 'Indian Rupee', symbol: '₹', rate: 1 }, formatted: '₹0' },
+    paid: { amount: 99, currency: { code: 'INR', name: 'Indian Rupee', symbol: '₹', rate: 1 }, formatted: '₹99' },
+    pro: { amount: 199, currency: { code: 'INR', name: 'Indian Rupee', symbol: '₹', rate: 1 }, formatted: '₹199' },
+    currencyCode: 'INR'
+  });
+
+  useEffect(() => {
+    const loadPricing = async () => {
+      try {
+        const userCountry = await detectUserCountry();
+        const convertedPricing = getConvertedPrices(userCountry);
+        setPricing(convertedPricing);
+      } catch (error) {
+        console.log('Failed to load pricing, using default INR');
+      }
+    };
+
+    loadPricing();
+  }, []);
+
+  const plans = getPlansWithPricing(pricing);
   const getButtonText = (plan: typeof plans[0]) => {
     if (plan.id === 'free') {
       return canUseFree ? 'Get Free Report' : `Free Limit Reached (${freeUsageCount}/3)`;
     }
-    return `${plan.name === 'Paid' ? 'Unlock Full Report' : 'Get Investment Suggestions'} - ₹${plan.price}`;
+    return `${plan.name === 'Paid' ? 'Unlock Full Report' : 'Get Investment Suggestions'} - ${plan.priceFormatted}`;
   };
 
   const getButtonClass = (plan: typeof plans[0]) => {
@@ -132,7 +166,7 @@ export default function PricingPlans({ onPlanSelect, canUseFree, freeUsageCount,
                     <IconComponent size={32} color={iconColor} />
                   </div>
                   <CardTitle className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</CardTitle>
-                  <p className="text-4xl font-bold" style={{ color: iconColor }}>₹{plan.price}</p>
+                  <p className="text-4xl font-bold" style={{ color: iconColor }}>{plan.priceFormatted}</p>
                   <p className="text-gray-600 mt-2">{plan.description}</p>
                 </CardHeader>
 

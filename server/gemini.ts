@@ -288,4 +288,3 @@ Format as JSON array:
     return [];
   }
 }
-`
