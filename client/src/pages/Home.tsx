@@ -241,7 +241,7 @@ export default function Home() {
       <main className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12 py-12">
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
           {/* Form Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-12 py-8">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-4 sm:px-6 lg:px-8 py-8">
             <h2 className="text-3xl font-bold text-white mb-3">
               Analyze Your Property Investment
             </h2>
@@ -251,7 +251,7 @@ export default function Home() {
           </div>
 
           {/* Form Content */}
-          <div className="px-12 py-10">
+          <div className="px-4 sm:px-6 lg:px-8 py-8">
             <div className="space-y-10">
               {/* Location Selection */}
               <div>
