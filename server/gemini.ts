@@ -240,25 +240,47 @@ function generateFallbackIntelligence(address: string): LocationIntelligence {
 }
 
 export async function generateInvestmentRecommendations(
-  analysisData: AIAnalysisRequest
+  analysisData: AIAnalysisRequest,
+  locationIntelligence?: any,
+  infrastructureScores?: any
 ): Promise<string[]> {
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    const prompt = `As a real estate investment expert, analyze this property investment opportunity:
+    const actualAmenities = analysisData.nearbyPlaces.map(p => `${p.name} (${p.vicinity || 'local area'})`).join(', ');
+    const actualDistances = Object.entries(analysisData.distances)
+      .map(([key, data]: [string, any]) => `${key}: ${data.distance?.text || 'N/A'}`)
+      .join(', ');
 
-Location: ${analysisData.location.address}
-Investment Amount: ₹${analysisData.amount.toLocaleString()}
-Property Type: ${analysisData.propertyType}
+    const prompt = `As a real estate investment expert, analyze this SPECIFIC property investment opportunity using ONLY the actual data provided:
 
-Nearby Places: ${analysisData.nearbyPlaces.map(p => `${p.name} (${p.vicinity})`).join(', ')}
+LOCATION: ${analysisData.location.address}
+INVESTMENT: ₹${analysisData.amount.toLocaleString()} for ${analysisData.propertyType}
 
-Key Distances: ${Object.entries(analysisData.distances).map(([key, data]: [string, any]) => 
-  `${key}: ${data.distance?.text || 'N/A'}`).join(', ')}
+ACTUAL AMENITIES DETECTED WITHIN 5KM:
+${actualAmenities || 'Limited amenities detected'}
 
-Provide exactly 3 specific, actionable investment recommendations for this property location. Each recommendation should be one clear sentence explaining why this location is good for investment. Focus on growth potential, infrastructure development, and market trends.
+ACTUAL DISTANCES TO KEY FACILITIES:
+${actualDistances || 'Distance data limited'}
 
-Format as a simple list without numbering or bullet points.`;
+${locationIntelligence ? `
+LOCATION CHARACTERISTICS:
+- Area Type: ${locationIntelligence.areaClassification}
+- Development Stage: ${locationIntelligence.developmentStage}
+- Safety Score: ${locationIntelligence.safetyScore}/10
+- Investment Potential: ${locationIntelligence.investmentPotential}%
+- Key Strengths: ${locationIntelligence.keyStrengths?.join(', ')}
+- Primary Concerns: ${locationIntelligence.primaryConcerns?.join(', ')}
+` : ''}
+
+CRITICAL INSTRUCTIONS:
+1. Base recommendations ONLY on the actual amenities and data provided above
+2. Do NOT mention metro, major highways, or commercial developments unless specifically found in the amenities
+3. Focus on the REAL infrastructure available (schools, shops, banks, transport that were actually detected)
+4. Be honest about limitations while highlighting genuine strengths
+5. Provide 3 specific, realistic recommendations based on actual location data
+
+Return exactly 3 recommendations as plain text lines without numbers or bullets.`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -269,21 +291,55 @@ Format as a simple list without numbering or bullet points.`;
       .split('\n')
       .filter(line => line.trim().length > 10)
       .slice(0, 3)
-      .map(rec => rec.trim().replace(/^[-*•]/, '').trim());
+      .map(rec => rec.trim().replace(/^[-*•\d.]/, '').trim());
 
-    return recommendations.length >= 3 ? recommendations : [
-      'Strong infrastructure connectivity with metro and highway access increases property appreciation potential',
-      'Growing commercial development in the area indicates rising property demand and rental yields',
-      'Proximity to educational institutions and healthcare facilities ensures consistent tenant demand'
-    ];
+    if (recommendations.length >= 3) {
+      return recommendations;
+    }
+
+    // Generate location-specific fallback based on actual data
+    const fallbackRecommendations = [];
+    
+    if (actualAmenities.includes('school') || actualAmenities.includes('School')) {
+      fallbackRecommendations.push('Presence of local schools ensures steady demand from families seeking educational proximity');
+    }
+    
+    if (actualAmenities.includes('bank') || actualAmenities.includes('ATM') || actualAmenities.includes('Bank')) {
+      fallbackRecommendations.push('Banking facilities in the area indicate established financial infrastructure supporting property transactions');
+    }
+    
+    if (actualAmenities.includes('market') || actualAmenities.includes('store') || actualAmenities.includes('grocery')) {
+      fallbackRecommendations.push('Local shopping facilities provide convenience for residents, enhancing rental appeal');
+    }
+    
+    // Add default based on area type
+    if (locationIntelligence?.areaClassification) {
+      fallbackRecommendations.push(`As an ${locationIntelligence.areaClassification}, the location offers ${locationIntelligence.developmentStage} infrastructure with moderate investment potential`);
+    }
+
+    return fallbackRecommendations.slice(0, 3);
   } catch (error) {
     console.error('Gemini API error:', error);
-    // Fallback recommendations
-    return [
-      'Strong infrastructure connectivity with metro and highway access increases property appreciation potential',
-      'Growing commercial development in the area indicates rising property demand and rental yields',
-      'Proximity to educational institutions and healthcare facilities ensures consistent tenant demand'
-    ];
+    
+    // Generate realistic fallback based on available data
+    const safeRecommendations = [];
+    const amenityText = analysisData.nearbyPlaces.map(p => p.name).join(', ');
+    
+    if (amenityText.includes('school') || amenityText.includes('School')) {
+      safeRecommendations.push('Local educational facilities provide stability for long-term residential demand');
+    } else {
+      safeRecommendations.push('Rural location offers affordability with potential for future development');
+    }
+    
+    if (amenityText.includes('bank') || amenityText.includes('market') || amenityText.includes('store')) {
+      safeRecommendations.push('Basic commercial infrastructure supports daily living needs for residents');
+    } else {
+      safeRecommendations.push('Emerging area with opportunity for early investment before infrastructure development');
+    }
+    
+    safeRecommendations.push('Location requires careful consideration of infrastructure development timeline for investment returns');
+    
+    return safeRecommendations.slice(0, 3);
   }
 }
 

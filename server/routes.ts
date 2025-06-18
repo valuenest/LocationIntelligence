@@ -1746,7 +1746,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
             propertyType,
             nearbyPlaces: result.nearbyPlaces,
             distances: result.distances
-          });
+          }, aiIntelligence, infrastructureScores);
           result.aiRecommendations = aiRecommendations;
         } catch (error) {
           console.error("AI recommendations error:", error);
