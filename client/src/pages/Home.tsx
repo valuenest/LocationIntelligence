@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import LocationInput from "@/components/LocationInput";
-import PropertyForm from "@/components/PropertyForm";
+import PropertyFormCompact from "../components/PropertyFormCompact";
 import PricingPlans from "@/components/PricingPlans";
 import SampleAnalysis from "@/components/SampleAnalysis";
 import PaymentModal from "@/components/PaymentModal";
@@ -202,37 +202,80 @@ export default function Home() {
   };
 
   return (
-    <div>
-      {/* Hero Section */}
-      <section className="gradient-bg py-16 lg:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50">
+      {/* Prominent Header Section */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
-            <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
-              Smartest Way to <span className="text-[#FF5A5F]">Judge Land Value</span>
+            <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-4">
+              Value<span className="text-[#FF5A5F]">Nest</span> AI
             </h1>
-            <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto">
-              Make informed real estate decisions with AI-powered location intelligence. Analyze property investments, get growth predictions, and discover hidden opportunities.
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Smart Real Estate Location Intelligence Tool
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Main Input Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-2xl airbnb-shadow-lg p-8 lg:p-12 border border-gray-100">
-            <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-              Analyze Your Property Investment
-            </h2>
-            
-            <LocationInput onLocationSelect={handleLocationSelect} selectedLocation={selectedLocation} />
-            
-            <div className="mt-8">
-              <PropertyForm onSubmit={handlePropertySubmit} selectedLocation={selectedLocation} />
+            <div className="mt-6 flex justify-center space-x-8 text-sm text-gray-500">
+              <div className="flex items-center">
+                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                AI-Powered Analysis
+              </div>
+              <div className="flex items-center">
+                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Crime Rate & Safety Assessment
+              </div>
+              <div className="flex items-center">
+                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Investment Growth Predictions
+              </div>
             </div>
           </div>
         </div>
-      </section>
+      </header>
+
+      {/* Main Content Section */}
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+          {/* Form Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-6">
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Analyze Your Property Investment
+            </h2>
+            <p className="text-blue-100">
+              Enter location and property details to get comprehensive investment insights
+            </p>
+          </div>
+
+          {/* Form Content */}
+          <div className="p-8">
+            <div className="grid lg:grid-cols-2 gap-8">
+              {/* Location Selection */}
+              <div>
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    📍 Property Location
+                  </h3>
+                  <LocationInput onLocationSelect={handleLocationSelect} selectedLocation={selectedLocation} />
+                </div>
+              </div>
+              
+              {/* Property Details Form */}
+              <div>
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    🏠 Property Information
+                  </h3>
+                  <PropertyFormCompact onSubmit={handlePropertySubmit} selectedLocation={selectedLocation} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
 
       {/* Usage Status */}
       {!canUseFree && (
