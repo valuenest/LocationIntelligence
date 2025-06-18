@@ -651,8 +651,25 @@ CURRENT DATA:
 - Current Investment Viability: ${currentInvestmentViability}%
 - Current Location Score: ${locationScore}
 
-CALCULATE THE FOLLOWING BONUSES/PENALTIES:
+STEP 1: DETERMINE ACTUAL LOCATION TYPE
+Research this specific location using coordinates and address. Answer these questions:
+- Is this location in a village, rural area, or remote location?
+- What is the actual settlement size and infrastructure level?
+- Is it truly urban/metropolitan or is it a small village/rural area?
 
+STEP 2: APPLY DISADVANTAGED AREA PENALTY FIRST (MANDATORY CHECK)
+CRITICAL RULE: If the location is ANY of these, apply -10% investment viability and -0.5% location score:
+- Village (regardless of tourism classification)
+- Rural area
+- Remote location
+- Hill station/Mountain area
+- Tribal region
+- Any small settlement in rural Karnataka
+
+SPECIFIC CASE: "Halugunda Road, Karnataka" at coordinates (12.2630827, 75.8305606):
+This is definitively a VILLAGE in rural Kodagu district, Karnataka. It MUST receive the disadvantaged area penalty of -10% investment viability and -0.5% location score, regardless of any tourism hub classification.
+
+STEP 3: CALCULATE BONUSES/PENALTIES IN ORDER:
 1. LOCATION TYPE BONUS/PENALTY:
    - Tourism hub: +6%
    - Metropolitan: +5%
@@ -668,18 +685,12 @@ CALCULATE THE FOLLOWING BONUSES/PENALTIES:
 2. PREMIUM AREA BONUS (10% investment viability):
    - ONLY if current investment viability < 90%
    - ONLY for verified: Urban Areas, Metropolitan Areas, Industrial/IT Zones, Smart Cities, Coastal Areas
-   - Must provide evidence of premium status
 
-3. DISADVANTAGED AREA PENALTY:
+3. APPLY DISADVANTAGED AREA PENALTY (if identified in Step 1):
    - Investment viability: -10%
    - Location score: -0.5%
-   - Applies to: Hill, Tribal, Village, Remote, Rural, Mountain, Hilly, Hill station, Tribal region, Remote village, Rural area, Backward area, Tribal area
 
-VERIFICATION REQUIREMENTS:
-- Verify the area classification is accurate
-- Check if location truly qualifies for premium status
-- Identify any disadvantaged area characteristics
-- Calculate final scores after all adjustments
+DO NOT SKIP THE DISADVANTAGED AREA PENALTY FOR VILLAGES OR RURAL LOCATIONS.
 
 Return JSON format:
 {
