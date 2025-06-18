@@ -1270,8 +1270,18 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // ===============================================
       const priorityLocationBonus = Math.min(1.0, aiIntelligence.priorityScore / 100); // Max 1.0 bonus
       
-      // Enhanced scoring with AI baseline and priority score adjustment
-      result.locationScore = Math.max(1.0, Math.min(5.0, rawLocationScore * 1.8 + aiBaselineBonus + priorityLocationBonus + 0.5));
+      // CRITICAL: Allow truly poor locations to get scores below 1.0
+      // Remove artificial inflation for poor rural areas
+      let finalLocationScore = rawLocationScore * 1.2; // Reduce multiplier from 1.8 to 1.2
+      
+      // Only add bonuses for locations that have some basic infrastructure
+      if (finalLocationScore > 0.8) {
+        finalLocationScore += aiBaselineBonus * 0.5; // Reduce AI baseline bonus
+        finalLocationScore += priorityLocationBonus * 0.3; // Reduce priority bonus
+      }
+      
+      // Allow scores from 0.1 to 5.0 (no artificial 1.0 minimum)
+      result.locationScore = Math.max(0.1, Math.min(5.0, finalLocationScore));
 
       // SOPHISTICATED INVESTMENT VIABILITY ANALYSIS
       // =============================================
@@ -1300,20 +1310,43 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // Base viability should reflect actual location quality, not just location type
       let baseViability = 0;
       
-      // Base viability should be driven by infrastructure and location score, not just AI classification
-      // Use location score as primary factor (0-5 scale) converted to 0-50 base points
+      // CRITICAL: Implement proper negative/low scoring for poor locations
+      // Use location score as primary driver - locations below 2.0 get severely penalized
       const locationBasedViability = (result.locationScore / 5.0) * 50;
       
-      // AI-based baseline adjustment for location types - More conservative
+      // ENHANCED 8-TIER CLASSIFICATION SYSTEM BASED ON USER'S LIST
       const metroAreaType = aiIntelligence.areaClassification || 'Urban Areas';
-      if (aiIntelligence.locationType === 'metropolitan' || metroAreaType === 'Metro city') {
-        baseViability = Math.max(60, locationBasedViability); // Metro areas minimum 60% if infrastructure supports it
-      } else if (aiIntelligence.locationType === 'city') {
-        baseViability = Math.max(30, locationBasedViability); // City areas minimum 30% if infrastructure supports it
-      } else if (aiIntelligence.developmentStage === 'developed') {
-        baseViability = Math.max(25, locationBasedViability); // Developed areas minimum 25%
+      
+      if (result.locationScore < 1.5) {
+        // TIER 8: Very Poor Rural/Remote Areas (Score < 1.5)
+        baseViability = Math.max(5, locationBasedViability * 0.3); // Severely reduce viability
+      } else if (result.locationScore < 2.0) {
+        // TIER 7: Poor Rural Areas (Score 1.5-2.0) 
+        baseViability = Math.max(10, locationBasedViability * 0.5); // Major penalty for poor infrastructure
+      } else if (aiIntelligence.locationType === 'metropolitan' || metroAreaType === 'Metro city') {
+        // TIER 1: Metropolitan Areas - only for locations with good infrastructure (score >= 2.0)
+        baseViability = Math.max(60, locationBasedViability);
+      } else if (metroAreaType.includes('Smart city') || metroAreaType.includes('Planned township')) {
+        // TIER 8: Smart Cities/Planned Cities
+        baseViability = Math.max(50, locationBasedViability * 1.1);
+      } else if (metroAreaType.includes('Industrial estate') || metroAreaType.includes('SEZ') || metroAreaType.includes('IT park')) {
+        // TIER 5: Industrial/IT Zones
+        baseViability = Math.max(45, locationBasedViability * 1.0);
+      } else if (aiIntelligence.locationType === 'city' || metroAreaType === 'Urban locality') {
+        // TIER 2: Urban Areas
+        baseViability = Math.max(25, locationBasedViability * 0.8);
+      } else if (metroAreaType.includes('Township') || metroAreaType.includes('Suburban')) {
+        // TIER 3: Semi-Urban Areas  
+        baseViability = Math.max(20, locationBasedViability * 0.7);
+      } else if (metroAreaType.includes('Coastal') || metroAreaType.includes('Port')) {
+        // TIER 6: Coastal Areas
+        baseViability = Math.max(30, locationBasedViability * 0.8);
+      } else if (metroAreaType.includes('Hill') || metroAreaType.includes('Tribal')) {
+        // TIER 7: Hill/Tribal Regions
+        baseViability = Math.max(15, locationBasedViability * 0.6);
       } else {
-        baseViability = locationBasedViability; // Rural/undeveloped areas use pure location score
+        // TIER 4: Rural Areas (default)
+        baseViability = Math.max(12, locationBasedViability * 0.6);
       }
       
       // Add AI investment potential directly
@@ -1474,70 +1507,116 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
 
       result.populationGrowthRate = Math.max(-4, Math.min(8, populationGrowthBase));
 
-      // 7. ENHANCED PROPERTY GROWTH PREDICTION
-      const viabilityFactor = result.investmentViability / 100;
-      const businessFactor = Math.max(0.1, result.businessGrowthRate + 5) / 15; // Better normalization
-      const populationFactor = Math.max(0.1, result.populationGrowthRate + 4) / 10; // Better baseline
-      const locationFactor = result.locationScore / 5;
+      // 7. ENHANCED PROPERTY GROWTH PREDICTION WITH NEGATIVE SCORING
+      
+      // CRITICAL: Locations with score < 2.0 should have negative growth
+      if (result.locationScore < 2.0) {
+        // Poor infrastructure locations get severely negative growth
+        const poorLocationPenalty = (2.0 - result.locationScore) * -8; // Scale penalty based on how poor the location is
+        let negativeGrowthBase = poorLocationPenalty;
+        
+        // Additional penalties for very poor areas
+        if (totalAmenities < 3) negativeGrowthBase -= 4; // Almost no amenities
+        if (infrastructureScores.connectivity < 20) negativeGrowthBase -= 3; // Very poor connectivity
+        if (result.investmentViability < 40) negativeGrowthBase -= 2; // Low viability
+        
+        result.growthPrediction = Math.max(-12, Math.min(-1, negativeGrowthBase)); // Force negative range
+      } else {
+        // Standard calculation for decent locations (score >= 2.0)
+        const viabilityFactor = result.investmentViability / 100;
+        const businessFactor = Math.max(0.1, result.businessGrowthRate + 5) / 15;
+        const populationFactor = Math.max(0.1, result.populationGrowthRate + 4) / 10;
+        const locationFactor = result.locationScore / 5;
 
-      // Combined growth prediction (much more conservative ranges)
-      const growthBase = (viabilityFactor * 0.4 + businessFactor * 0.3 + populationFactor * 0.2 + locationFactor * 0.1) * 15;
+        const growthBase = (viabilityFactor * 0.4 + businessFactor * 0.3 + populationFactor * 0.2 + locationFactor * 0.1) * 15;
+        let finalGrowthPrediction = growthBase - 5;
 
-      // Apply market reality constraints
-      let finalGrowthPrediction = growthBase - 5; // Shift down for realism
+        // Additional constraints based on infrastructure reality
+        if (totalAmenities < 8) finalGrowthPrediction -= 3;
+        else if (totalAmenities < 15) finalGrowthPrediction -= 1.5;
 
-      // Additional constraints based on infrastructure reality
-      if (totalAmenities < 8) finalGrowthPrediction -= 3;
-      else if (totalAmenities < 15) finalGrowthPrediction -= 1.5;
+        if (infrastructureScores.connectivity < 40) finalGrowthPrediction -= 2;
 
-      if (infrastructureScores.connectivity < 40) finalGrowthPrediction -= 2;
+        result.growthPrediction = Math.max(-8, Math.min(12, finalGrowthPrediction));
+      }
 
-      result.growthPrediction = Math.max(-8, Math.min(12, finalGrowthPrediction));
-
-      // SOPHISTICATED INVESTMENT RECOMMENDATION ENGINE USING AI CLASSIFICATION
+      // ENHANCED INVESTMENT RECOMMENDATION ENGINE WITH 8-TIER CLASSIFICATION
       const generateInvestmentRecommendation = () => {
         const viability = result.investmentViability;
         const locationScore = result.locationScore;
-        const businessGrowth = result.businessGrowthRate;
-        const safety = aiIntelligence.safetyScore;
         const areaClassification = aiIntelligence.areaClassification || 'Urban Areas';
         const locationType = aiIntelligence.locationType || 'urban';
 
-        // Use AI's area classification for proper categorization
+        // 8-TIER CLASSIFICATION SYSTEM
         let areaCategory = '';
+        let tierRisk = '';
+        
+        // TIER 1: Metropolitan Areas
         if (areaClassification === 'Metro city' || locationType === 'metropolitan') {
           areaCategory = 'Premium Metropolitan';
-        } else if (areaClassification.includes('Smart city') || areaClassification.includes('IT park')) {
-          areaCategory = 'Smart City Tech Hub';
-        } else if (areaClassification.includes('Industrial') || areaClassification.includes('SEZ')) {
-          areaCategory = 'Industrial Zone';
-        } else if (locationType === 'city') {
+          tierRisk = locationScore >= 4.0 ? 'Ultra-Premium' : locationScore >= 3.5 ? 'Premium' : 'Standard Metropolitan';
+        }
+        // TIER 8: Smart Cities/Planned Cities  
+        else if (areaClassification.includes('Smart city') || areaClassification.includes('Planned')) {
+          areaCategory = 'Smart City Development';
+          tierRisk = 'Tech-Forward';
+        }
+        // TIER 5: Industrial/IT Zones
+        else if (areaClassification.includes('Industrial') || areaClassification.includes('SEZ') || areaClassification.includes('IT')) {
+          areaCategory = 'Industrial Tech Hub';
+          tierRisk = 'Business-Focused';
+        }
+        // TIER 2: Urban Areas
+        else if (locationType === 'city' || areaClassification === 'Urban locality') {
           areaCategory = 'Urban City';
-        } else if (locationType === 'town') {
-          areaCategory = 'Town Development';
-        } else {
+          tierRisk = locationScore >= 3.0 ? 'Established Urban' : 'Developing Urban';
+        }
+        // TIER 3: Semi-Urban Areas
+        else if (areaClassification.includes('Township') || areaClassification.includes('Suburban')) {
+          areaCategory = 'Semi-Urban Development';
+          tierRisk = 'Growth Corridor';
+        }
+        // TIER 6: Coastal Areas
+        else if (areaClassification.includes('Coastal') || areaClassification.includes('Port')) {
+          areaCategory = 'Coastal Zone';
+          tierRisk = 'Maritime Hub';
+        }
+        // TIER 7: Hill/Tribal Regions
+        else if (areaClassification.includes('Hill') || areaClassification.includes('Tribal')) {
+          areaCategory = 'Hill Station/Tribal';
+          tierRisk = 'Remote Eco-Zone';
+        }
+        // TIER 4: Rural Areas
+        else {
           areaCategory = 'Rural Development';
+          tierRisk = locationScore >= 2.0 ? 'Accessible Rural' : 'Remote Rural';
         }
 
         const infrastructureGrade = locationScore >= 4.0 ? 'A-Grade' :
                                    locationScore >= 3.0 ? 'B-Grade' :
-                                   locationScore >= 2.0 ? 'C-Grade' : 'D-Grade';
+                                   locationScore >= 2.0 ? 'C-Grade' : 
+                                   locationScore >= 1.0 ? 'D-Grade' : 'E-Grade';
 
-        // Investment recommendation based on viability ranges
+        // CRITICAL: Handle very poor locations (score < 2.0) with negative outlook
+        if (locationScore < 1.5) {
+          return `Not Recommended - ${areaCategory} (${infrastructureGrade} Infrastructure) - Severe Infrastructure Deficit`;
+        } else if (locationScore < 2.0) {
+          return `High Risk Investment - ${areaCategory} (${infrastructureGrade} Infrastructure) - Major Infrastructure Gaps`;
+        }
+        
+        // Standard viability-based recommendations for decent locations (score >= 2.0)
         if (viability >= 85) {
           return `Outstanding ${areaCategory} Investment - ${infrastructureGrade} Infrastructure`;
         } else if (viability >= 70) {
-          return `Excellent ${areaCategory} Investment - Strong Growth Potential`;
+          return `Excellent ${areaCategory} Investment - ${tierRisk} Growth Potential`;
         } else if (viability >= 55) {
           return `Good ${areaCategory} Investment - Moderate Risk`;
         } else if (viability >= 40) {
           return `Limited ${areaCategory} Investment - Higher Risk`;
         } else if (viability >= 25) {
           return `Speculative ${areaCategory} Investment - High Risk`;
-        } else if (viability >= 15) {
-          return `Poor Investment Potential - Infrastructure Constraints`;
         } else {
-          return `Uninhabitable Location - No Investment Viability`;
+          return `Poor Investment Potential - ${areaCategory} Infrastructure Constraints`;
         }
       };
 
