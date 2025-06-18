@@ -239,36 +239,36 @@ export default function Home() {
 
       {/* Main Content Section */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
           {/* Form Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-4 sm:px-6 lg:px-8 py-12">
-            <h2 className="text-4xl font-bold text-white mb-4">
+          <div className="bg-gradient-to-r from-[#FF5A5F] to-[#FC642D] px-4 sm:px-6 lg:px-8 py-16 text-center">
+            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
               Analyze Your Property Investment
             </h2>
-            <p className="text-blue-100 text-xl">
-              Enter location and property details to get comprehensive investment insights
+            <p className="text-white/90 text-xl max-w-3xl mx-auto leading-relaxed">
+              Get AI-powered insights on location value, crime rates, growth predictions, and investment potential
             </p>
           </div>
 
           {/* Form Content */}
           <div className="px-4 sm:px-6 lg:px-8 py-16">
-            <div className="space-y-12">
+            <div className="max-w-4xl mx-auto space-y-16">
               {/* Location Selection */}
               <div>
-                <h3 className="text-2xl font-semibold text-gray-900 mb-8">
-                  📍 Property Location
+                <h3 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+                  Select Property Location
                 </h3>
-                <div className="bg-gray-50 p-8 rounded-xl">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-2xl border border-blue-100">
                   <LocationInput onLocationSelect={handleLocationSelect} selectedLocation={selectedLocation} />
                 </div>
               </div>
               
               {/* Property Details Form */}
               <div>
-                <h3 className="text-2xl font-semibold text-gray-900 mb-8">
-                  🏠 Property Information
+                <h3 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+                  Property Details
                 </h3>
-                <div className="bg-gray-50 p-8 rounded-xl">
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-8 rounded-2xl border border-green-100">
                   <PropertyFormCompact onSubmit={handlePropertySubmit} selectedLocation={selectedLocation} />
                 </div>
               </div>
