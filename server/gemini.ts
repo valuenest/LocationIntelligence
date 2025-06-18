@@ -101,24 +101,44 @@ TIER 5: Smart Cities/Planned Cities (Priority Score: 85-100)
 - "Planned township" - Integrated townships
 - "Satellite city" - Planned satellite towns
 
-TIER 6: Coastal Areas (Priority Score: 60-80)
+TIER 6: Tourism & Highway Corridors (Priority Score: 75-90)
+- "Tourism hub" - Major tourist destinations (Coorg, Ooty, Munnar, Goa)
+- "Highway corridor" - National/State highway adjacent areas
+- "Tourist town" - Towns with significant tourism potential
+- "Resort area" - Areas with resort/hospitality development
+- "Weekend getaway" - Popular short-distance destinations
+- "Scenic location" - Locations with natural beauty/attractions
+
+TIER 7: Coastal Areas (Priority Score: 60-80)
 - "Coastal town" - Coastal settlements
 - "Port city" - Port areas
 - "Beachside area" - Beach localities
 
-TIER 7: Hill/Tribal Regions (Priority Score: 30-50)
+TIER 8: Hill/Tribal Regions (Priority Score: 50-70)
 - "Hill station" - Mountain retreats
 - "Tribal area" - Tribal regions
 - "Mountain village" - Hill settlements
 
-TIER 8: Rural Areas (Priority Score: 20-40)
+TIER 9: Rural Areas (Priority Score: 20-40)
 - "Village" - Rural villages
 - "Panchayat" - Gram panchayat areas
 - "Countryside" - Rural countryside
 - "Hamlet" - Small villages
 - "Rural block" - Rural administrative blocks
 
-IMPORTANT: HSR Layout Bangalore should be classified as "Metro city" with 95+ priority score due to its premium location in Bangalore metro.
+CRITICAL SPECIAL LOCATIONS - MUST IDENTIFY CORRECTLY:
+- Coorg (Kodagu) areas including Bittangala, Virajpet, Madikeri = "Tourism hub" with 85-90 priority score
+- Areas near National Highway NH-275, NH-48, NH-44 = "Highway corridor" with 80-85 priority score  
+- Hill stations like Ooty, Munnar, Nainital = "Hill station" with 70-80 priority score
+- Beach towns like Gokarna, Varkala, Pondicherry = "Coastal town" with 75-80 priority score
+- HSR Layout Bangalore = "Metro city" with 95+ priority score
+
+TOURISM INVESTMENT INDICATORS - Look for these keywords/areas:
+- Coorg, Kodagu, Coffee plantations, Hill tourism
+- Weekend destinations from major cities
+- National/State highway connectivity (NH-xx, SH-xx)
+- Tourist attractions, resorts, homestays nearby
+- Scenic beauty, nature tourism potential
 
 2. Safety & Crime Assessment:
    - Research known crime statistics for this area
