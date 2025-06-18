@@ -661,10 +661,22 @@ export default function Results() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-700">Investment Grade:</span>
-                        <span className={`font-semibold ${(analysisResult.investmentViability || 0) >= 70 ? 'text-green-600' : 
+                        <span className={`font-semibold ${(analysisResult.investmentViability || 0) >= 85 ? 'text-green-600' : 
+                                                         (analysisResult.investmentViability || 0) >= 70 ? 'text-blue-600' :
                                                          (analysisResult.investmentViability || 0) >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
-                          {(analysisResult.investmentViability || 0) >= 70 ? 'Grade A' : 
+                          {(analysisResult.investmentViability || 0) >= 85 ? 'Grade A+' : 
+                           (analysisResult.investmentViability || 0) >= 70 ? 'Grade A' :
                            (analysisResult.investmentViability || 0) >= 50 ? 'Grade B' : 'Grade C'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-700">Essential Services:</span>
+                        <span className={`font-semibold ${
+                          ((analysisResult as any).essentialServicesCount || 0) === 5 ? 'text-green-600' :
+                          ((analysisResult as any).essentialServicesCount || 0) >= 3 ? 'text-blue-600' :
+                          ((analysisResult as any).essentialServicesCount || 0) >= 1 ? 'text-yellow-600' : 'text-red-600'
+                        }`}>
+                          {((analysisResult as any).essentialServicesCount || 0)}/5 present
                         </span>
                       </div>
                     </div>
