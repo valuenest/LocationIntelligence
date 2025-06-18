@@ -1852,7 +1852,45 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         investmentViability -= 20;
       }
       
-      // 4. QUALITY/REVIEW PENALTY
+      // 4. LOCATION TYPE BONUS/PENALTY based on area classification
+      const locationType = aiIntelligence.locationType || 'urban';
+      const areaClassification = aiIntelligence.areaClassification || 'Urban Areas';
+      let locationBonus = 0;
+      
+      console.log(`LOCATION BONUS DEBUG: locationType="${locationType}", areaClassification="${areaClassification}"`);
+      
+      // Premium location types get bonuses
+      if (locationType === 'metropolitan' || areaClassification.includes('Metro city') || areaClassification.includes('Metropolitan')) {
+        locationBonus += 5; // +5% for metropolitan areas
+        console.log('Applied Metropolitan bonus: +5%');
+      } else if (areaClassification.includes('Smart city') || areaClassification.includes('IT park') || areaClassification.includes('Tech hub')) {
+        locationBonus += 8; // +8% for tech/smart cities
+        console.log('Applied Tech/Smart city bonus: +8%');
+      } else if (areaClassification.includes('Tourism hub') || areaClassification.includes('Tourist town')) {
+        locationBonus += 6; // +6% for tourism hubs
+        console.log('Applied Tourism hub bonus: +6%');
+      } else if (locationType === 'city' || areaClassification.includes('Urban')) {
+        locationBonus += 3; // +3% for urban cities
+        console.log('Applied Urban city bonus: +3%');
+      } else if (areaClassification.includes('Industrial') || areaClassification.includes('SEZ')) {
+        locationBonus += 4; // +4% for industrial zones
+        console.log('Applied Industrial zone bonus: +4%');
+      } else if (locationType === 'town' || areaClassification.includes('Township')) {
+        locationBonus += 1; // +1% for towns
+        console.log('Applied Town bonus: +1%');
+      } else if (locationType === 'village' || areaClassification.includes('Village')) {
+        locationBonus -= 3; // -3% for villages
+        console.log('Applied Village penalty: -3%');
+      } else if (locationType === 'rural' || areaClassification.includes('Rural')) {
+        locationBonus -= 5; // -5% for rural areas
+        console.log('Applied Rural penalty: -5%');
+      } else {
+        console.log('No location bonus/penalty applied - no matching criteria');
+      }
+      
+      investmentViability += locationBonus;
+      
+      // 5. QUALITY/REVIEW PENALTY
       // Low quality/review score = -0.5% for each poor facility
       let qualityPenalty = 0;
       result.nearbyPlaces.forEach(place => {
@@ -1862,13 +1900,13 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       });
       investmentViability -= qualityPenalty;
       
-      // 5. ENSURE MINIMUM VIABILITY
+      // 6. ENSURE MINIMUM VIABILITY
       investmentViability = Math.max(0, Math.min(100, investmentViability));
       
       // Use the simplified investment viability calculation
       const finalViability = investmentViability;
       
-      // Enhanced debug logging with service count
+      // Enhanced debug logging with service count and location bonus
       console.log(`ENHANCED INVESTMENT VIABILITY CALCULATION:
         Location Score: ${result.locationScore.toFixed(2)}
         Base Viability: ${result.locationScore >= 4.5 ? 100 : result.locationScore >= 4.0 ? 90 : result.locationScore >= 3.5 ? 80 : result.locationScore >= 3.0 ? 70 : result.locationScore >= 2.5 ? 60 : result.locationScore >= 2.0 ? 50 : result.locationScore >= 1.5 ? 40 : result.locationScore >= 1.0 ? 30 : 20}%
@@ -1881,15 +1919,19 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         Missing Services Penalty: -${missingServices * 2}% (${missingServices} missing × 2%)
         All Services Missing: ${serviceCount === 0 ? 'YES (-20%)' : 'NO (0%)'}
         Education + Transport Both Missing: ${essentialServices.education.length === 0 && essentialServices.transport.length === 0 && serviceCount > 0 ? 'YES (-20%)' : 'NO (0%)'}
+        LOCATION TYPE BONUS: ${locationBonus >= 0 ? '+' : ''}${locationBonus}% (${locationType} - ${areaClassification})
         Quality Penalty: -${qualityPenalty.toFixed(1)}% (${result.nearbyPlaces.filter(p => p.rating && p.rating < 3.0).length} low-rated facilities)
         Final Investment Viability: ${finalViability.toFixed(1)}%`);
       
       result.investmentViability = Math.min(100, Math.max(0, Math.round(finalViability)));
 
-      // Add essential services count to result for enhanced frontend grading
+      // Add essential services count and location bonus to result for enhanced frontend grading
       (result as any).essentialServicesCount = serviceCount;
       (result as any).totalEssentialServices = totalServices;
       (result as any).presentServices = presentServices;
+      (result as any).locationTypeBonus = locationBonus;
+      (result as any).locationType = locationType;
+      (result as any).areaClassification = areaClassification;
 
       // Generate investment recommendation using simplified logic
       const viabilityScore = result.investmentViability || 0;

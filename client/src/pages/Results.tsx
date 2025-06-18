@@ -679,6 +679,18 @@ export default function Results() {
                           {((analysisResult as any).essentialServicesCount || 0)}/5 present
                         </span>
                       </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-700">Location Type:</span>
+                        <span className={`font-semibold ${
+                          ((analysisResult as any).locationTypeBonus || 0) > 0 ? 'text-green-600' :
+                          ((analysisResult as any).locationTypeBonus || 0) < 0 ? 'text-red-600' : 'text-gray-600'
+                        }`}>
+                          {((analysisResult as any).areaClassification || 'Urban').split(' ')[0]} 
+                          {((analysisResult as any).locationTypeBonus || 0) !== 0 && 
+                            ` (${((analysisResult as any).locationTypeBonus || 0) > 0 ? '+' : ''}${((analysisResult as any).locationTypeBonus || 0)}%)`
+                          }
+                        </span>
+                      </div>
                     </div>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
