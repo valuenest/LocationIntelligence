@@ -1505,29 +1505,45 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // Allow scores from 0.1 to 5.0 (no artificial 1.0 minimum)
       let preliminaryScore = Math.max(0.1, Math.min(5.0, finalLocationScore));
       
+      // Check if location qualifies for exempt area bonuses
+      const areaType = aiIntelligence.areaClassification || '';
+      const locationType = aiIntelligence.locationType || '';
+      
+      // EXEMPT AREA TYPES - Can exceed 4.5 without major transport infrastructure
+      const exemptAreaTypes = [
+        'Urban', 'Metropolitan', 'Metro city', 'Megacity', 'Urban agglomeration',
+        'Suburban', 'Sub-urban', 'Residential suburb',
+        'Industrial estate', 'SEZ', 'IT park', 'Tech hub', 'Industrial zone',
+        'Smart city', 'Planned township', 'Satellite city', 'Planned city',
+        'Coastal', 'Coastal area', 'Port city', 'Harbor town'
+      ];
+      
+      const isExemptArea = exemptAreaTypes.some(exemptType => 
+        areaType.includes(exemptType) || locationType === 'metropolitan' || locationType === 'city'
+      );
+      
+      // EXEMPT AREA BONUS SYSTEM - Apply bonuses for qualifying areas
+      if (isExemptArea) {
+        let exemptAreaBonus = 0;
+        if (preliminaryScore >= 3.5 && preliminaryScore < 4.0) {
+          exemptAreaBonus = 0.5; // +0.5 bonus for scores 3.5-4.0
+        } else if (preliminaryScore >= 3.0 && preliminaryScore < 3.5) {
+          exemptAreaBonus = 1.0; // +1.0 bonus for scores 3.0-3.5
+        }
+        
+        if (exemptAreaBonus > 0) {
+          const beforeBonus = preliminaryScore;
+          preliminaryScore = Math.min(5.0, preliminaryScore + exemptAreaBonus);
+          console.log(`EXEMPT AREA BONUS APPLIED: +${exemptAreaBonus} bonus for ${areaType} (${beforeBonus.toFixed(2)} → ${preliminaryScore.toFixed(2)})`);
+        }
+      }
+      
       // MANDATORY INFRASTRUCTURE CHECK FOR SCORES ABOVE 4.5
       // ===================================================
       if (preliminaryScore > 4.5) {
-        // Check if location qualifies for exemption from infrastructure requirement
-        const areaType = aiIntelligence.areaClassification || '';
-        const locationType = aiIntelligence.locationType || '';
-        
-        // EXEMPT AREA TYPES - Can exceed 4.5 without major transport infrastructure
-        const exemptAreaTypes = [
-          'Urban', 'Metropolitan', 'Metro city', 'Megacity', 'Urban agglomeration',
-          'Suburban', 'Sub-urban', 'Residential suburb',
-          'Industrial estate', 'SEZ', 'IT park', 'Tech hub', 'Industrial zone',
-          'Smart city', 'Planned township', 'Satellite city', 'Planned city',
-          'Coastal', 'Coastal area', 'Port city', 'Harbor town'
-        ];
-        
-        const isExemptArea = exemptAreaTypes.some(exemptType => 
-          areaType.includes(exemptType) || locationType === 'metropolitan' || locationType === 'city'
-        );
-        
         if (isExemptArea) {
           console.log(`INFRASTRUCTURE CHECK EXEMPTED: Area type "${areaType}" (${locationType}) qualifies for scores above 4.5 without major transport infrastructure`);
-          console.log(`Score maintained: ${preliminaryScore.toFixed(2)}`);
+          console.log(`Final score: ${preliminaryScore.toFixed(2)}`);
         } else {
           console.log(`MANDATORY INFRASTRUCTURE CHECK: Score ${preliminaryScore.toFixed(2)} > 4.5 for non-exempt area "${areaType}", validating major transport infrastructure within 5km...`);
           
@@ -1906,8 +1922,6 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       }
       
       // 4. LOCATION TYPE BONUS/PENALTY based on area classification
-      const locationType = aiIntelligence.locationType || 'urban';
-      const areaClassification = aiIntelligence.areaClassification || 'Urban Areas';
       let locationBonus = 0;
       
       console.log(`LOCATION BONUS DEBUG: locationType="${locationType}", areaClassification="${areaClassification}"`);
@@ -2123,9 +2137,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       }
 
       // Determine area type based on infrastructure and connectivity
-      const areaType = infrastructureScores.commercial.total >= 5 && infrastructureScores.transport.total >= 3 ? 'metropolitan' :
-                      infrastructureScores.commercial.total >= 3 && infrastructureScores.transport.total >= 2 ? 'urban' :
-                      infrastructureScores.commercial.total >= 1 && infrastructureScores.transport.total >= 1 ? 'suburban' : 'rural';
+      // Use existing areaType and locationType variables defined earlier
 
       // Use AI-based investment recommendation - no override needed
 
