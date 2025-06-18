@@ -78,13 +78,18 @@ export default function Home() {
       if (result.success) {
         const validation = result.validation;
         
-        // Only show validation popup if there are actual issues or high risk
-        if (!validation.isValid || validation.riskLevel === 'high' || validation.issues.length > 0) {
+        console.log('Validation result:', validation);
+        console.log('Should show popup:', !validation.isValid || validation.riskLevel === 'high' || validation.issues.length > 0);
+        
+        // Always show validation popup if there are issues
+        if (!validation.isValid || validation.issues.length > 0 || validation.riskLevel === 'high') {
+          console.log('Showing validation popup');
           setValidationResult(validation);
           setPendingFormData(data);
           setValidationModalOpen(true);
         } else {
           // Property data is realistic and valid - proceed directly to analysis
+          console.log('Proceeding with analysis - no issues found');
           proceedWithAnalysis(data);
         }
       } else {
@@ -119,6 +124,7 @@ export default function Home() {
       return;
     }
     
+    console.log('Form submitted, starting validation for:', selectedLocation.address);
     // Perform smart validation before proceeding
     await performValidation(data);
   };
