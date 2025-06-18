@@ -834,6 +834,8 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // Get AI assessment of the location first to properly identify metropolitan areas
       let aiIntelligence = {
         locationType: 'town',
+        areaClassification: 'Town',
+        priorityScore: 50,
         safetyScore: 5,
         crimeRate: 'moderate',
         developmentStage: 'developing',
@@ -1326,6 +1328,11 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       
       // Add AI investment potential directly
       const aiViabilityBonus = Math.min(25, aiIntelligence.investmentPotential * 0.25);
+      
+      // PRIORITY SCORE ENHANCEMENT BASED ON AREA CLASSIFICATION
+      // ========================================================
+      const priorityScoreBonus = Math.min(30, aiIntelligence.priorityScore * 0.3);
+      console.log(`Area Classification: ${aiIntelligence.areaClassification}, Priority Score: ${aiIntelligence.priorityScore}, Bonus: ${priorityScoreBonus}`);
       
       // Add points based on market fundamentals (0-30 additional points)
       const viabilityBonus = Math.min(30, totalMarketScore * 0.3);

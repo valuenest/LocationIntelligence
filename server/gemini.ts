@@ -14,6 +14,8 @@ interface InvestmentLocation {
 
 interface LocationIntelligence {
   locationType: 'metropolitan' | 'city' | 'town' | 'village' | 'rural' | 'uninhabitable';
+  areaClassification: string; // Detailed area type classification
+  priorityScore: number; // Score based on area type priority (0-100)
   safetyScore: number; // 1-10 scale
   crimeRate: 'very-low' | 'low' | 'moderate' | 'high' | 'very-high';
   developmentStage: 'developed' | 'developing' | 'underdeveloped' | 'restricted';
@@ -66,15 +68,39 @@ Coordinates: ${lat}, ${lng}
 
 Analyze and provide a comprehensive assessment including:
 
-1. Location Type Classification:
-   - metropolitan: Premium areas in major metros with tech hubs, IT corridors, high-end residential areas
-     (Examples: HSR Layout/Koramangala/Whitefield Bangalore, Gurgaon/Noida Delhi NCR, Bandra/Powai Mumbai, 
-     OMR/ECR Chennai, Hitech City Hyderabad, Hinjewadi Pune)
-   - city: Tier 1/2 city centers and established suburbs with good infrastructure
-   - town: Smaller urban centers with basic amenities (district headquarters, developing suburbs)
-   - village: Rural areas with limited infrastructure
-   - rural: Agricultural/remote areas with minimal development
-   - uninhabitable: Forests, water bodies, deserts, restricted zones
+1. Location Type Classification with Priority Scoring:
+
+TIER 1: Metropolitan Areas (Priority Score: 90-100)
+- Metro city, Metropolitan area, Megacity, Urban agglomeration
+- Large, densely populated cities with advanced infrastructure, central to commerce and industry
+
+TIER 2: Urban Areas (Priority Score: 70-89)  
+- City, Urban locality, Municipality, Town
+- Cities and towns with significant infrastructure, population, and services but smaller than metros
+
+TIER 3: Semi-Urban Areas (Priority Score: 50-69)
+- Township, Suburban, Semi-urban, Outskirts
+- Areas between rural and urban, often townships or fast-developing outskirts
+
+TIER 4: Industrial/IT Zones (Priority Score: 80-95)
+- Industrial estate, SEZ (Special Economic Zone), IT park, Tech hub
+- Specialized areas meant for business, manufacturing, or IT development
+
+TIER 5: Smart Cities/Planned Cities (Priority Score: 85-100)
+- Smart city, Planned township, Satellite city
+- Newly developed or upgraded urban areas with smart infrastructure
+
+TIER 6: Coastal Areas (Priority Score: 60-80)
+- Coastal town, Port city, Beachside area
+- Areas along the coast, which could be rural or urban
+
+TIER 7: Hill/Tribal Regions (Priority Score: 30-50)
+- Hill station, Tribal area, Mountain village
+- High-altitude or tribal-populated areas, often remote and less urbanized
+
+TIER 8: Rural Areas (Priority Score: 20-40)
+- Village, Panchayat, Countryside, Hamlet, Rural block
+- Villages and countryside regions with lower population density and limited infrastructure
 
 2. Safety & Crime Assessment:
    - Research known crime statistics for this area
@@ -96,6 +122,8 @@ Analyze and provide a comprehensive assessment including:
 Respond in this exact JSON format:
 {
   "locationType": "one of: metropolitan|city|town|village|rural|uninhabitable",
+  "areaClassification": "specific area type from the tiers above (e.g., Metro city, IT park, Smart city)",
+  "priorityScore": number between 0-100,
   "safetyScore": number between 1-10,
   "crimeRate": "one of: very-low|low|moderate|high|very-high",
   "developmentStage": "one of: developed|developing|underdeveloped|restricted",
@@ -163,8 +191,25 @@ function generateFallbackIntelligence(address: string): LocationIntelligence {
     safetyScore = 7;
   }
 
+  // Determine area classification and priority score based on location type
+  let areaClassification = 'Urban locality';
+  let priorityScore = 50;
+  
+  if (locationType === 'metropolitan') {
+    areaClassification = 'Metro city';
+    priorityScore = 95;
+  } else if (locationType === 'city') {
+    areaClassification = 'City';
+    priorityScore = 75;
+  } else if (locationType === 'village') {
+    areaClassification = 'Village';
+    priorityScore = 30;
+  }
+
   return {
     locationType,
+    areaClassification,
+    priorityScore,
     safetyScore,
     crimeRate: safetyScore >= 7 ? 'low' : safetyScore >= 5 ? 'moderate' : 'high',
     developmentStage: investmentPotential >= 70 ? 'developed' : investmentPotential >= 40 ? 'developing' : 'underdeveloped',
