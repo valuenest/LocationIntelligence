@@ -58,27 +58,27 @@ async function checkLocationViability(location: { lat: number; lng: number; addr
     // Check address for restricted area keywords
     const addressLower = location.address.toLowerCase();
     
-    // Water bodies - oceans, rivers, etc.
+    // Water bodies - more specific to avoid false positives
     const waterKeywords = [
-      'river', 'lake', 'ocean', 'sea', 'bay', 'creek', 'stream',
-      'pond', 'reservoir', 'beach', 'harbor', 'marina', 'waterfront', 
-      'canal', 'dam', 'waterway', 'estuary', 'inlet', 'lagoon'
+      'in the river', 'middle of lake', 'ocean floor', 'sea bed', 'bay area', 'creek bed',
+      'river bed', 'lake shore', 'ocean view', 'sea front', 'harbor area', 'marina complex',
+      'dam reservoir', 'estuary mouth', 'lagoon center'
     ];
     
-    // Forests and protected areas
+    // Forests and protected areas - more specific
     const forestKeywords = [
-      'forest', 'woods', 'jungle', 'national park', 'wildlife',
-      'reserve', 'sanctuary', 'conservation', 'protected area', 
-      'nature reserve', 'biodiversity', 'ecological', 'wetland',
-      'mangrove', 'rainforest', 'woodland'
+      'dense forest', 'deep jungle', 'national park entrance', 'wildlife sanctuary',
+      'forest reserve', 'tiger reserve', 'nature reserve area', 'protected forest',
+      'conservation area', 'biodiversity hotspot', 'ecological reserve', 'wetland area',
+      'mangrove forest', 'rainforest area', 'woodland reserve'
     ];
     
-    // Government and military areas
+    // Government and military areas - more specific keywords
     const governmentKeywords = [
-      'government', 'military', 'army', 'navy', 'air force', 'defense',
-      'restricted', 'prohibited', 'cantonment', 'base', 'headquarters',
-      'embassy', 'consulate', 'courthouse', 'police station', 'ministry',
-      'secretariat', 'parliament', 'capitol', 'federal', 'state government'
+      'military base', 'army cantonment', 'naval base', 'air force station', 'defense facility',
+      'restricted area', 'prohibited zone', 'military headquarters',
+      'embassy compound', 'consulate general', 'high security zone',
+      'ministry complex', 'parliament house', 'capitol building', 'government secretariat'
     ];
     
     // Check for water bodies
