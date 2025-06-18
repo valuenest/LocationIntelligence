@@ -1208,15 +1208,18 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
 
       if (isMetropolitan) economicMultiplier += 0.15;
 
-      // 5. INFRASTRUCTURE DENSITY PENALTY/BONUS
-      // Locations with too few amenities get penalized heavily
+      // 5. INFRASTRUCTURE DENSITY SCORING (More Balanced Approach)
+      // Give credit for available amenities rather than heavy penalties
       const totalAmenities = result.nearbyPlaces.length;
       let densityMultiplier = 1.0;
 
-      if (totalAmenities < 8) densityMultiplier = 0.3; // Severe penalty for sparse areas
-      else if (totalAmenities < 15) densityMultiplier = 0.6; // Moderate penalty
-      else if (totalAmenities < 25) densityMultiplier = 0.8; // Light penalty
-      else if (totalAmenities >= 40) densityMultiplier = 1.2; // Bonus for dense areas
+      if (totalAmenities >= 50) densityMultiplier = 1.4; // Excellent density
+      else if (totalAmenities >= 35) densityMultiplier = 1.3; // Very good density
+      else if (totalAmenities >= 25) densityMultiplier = 1.2; // Good density  
+      else if (totalAmenities >= 15) densityMultiplier = 1.1; // Adequate density
+      else if (totalAmenities >= 8) densityMultiplier = 1.0; // Basic density
+      else if (totalAmenities >= 3) densityMultiplier = 0.9; // Limited amenities
+      else densityMultiplier = 0.8; // Very limited amenities
 
       // 6. FINAL LOCATION SCORE CALCULATION (Much More Conservative)
       const baseInfrastructureScore = (
@@ -1233,8 +1236,8 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       // Apply all multipliers and constraints
       const rawLocationScore = baseInfrastructureScore * economicMultiplier * densityMultiplier * distanceQualityFactor;
 
-      // Apply realistic score distribution (most locations should score 2-4, not 4-5)
-      result.locationScore = Math.max(0.5, Math.min(5.0, rawLocationScore * 3.5)); // Scale more conservatively
+      // Apply realistic score distribution with better scaling
+      result.locationScore = Math.max(1.0, Math.min(5.0, rawLocationScore * 2.5 + 1.5)); // Better baseline scoring
 
       // SOPHISTICATED INVESTMENT VIABILITY ANALYSIS
       // =============================================
@@ -1259,42 +1262,43 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
 
       const totalMarketScore = Object.values(marketFundamentals).reduce((sum, score) => sum + score, 0);
 
-      // 2. RISK ASSESSMENT FACTORS (Deductions)
-      let riskPenalties = 0;
+      // 2. ENHANCED INVESTMENT VIABILITY CALCULATION (More Realistic)
+      // Base viability starts at 30% (minimum viable investment threshold)
+      let baseViability = 30;
+      
+      // Add points based on market fundamentals (0-50 additional points)
+      const viabilityBonus = Math.min(50, totalMarketScore * 0.5);
+      
+      // Apply multipliers for strong indicators
+      let viabilityMultiplier = 1.0;
+      
+      // Connectivity bonus
+      if (infrastructureScores.connectivity >= 100) viabilityMultiplier += 0.3;
+      else if (infrastructureScores.connectivity >= 50) viabilityMultiplier += 0.15;
+      
+      // Amenity density bonus
+      if (totalAmenities >= 30) viabilityMultiplier += 0.25;
+      else if (totalAmenities >= 15) viabilityMultiplier += 0.15;
+      else if (totalAmenities >= 8) viabilityMultiplier += 0.1;
+      
+      // Commercial activity bonus
+      if (infrastructureScores.commercial.total >= 10) viabilityMultiplier += 0.2;
+      else if (infrastructureScores.commercial.total >= 5) viabilityMultiplier += 0.1;
 
-      // Low amenity density penalty
-      if (totalAmenities < 10) riskPenalties += 20;
-      else if (totalAmenities < 20) riskPenalties += 10;
-
-      // Poor connectivity penalty
-      if (infrastructureScores.connectivity < 30) riskPenalties += 15;
-      else if (infrastructureScores.connectivity < 60) riskPenalties += 8;
-
-      // Limited healthcare penalty
-      if (infrastructureScores.healthcare.total < 2) riskPenalties += 12;
-      else if (infrastructureScores.healthcare.total < 4) riskPenalties += 6;
-
-      // Poor transport penalty
-      if (infrastructureScores.transport.total < 2) riskPenalties += 15;
-      else if (infrastructureScores.transport.total < 4) riskPenalties += 8;
-
-      // 3. GROWTH POTENTIAL MULTIPLIERS
-      let growthMultiplier = 1.0;
-
-      // Tech corridor multiplier
-      if (techIndicators.length >= 3) growthMultiplier += 0.4;
-      else if (techIndicators.length >= 1) growthMultiplier += 0.2;
+      // Growth potential multipliers
+      if (techIndicators.length >= 3) viabilityMultiplier += 0.4;
+      else if (techIndicators.length >= 1) viabilityMultiplier += 0.2;
 
       // Financial district multiplier
-      if (financialIndicators.length >= 2) growthMultiplier += 0.3;
-      else if (financialIndicators.length >= 1) growthMultiplier += 0.15;
+      if (financialIndicators.length >= 2) viabilityMultiplier += 0.3;
+      else if (financialIndicators.length >= 1) viabilityMultiplier += 0.15;
 
       // Metropolitan status multiplier
-      if (isMetropolitan) growthMultiplier += 0.25;
+      if (isMetropolitan) viabilityMultiplier += 0.25;
 
-      // 4. FINAL INVESTMENT VIABILITY CALCULATION
-      const baseViability = Math.max(0, totalMarketScore - riskPenalties);
-      result.investmentViability = Math.min(95, Math.max(5, baseViability * growthMultiplier));
+      // Calculate final investment viability (30-95% range)
+      const finalViability = (baseViability + viabilityBonus) * viabilityMultiplier;
+      result.investmentViability = Math.min(95, Math.max(30, Math.round(finalViability)));
 
       // 5. BUSINESS GROWTH ANALYSIS (More Conservative)
       const businessGrowthFactors = {
@@ -1338,10 +1342,10 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
 
       result.populationGrowthRate = Math.max(-4, Math.min(8, populationGrowthBase));
 
-      // 7. PROPERTY GROWTH PREDICTION (Much More Conservative)
+      // 7. ENHANCED PROPERTY GROWTH PREDICTION
       const viabilityFactor = result.investmentViability / 100;
-      const businessFactor = Math.max(0, result.businessGrowthRate + 3) / 15; // Normalize business growth
-      const populationFactor = Math.max(0, result.populationGrowthRate + 2) / 10; // Normalize population growth
+      const businessFactor = Math.max(0.1, result.businessGrowthRate + 5) / 15; // Better normalization
+      const populationFactor = Math.max(0.1, result.populationGrowthRate + 4) / 10; // Better baseline
       const locationFactor = result.locationScore / 5;
 
       // Combined growth prediction (much more conservative ranges)
