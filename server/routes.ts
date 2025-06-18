@@ -820,26 +820,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let areaType = 'village'; // Default classification
       let maxViability = 35; // Village max 35%
       
-      // Metropolitan area indicators
-      const metroIndicators = result.nearbyPlaces.filter(place => {
+      // More stringent metropolitan indicators
+      const realMetroIndicators = result.nearbyPlaces.filter(place => {
         const name = place.name.toLowerCase();
         const vicinity = place.vicinity?.toLowerCase() || '';
-        return name.includes('metro') || name.includes('airport') || name.includes('mall') ||
-               name.includes('hospital') || name.includes('university') || 
-               vicinity.includes('metro') || vicinity.includes('airport');
+        return (name.includes('airport') || vicinity.includes('airport')) ||
+               (name.includes('metro') || vicinity.includes('metro')) ||
+               (name.includes('mall') && name.includes('shopping')) ||
+               (name.includes('hospital') && place.rating && place.rating >= 4.0) ||
+               (name.includes('university') || name.includes('college'));
       });
       
-      // City classification logic
-      if (totalPlaces >= 15 && totalInfrastructureForClassification >= 15 && metroIndicators.length >= 3) {
-        areaType = 'metropolitan';
-        maxViability = 95; // Metro areas can reach 95%
-      } else if (totalPlaces >= 10 && totalInfrastructureForClassification >= 8) {
-        areaType = 'city';
-        maxViability = 70; // Cities max 70%
-      } else if (totalPlaces >= 6 && totalInfrastructureForClassification >= 4) {
-        areaType = 'town';
-        maxViability = 50; // Towns max 50%
+      // Premium commercial indicators for cities
+      const commercialIndicators = result.nearbyPlaces.filter(place => {
+        const name = place.name.toLowerCase();
+        return name.includes('bank') || name.includes('hotel') || 
+               name.includes('restaurant') || name.includes('store');
+      });
+      
+      // Address-based urban/rural detection
+      const isRuralByAddress = addressLower.includes('village') || addressLower.includes('rural') || 
+                              addressLower.includes('farm') || addressLower.includes('countryside');
+      
+      console.log(`Classification Debug: Places=${totalPlaces}, Infrastructure=${totalInfrastructureForClassification}, RealMetro=${realMetroIndicators.length}, Commercial=${commercialIndicators.length}, RuralAddress=${isRuralByAddress}`);
+      
+      // If address explicitly mentions rural/village, cap at village level
+      if (isRuralByAddress) {
+        areaType = 'village';
+        maxViability = 35;
       }
+      // Very strict metropolitan classification
+      else if (totalPlaces >= 20 && totalInfrastructureForClassification >= 30 && 
+          realMetroIndicators.length >= 4 && commercialIndicators.length >= 10) {
+        areaType = 'metropolitan';
+        maxViability = 95;
+      } 
+      // Strict city classification
+      else if (totalPlaces >= 18 && totalInfrastructureForClassification >= 25 && 
+               realMetroIndicators.length >= 3 && commercialIndicators.length >= 8) {
+        areaType = 'city';
+        maxViability = 70;
+      } 
+      // Town classification
+      else if (totalPlaces >= 15 && totalInfrastructureForClassification >= 18 && 
+               commercialIndicators.length >= 6) {
+        areaType = 'town';
+        maxViability = 50;
+      }
+      // Default to village for lower infrastructure
+      else {
+        areaType = 'village';
+        maxViability = 35;
+      }
+      
+      console.log(`Classified as: ${areaType} (max: ${maxViability}%)`);
       
       // Enhanced investment viability calculation with area-based caps
       const scoreAsPercentage = Math.min((result.locationScore / 5) * 100, 120);
