@@ -2164,7 +2164,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       if (planType === "pro") {
         // Top investment locations for Pro tier only
         try {
-          const topLocations = await findTopInvestmentLocations(location, propertyType);
+          const topLocations = await findTopInvestmentLocations(location, 10);
           result.topInvestmentLocations = topLocations;
         } catch (error) {
           console.error("Top locations error:", error);
