@@ -1110,23 +1110,29 @@ export default function Results() {
                         <div className="flex justify-between">
                           <span className="text-sm text-gray-600">Peak Hours:</span>
                           <span className="text-sm font-medium">
-                            {analysisResult.investmentViability === 0 ? 'No Traffic' : '8-10 AM, 6-8 PM'}
+                            {(analysisResult as any).trafficData?.peakHours || '8-10 AM, 6-8 PM'}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-gray-600">Traffic Density:</span>
                           <span className={`text-sm font-medium ${
-                            analysisResult.investmentViability === 0 ? 'text-red-600' : 'text-yellow-600'
+                            (analysisResult as any).trafficData?.density === 'None' ? 'text-red-600' :
+                            (analysisResult as any).trafficData?.density === 'Low' ? 'text-orange-600' :
+                            (analysisResult as any).trafficData?.density === 'Moderate' ? 'text-yellow-600' :
+                            (analysisResult as any).trafficData?.density === 'High' ? 'text-blue-600' : 'text-purple-600'
                           }`}>
-                            {analysisResult.investmentViability === 0 ? 'None' : 'Moderate'}
+                            {(analysisResult as any).trafficData?.density || 'Moderate'}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-gray-600">Connectivity:</span>
                           <span className={`text-sm font-medium ${
-                            analysisResult.investmentViability === 0 ? 'text-red-600' : 'text-green-600'
+                            (analysisResult as any).trafficData?.connectivity === 'No Roads' ? 'text-red-600' :
+                            (analysisResult as any).trafficData?.connectivity === 'Poor' ? 'text-orange-600' :
+                            (analysisResult as any).trafficData?.connectivity === 'Fair' ? 'text-yellow-600' :
+                            (analysisResult as any).trafficData?.connectivity === 'Good' ? 'text-green-600' : 'text-emerald-600'
                           }`}>
-                            {analysisResult.investmentViability === 0 ? 'No Roads' : 'Good'}
+                            {(analysisResult as any).trafficData?.connectivity || 'Good'}
                           </span>
                         </div>
                       </div>
@@ -1141,11 +1147,25 @@ export default function Results() {
                       <div className="space-y-2">
                         <div className="flex justify-between">
                           <span className="text-sm text-gray-600">AQI Level:</span>
-                          <span className="text-sm font-medium text-green-600">Good (51-100)</span>
+                          <span className={`text-sm font-medium ${
+                            (analysisResult as any).airQuality?.level === 'Excellent' ? 'text-green-600' :
+                            (analysisResult as any).airQuality?.level === 'Good' ? 'text-green-600' :
+                            (analysisResult as any).airQuality?.level === 'Moderate' ? 'text-yellow-600' :
+                            (analysisResult as any).airQuality?.level === 'Poor' ? 'text-orange-600' : 'text-red-600'
+                          }`}>
+                            {(analysisResult as any).airQuality?.aqi || 'Good (51-100)'}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-gray-600">Pollution Sources:</span>
-                          <span className="text-sm font-medium">Low-Medium</span>
+                          <span className={`text-sm font-medium ${
+                            (analysisResult as any).airQuality?.pollutionSources === 'Very Low' ? 'text-green-600' :
+                            (analysisResult as any).airQuality?.pollutionSources === 'Low' ? 'text-green-600' :
+                            (analysisResult as any).airQuality?.pollutionSources === 'Low-Medium' ? 'text-yellow-600' :
+                            (analysisResult as any).airQuality?.pollutionSources === 'Medium' ? 'text-orange-600' : 'text-red-600'
+                          }`}>
+                            {(analysisResult as any).airQuality?.pollutionSources || 'Low-Medium'}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-gray-600">Green Coverage:</span>

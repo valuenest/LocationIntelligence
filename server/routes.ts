@@ -130,6 +130,16 @@ interface AnalysisResult {
   investmentRecommendation?: string; // Text recommendation
   locationImageUrl?: string; // Image for all tiers
   aiIntelligence?: any; // AI location intelligence data
+  trafficData?: {
+    density: 'None' | 'Low' | 'Moderate' | 'High' | 'Very High';
+    peakHours: string;
+    connectivity: 'No Roads' | 'Poor' | 'Fair' | 'Good' | 'Excellent';
+  };
+  airQuality?: {
+    level: 'Excellent' | 'Good' | 'Moderate' | 'Poor' | 'Very Poor';
+    aqi: string;
+    pollutionSources: 'Very Low' | 'Low' | 'Low-Medium' | 'Medium' | 'High';
+  };
   topInvestmentLocations?: Array<{
     address: string;
     lat: number;
@@ -823,7 +833,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
           // Rate limiting to avoid quota issues
           await new Promise(resolve => setTimeout(resolve, 200));
         } catch (error) {
-          console.error(`Error searching for ${query}:`, error);
+          console.error(`Error searching for ${priorityTypes[i]}:`, error);
         }
       }
 
@@ -2154,7 +2164,7 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       if (planType === "pro") {
         // Top investment locations for Pro tier only
         try {
-          const topLocations = await findTopInvestmentLocations(location, propertyType, amount);
+          const topLocations = await findTopInvestmentLocations(location, propertyType);
           result.topInvestmentLocations = topLocations;
         } catch (error) {
           console.error("Top locations error:", error);
@@ -2183,6 +2193,118 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
 
     // Add AI intelligence data to results
     result.aiIntelligence = aiIntelligence;
+
+    // DYNAMIC TRAFFIC AND AIR QUALITY ANALYSIS
+    // =======================================
+    // Generate realistic traffic and air quality data based on location analysis
+    
+    // Traffic analysis based on location type and infrastructure
+    const generateTrafficData = () => {
+      const transportCount = result.nearbyPlaces.filter(p => 
+        p.types.some(t => ['transit_station', 'bus_station', 'subway_station', 'train_station'].includes(t))
+      ).length;
+      
+      const isUrbanArea = aiIntelligence.locationType === 'metropolitan' || 
+                         aiIntelligence.locationType === 'city' ||
+                         (aiIntelligence.areaClassification && 
+                          (aiIntelligence.areaClassification.includes('Metro') || 
+                           aiIntelligence.areaClassification.includes('Urban')));
+      
+      const isRuralArea = aiIntelligence.locationType === 'rural' || 
+                         aiIntelligence.locationType === 'village' ||
+                         (aiIntelligence.areaClassification && 
+                          (aiIntelligence.areaClassification.includes('Rural') || 
+                           aiIntelligence.areaClassification.includes('Village')));
+      
+      let density: 'None' | 'Low' | 'Moderate' | 'High' | 'Very High';
+      let connectivity: 'No Roads' | 'Poor' | 'Fair' | 'Good' | 'Excellent';
+      let peakHours: string;
+      
+      if (result.investmentViability === 0 || result.locationScore < 0.5) {
+        density = 'None';
+        connectivity = 'No Roads';
+        peakHours = 'No Traffic';
+      } else if (isRuralArea || result.locationScore < 2.0) {
+        density = transportCount > 0 ? 'Low' : 'None';
+        connectivity = transportCount > 0 ? 'Fair' : 'Poor';
+        peakHours = '7-9 AM, 5-7 PM';
+      } else if (result.locationScore < 3.0) {
+        density = 'Low';
+        connectivity = transportCount >= 2 ? 'Good' : 'Fair';
+        peakHours = '7-9 AM, 5-7 PM';
+      } else if (result.locationScore < 4.0) {
+        density = transportCount >= 3 ? 'High' : 'Moderate';
+        connectivity = 'Good';
+        peakHours = '8-10 AM, 6-8 PM';
+      } else if (isUrbanArea || result.locationScore >= 4.0) {
+        density = transportCount >= 4 ? 'Very High' : 'High';
+        connectivity = 'Excellent';
+        peakHours = '7-10 AM, 5-9 PM';
+      } else {
+        density = 'Moderate';
+        connectivity = 'Good';
+        peakHours = '8-10 AM, 6-8 PM';
+      }
+      
+      return { density, peakHours, connectivity };
+    };
+    
+    // Air quality analysis based on location and development stage
+    const generateAirQualityData = () => {
+      const parkCount = result.nearbyPlaces.filter(p => 
+        p.types.some(t => ['park', 'natural_feature'].includes(t))
+      ).length;
+      
+      const industrialCount = result.nearbyPlaces.filter(p => 
+        p.types.some(t => ['gas_station', 'car_repair', 'store'].includes(t))
+      ).length;
+      
+      const isCoastalArea = aiIntelligence.areaClassification && 
+                           aiIntelligence.areaClassification.includes('Coastal');
+      
+      const isHillArea = aiIntelligence.areaClassification && 
+                        (aiIntelligence.areaClassification.includes('Hill') || 
+                         aiIntelligence.areaClassification.includes('Mountain'));
+      
+      const isMetroArea = aiIntelligence.locationType === 'metropolitan' ||
+                         (aiIntelligence.areaClassification && 
+                          aiIntelligence.areaClassification.includes('Metro'));
+      
+      let level: 'Excellent' | 'Good' | 'Moderate' | 'Poor' | 'Very Poor';
+      let aqi: string;
+      let pollutionSources: 'Very Low' | 'Low' | 'Low-Medium' | 'Medium' | 'High';
+      
+      if (isHillArea || isCoastalArea) {
+        level = parkCount > 0 ? 'Excellent' : 'Good';
+        aqi = parkCount > 0 ? 'Excellent (0-50)' : 'Good (51-100)';
+        pollutionSources = 'Very Low';
+      } else if (aiIntelligence.locationType === 'rural' || result.locationScore < 2.0) {
+        level = 'Good';
+        aqi = 'Good (51-100)';
+        pollutionSources = industrialCount > 2 ? 'Low-Medium' : 'Low';
+      } else if (result.locationScore < 3.0) {
+        level = 'Good';
+        aqi = 'Good (51-100)';
+        pollutionSources = 'Low-Medium';
+      } else if (isMetroArea && industrialCount > 3) {
+        level = 'Moderate';
+        aqi = 'Moderate (101-150)';
+        pollutionSources = 'Medium';
+      } else if (isMetroArea) {
+        level = parkCount > 1 ? 'Good' : 'Moderate';
+        aqi = parkCount > 1 ? 'Good (51-100)' : 'Moderate (101-150)';
+        pollutionSources = 'Low-Medium';
+      } else {
+        level = 'Good';
+        aqi = 'Good (51-100)';
+        pollutionSources = 'Low-Medium';
+      }
+      
+      return { level, aqi, pollutionSources };
+    };
+    
+    result.trafficData = generateTrafficData();
+    result.airQuality = generateAirQualityData();
 
     return result;
   };
