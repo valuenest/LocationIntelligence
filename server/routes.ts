@@ -784,6 +784,55 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
     }
     
     console.log(`AI Location Intelligence Complete: ${aiIntelligence.areaClassification} (Priority: ${aiIntelligence.priorityScore})`)
+    
+    // CRITICAL HABITABILITY VALIDATION - STOP ANALYSIS FOR UNINHABITABLE LOCATIONS
+    // ============================================================================
+    if (aiIntelligence.locationType === 'uninhabitable' || 
+        aiIntelligence.priorityScore < 10 ||
+        aiIntelligence.developmentStage === 'restricted' ||
+        aiIntelligence.areaClassification.toLowerCase().includes('uninhabitable') ||
+        aiIntelligence.areaClassification.toLowerCase().includes('restricted') ||
+        aiIntelligence.reasoning.toLowerCase().includes('uninhabitable') ||
+        aiIntelligence.reasoning.toLowerCase().includes('unsuitable for development')) {
+      
+      console.log("HABITABILITY CHECK FAILED: Location deemed uninhabitable by AI analysis");
+      console.log("Reasoning:", aiIntelligence.reasoning);
+      console.log("Priority Score:", aiIntelligence.priorityScore);
+      console.log("Development Stage:", aiIntelligence.developmentStage);
+      
+      // Return uninhabitable result immediately without further analysis
+      return {
+        locationScore: 0,
+        growthPrediction: 0,
+        nearbyPlaces: [],
+        distances: {},
+        investmentViability: 0,
+        businessGrowthRate: 0,
+        populationGrowthRate: 0,
+        investmentRecommendation: `Uninhabitable Location - ${aiIntelligence.areaClassification}`,
+        aiIntelligence: {
+          locationType: aiIntelligence.locationType,
+          areaClassification: aiIntelligence.areaClassification,
+          safetyScore: aiIntelligence.safetyScore,
+          crimeRate: aiIntelligence.crimeRate,
+          developmentStage: aiIntelligence.developmentStage,
+          primaryConcerns: aiIntelligence.primaryConcerns,
+          keyStrengths: aiIntelligence.keyStrengths,
+          reasoning: aiIntelligence.reasoning,
+          confidence: aiIntelligence.confidence
+        },
+        trafficData: {
+          density: 'None',
+          peakHours: 'No Traffic',
+          connectivity: 'No Roads'
+        },
+        airQuality: {
+          level: 'Very Poor',
+          aqi: 'Hazardous (>300)',
+          pollutionSources: 'High'
+        }
+      };
+    }
 
     try {
       // Enhanced place search with infrastructure-focused types
