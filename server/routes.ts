@@ -1999,6 +1999,14 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         investmentViability = 20; // Extremely poor location
       }
       
+      // APPLY SEVERE PENALTIES FOR DANGEROUS CONFLICT ZONES
+      // ==================================================
+      if (isDangerousLocation) {
+        console.log(`DANGER ZONE PENALTY: Applying severe negative investment viability for conflict area`);
+        investmentViability = Math.min(-50, investmentViability - 80); // Force severe negative investment viability
+        console.log(`DANGER ZONE PENALTY APPLIED: Investment viability reduced to ${investmentViability}% for safety reasons`);
+      }
+      
       // 2. ESSENTIAL SERVICES PENALTY - Enhanced with service count consideration
       // Missing any essential service = -2% each
       const missingServices = totalServices - serviceCount;
@@ -2133,7 +2141,19 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       const viabilityScore = result.investmentViability || 0;
       const areaTypeSimple = areaType;
       
-      if (viabilityScore >= 85) {
+      // DANGEROUS LOCATIONS GET SEVERE WARNING MESSAGES
+      if (isDangerousLocation) {
+        result.investmentRecommendation = `⚠️ EXTREME DANGER WARNING - INVESTMENT NOT RECOMMENDED ⚠️
+        
+This location poses severe risks to human life and safety:
+• Active conflict zone with terrorism/violence
+• High risk of casualties and property damage  
+• Unstable political/security situation
+• No safe property investment possible
+• Emergency evacuation may be required
+
+RECOMMENDATION: DO NOT INVEST - PRIORITIZE HUMAN SAFETY`;
+      } else if (viabilityScore >= 85) {
         result.investmentRecommendation = `Excellent ${areaTypeSimple} Investment - Premium Grade Infrastructure`;
       } else if (viabilityScore >= 70) {
         result.investmentRecommendation = `Good ${areaTypeSimple} Investment - A-Grade Infrastructure`;
