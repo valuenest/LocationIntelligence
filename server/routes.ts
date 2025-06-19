@@ -833,6 +833,33 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
         }
       };
     }
+    
+    // DANGEROUS LOCATION VALIDATION - SEVERE PENALTIES FOR CONFLICT ZONES
+    // ===================================================================
+    const isDangerousLocation = aiIntelligence.locationType === 'dangerous' ||
+        aiIntelligence.safetyScore <= 2 ||
+        aiIntelligence.crimeRate === 'very-high' ||
+        aiIntelligence.areaClassification.toLowerCase().includes('conflict') ||
+        aiIntelligence.areaClassification.toLowerCase().includes('war zone') ||
+        aiIntelligence.areaClassification.toLowerCase().includes('terrorist') ||
+        aiIntelligence.reasoning.toLowerCase().includes('terrorism') ||
+        aiIntelligence.reasoning.toLowerCase().includes('taliban') ||
+        aiIntelligence.reasoning.toLowerCase().includes('conflict') ||
+        aiIntelligence.reasoning.toLowerCase().includes('war') ||
+        location.address.toLowerCase().includes('afghanistan') ||
+        location.address.toLowerCase().includes('kabul') ||
+        location.address.toLowerCase().includes('syria') ||
+        location.address.toLowerCase().includes('yemen') ||
+        location.address.toLowerCase().includes('somalia');
+    
+    if (isDangerousLocation) {
+      console.log("DANGEROUS LOCATION DETECTED: Applying severe negative penalties for conflict zone");
+      console.log("Safety Score:", aiIntelligence.safetyScore);
+      console.log("Crime Rate:", aiIntelligence.crimeRate);
+      console.log("Area Classification:", aiIntelligence.areaClassification);
+      
+      // Continue with analysis but apply massive negative penalties
+    }
 
     try {
       // Enhanced place search with infrastructure-focused types
@@ -1563,6 +1590,14 @@ Sitemap: https://valuenest-ai.replit.app/sitemap.xml`;
       
       // Allow scores from 0.1 to 5.0 (no artificial 1.0 minimum)
       let preliminaryScore = Math.max(0.1, Math.min(5.0, finalLocationScore));
+      
+      // APPLY SEVERE PENALTIES FOR DANGEROUS CONFLICT ZONES
+      // ===================================================
+      if (isDangerousLocation) {
+        console.log(`DANGER ZONE PENALTY: Applying severe negative score for conflict area`);
+        preliminaryScore = Math.min(-1.5, preliminaryScore - 3.0); // Force negative score for dangerous areas
+        console.log(`DANGER ZONE PENALTY APPLIED: Score reduced to ${preliminaryScore.toFixed(2)} for safety reasons`);
+      }
       
       // Check if location qualifies for exempt area bonuses
       const areaType = aiIntelligence.areaClassification || '';

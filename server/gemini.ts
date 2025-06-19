@@ -13,7 +13,7 @@ interface InvestmentLocation {
 }
 
 interface LocationIntelligence {
-  locationType: 'metropolitan' | 'city' | 'town' | 'village' | 'rural' | 'uninhabitable';
+  locationType: 'metropolitan' | 'city' | 'town' | 'village' | 'rural' | 'uninhabitable' | 'dangerous';
   areaClassification: string; // Detailed area type classification
   priorityScore: number; // Score based on area type priority (0-100)
   safetyScore: number; // 1-10 scale
@@ -139,6 +139,16 @@ UNINHABITABLE/RESTRICTED LOCATIONS (Priority Score: 0, locationType: "uninhabita
 - Nuclear facilities and surrounding areas = "Nuclear restricted zone"
 - Any location with "restricted", "prohibited", "danger", "hazardous" in description
 
+DANGEROUS CONFLICT/TERRORIST ZONES (Priority Score: 0-10, locationType: "uninhabitable" or "dangerous"):
+- Afghanistan (especially Kabul, Kandahar) = "Conflict zone" - Active terrorism, Taliban control, extreme danger
+- Syria, Yemen, Somalia = "War zone" - Active conflicts, terrorist groups
+- Gaza Strip, parts of Iraq = "Conflict area" - Military operations, terrorism risk
+- North Korea = "Authoritarian regime" - Restricted foreign investment, severe penalties
+- Iran (under sanctions) = "Sanctioned territory" - Economic sanctions, investment restrictions
+- Parts of Mexico (cartel areas) = "Criminal territory" - Drug cartel violence
+- Parts of Nigeria, Mali = "Terrorist territory" - Boko Haram, ISIS presence
+- For any location in these areas: SEVERE NEGATIVE PENALTIES REQUIRED
+
 HABITABLE LOCATIONS:
 - ALL Kodagu district locations (including Halugunda, Bittangala, Virajpet, Madikeri, Kushalnagar, Pollibetta) = "Tourism hub" with 85-90 priority score
 - Kodagu district is Karnataka's premier coffee and tourism region - ANY location within this district should get tourism classification
@@ -163,9 +173,11 @@ TOURISM INVESTMENT INDICATORS - Look for these keywords/areas:
 2. Safety & Crime Assessment:
    - FIRST CHECK: Is this location government-restricted, dangerous, or prohibited?
    - Snake Island (Brazil), Chernobyl, North Sentinel Island, military zones = UNINHABITABLE
+   - CONFLICT ZONES: Afghanistan, Syria, Yemen, Somalia, Gaza = EXTREMELY DANGEROUS
+   - For conflict zones: safetyScore = 1, crimeRate = "very-high", locationType = "dangerous"
    - Research known crime statistics for this area
-   - Consider factors like: theft rates, safety for families, women's safety, law enforcement presence
-   - Rate safety on 1-10 scale (10 = very safe, 1 = dangerous for restricted areas)
+   - Consider factors like: terrorism risk, war zones, Taliban control, ISIS presence, cartel violence
+   - Rate safety on 1-10 scale (10 = very safe, 1 = extreme danger/conflict zones)
 
 3. Development Stage:
    - developed: Established infrastructure, mature market
