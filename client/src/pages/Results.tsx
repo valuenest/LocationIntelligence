@@ -591,7 +591,7 @@ export default function Results() {
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="text-center">
-                          <div className="text-2xl font-bold text-blue-600">{analysisResult.locationScore.toFixed(1)}</div>
+                          <div className="text-2xl font-bold text-blue-600">{Math.min(5.0, analysisResult.locationScore).toFixed(1)}</div>
                           <div className="text-xs text-gray-600">out of 5.0</div>
                         </div>
                       </div>
@@ -685,10 +685,7 @@ export default function Results() {
                           ((analysisResult as any).locationTypeBonus || 0) > 0 ? 'text-green-600' :
                           ((analysisResult as any).locationTypeBonus || 0) < 0 ? 'text-red-600' : 'text-gray-600'
                         }`}>
-                          {((analysisResult as any).areaClassification || 'Urban').split(' ')[0]} 
-                          {((analysisResult as any).locationTypeBonus || 0) !== 0 && 
-                            ` (${((analysisResult as any).locationTypeBonus || 0) > 0 ? '+' : ''}${((analysisResult as any).locationTypeBonus || 0)}%)`
-                          }
+                          {((analysisResult as any).areaClassification || 'Urban').split(' ')[0]}
                         </span>
                       </div>
                     </div>
