@@ -127,6 +127,19 @@ TIER 9: Rural Areas (Priority Score: 20-40)
 - "Rural block" - Rural administrative blocks
 
 CRITICAL SPECIAL LOCATIONS - MUST IDENTIFY CORRECTLY:
+
+UNINHABITABLE/RESTRICTED LOCATIONS (Priority Score: 0, locationType: "uninhabitable"):
+- Snake Island (Ilha da Queimada Grande), Brazil = "Restricted island" - Government-banned due to deadly snakes
+- Chernobyl Exclusion Zone = "Nuclear restricted zone" - Radiation hazard
+- North Sentinel Island = "Restricted tribal territory" - Protected indigenous area
+- Area 51, Nevada = "Military restricted zone" - Classified military installation
+- Any coordinates in open ocean/sea = "Open waters" - No landmass
+- Active volcano craters = "Volcanic hazard zone" - Environmental danger
+- Military bases and restricted zones = "Military restricted area"
+- Nuclear facilities and surrounding areas = "Nuclear restricted zone"
+- Any location with "restricted", "prohibited", "danger", "hazardous" in description
+
+HABITABLE LOCATIONS:
 - ALL Kodagu district locations (including Halugunda, Bittangala, Virajpet, Madikeri, Kushalnagar, Pollibetta) = "Tourism hub" with 85-90 priority score
 - Kodagu district is Karnataka's premier coffee and tourism region - ANY location within this district should get tourism classification
 - Areas near National Highway NH-275, NH-48, NH-44 = "Highway corridor" with 80-85 priority score  
@@ -148,9 +161,11 @@ TOURISM INVESTMENT INDICATORS - Look for these keywords/areas:
 - Scenic beauty, nature tourism potential in hill districts
 
 2. Safety & Crime Assessment:
+   - FIRST CHECK: Is this location government-restricted, dangerous, or prohibited?
+   - Snake Island (Brazil), Chernobyl, North Sentinel Island, military zones = UNINHABITABLE
    - Research known crime statistics for this area
    - Consider factors like: theft rates, safety for families, women's safety, law enforcement presence
-   - Rate safety on 1-10 scale (10 = very safe, 1 = dangerous)
+   - Rate safety on 1-10 scale (10 = very safe, 1 = dangerous for restricted areas)
 
 3. Development Stage:
    - developed: Established infrastructure, mature market
